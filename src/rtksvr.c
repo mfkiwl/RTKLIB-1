@@ -41,11 +41,10 @@
 #include "rtklib.h"
 
 
-#define MIN_INT_RESET               30000   /* mininum interval of reset command (ms) */
-#define NMEAREQ_SEND_NONE           0       /* don't send nmea request */
 #define NMEAREQ_SEND_LLH            1       /* nmea request with llh position */
 #define NMEAREQ_SEND_SINGLE         2       /* nmea request with single solution */
 #define NMEAREQ_SEND_RESET_SINGLE   3       /* send reset and nmea request with single solution */
+#define MIN_INT_RESET   30000   /* mininum interval of reset command (ms) */
 
 /* write solution header to output stream ------------------------------------*/
 static void writesolhead(stream_t *stream, const solopt_t *solopt)

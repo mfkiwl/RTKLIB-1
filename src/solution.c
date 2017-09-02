@@ -47,7 +47,6 @@
 #include <ctype.h>
 #include "rtklib.h"
 
-
 /* constants and macros ------------------------------------------------------*/
 
 #define SQR(x)     ((x)<0.0?-(x)*(x):(x)*(x))

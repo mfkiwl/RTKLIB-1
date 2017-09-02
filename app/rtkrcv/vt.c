@@ -32,7 +32,6 @@
 #endif
 #include "vt.h"
 
-
 #define DEF_DEV     "/dev/tty"          /* default console device */
 
 #define C_DEL       (char)0x7F          /* delete */

@@ -659,15 +659,14 @@ static void decode_gps_subfrm4(const unsigned char *buff, alm_t *alm,
         /* decode as and sv config */
         i=56;
         for (sat=1;sat<=32;sat++) {
-            if (alm) 
-                alm[sat-1].svconf=getbitu(buff,i,4);
+            if (alm) alm[sat-1].svconf=getbitu(buff,i,4);
             i+=4;
         }
         /* decode sv health */
         i=186;
         for (sat=25;sat<=32;sat++) {
             if (alm) alm[sat-1].svh   =getbitu(buff,i,6);
-        i+=6;
+            i+=6;
         }
     }
     else if (svid==56) { /* page 18 */

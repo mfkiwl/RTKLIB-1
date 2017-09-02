@@ -79,7 +79,6 @@
 #include <netdb.h>
 #endif
 
-
 /* constants -----------------------------------------------------------------*/
 
 #define TINTACT             200         /* period for stream active (ms) */

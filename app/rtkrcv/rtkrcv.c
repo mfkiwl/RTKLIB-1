@@ -52,7 +52,6 @@
 #include "rtklib.h"
 #include "vt.h"
 
-
 #define PRGNAME     "rtkrcv"            /* program name */
 #define CMDPROMPT   "rtkrcv> "          /* command prompt */
 #define MAXCON      32                  /* max number of consoles */
@@ -780,13 +779,11 @@ static void prstatus(vt_t *vt)
     vt_printf(vt,"%-28s: %.3f,%.3f,%.3f\n","vel enu (m/s) base",
             vel[0],vel[1],vel[2]);
     if (rtk.opt.mode>0&&rtk.x&&norm(rtk.x,3)>0.0) {
-        for (i=0;i<3;i++)
-            rr[i]=rtk.x[i]-rtk.rb[i];
+        for (i=0;i<3;i++) rr[i]=rtk.x[i]-rtk.rb[i];
         bl1=norm(rr,3);
     }
     if (rtk.opt.mode>0&&rtk.xa&&norm(rtk.xa,3)>0.0) {
-        for (i=0;i<3;i++)
-            rr[i]=rtk.xa[i]-rtk.rb[i];
+        for (i=0;i<3;i++) rr[i]=rtk.xa[i]-rtk.rb[i];
         bl2=norm(rr,3);
     }
     vt_printf(vt,"%-28s: %.3f\n","baseline length float (m)",bl1);

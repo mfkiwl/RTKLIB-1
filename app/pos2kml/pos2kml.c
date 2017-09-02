@@ -17,7 +17,6 @@
 #include <stdarg.h>
 #include "rtklib.h"
 
-
 /* help text -----------------------------------------------------------------*/
 static const char *help[]={
 "",
