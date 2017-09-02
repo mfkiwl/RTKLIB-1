@@ -147,4 +147,4 @@ UPDATE HISTORY
 2017/04/25  2.4.3 b27 fix several bugs
 2017/05/26  2.4.3 b28 fix bug on decoding skytraq extended raw message
                       add rcv/tersus.c to support tersus BX306
-</pre>
+2017/09/02  2.4.3 b29 fix bugs
