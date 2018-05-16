@@ -15,7 +15,7 @@ extern glo_IFB_t *glo_IFB_init()
 
   if ( glo_IFB == NULL ) {
 
-    return 0;
+    return NULL;
   }
 
   glo_IFB->mode             = GLO_IFB_SEARCH_MODE;
@@ -58,13 +58,13 @@ extern void glo_IFB_free(glo_IFB_t *glo_IFB)
   free(glo_IFB);
 }
 
-extern void glo_IFB_copy(const glo_IFB_t *glo_IFB_source, glo_IFB_t *glo_IFB_destination)
+extern void glo_IFB_copy(const glo_IFB_t *glo_IFB_src, glo_IFB_t *glo_IFB_dest)
 {
-  assert( glo_IFB_is_valid(glo_IFB_source) );
-  assert( glo_IFB_is_valid(glo_IFB_destination) );
+  assert( glo_IFB_is_valid(glo_IFB_src) );
+  assert( glo_IFB_is_valid(glo_IFB_dest) );
 
   /* field-to-field copy */
-  *glo_IFB_destination = *glo_IFB_source;
+  *glo_IFB_dest = *glo_IFB_src;
 }
 
 extern void glo_IFB_reset(glo_IFB_t *glo_IFB)
@@ -108,6 +108,27 @@ extern int glo_IFB_is_enough_sats(const rtk_t *rtk)
   }
 
   return 1;
+}
+
+extern double glo_IFB_get_glo_dt(const glo_IFB_t *glo_IFB)
+{
+  assert( glo_IFB_is_valid(glo_IFB) );
+
+  return glo_IFB->glo_dt;
+}
+
+extern double glo_IFB_get_delta_glo_dt(const glo_IFB_t *glo_IFB)
+{
+  assert( glo_IFB_is_valid(glo_IFB) );
+
+  return glo_IFB->delta_glo_dt;
+}
+
+extern void glo_IFB_send_signal_to_reset(glo_IFB_t *glo_IFB)
+{
+  assert( glo_IFB_is_valid(glo_IFB) );
+
+  glo_IFB->signal_to_reset = GLO_IFB_SIGNAL_TO_RESET;
 }
 
 /* -------------------------------------------------------------------------------------------------------------- */

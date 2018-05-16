@@ -8,7 +8,7 @@
 #include "rtklib.h"
 
 /* -------------------------------------------------------------------------------------------------------------- */
-/* model paramters */
+/* model parameters */
 
 #define GLO_IFB_MIN_GLO_DT_SEARCH  -0.3   /* min glo_dt value while searching (cycles/frequency_number) */
 #define GLO_IFB_MAX_GLO_DT_SEARCH   0.3   /* max glo_dt value while searching (cycles/frequency_number) */
@@ -57,14 +57,17 @@ typedef struct {
 /* -------------------------------------------------------------------------------------------------------------- */
 /* API */
 
-extern glo_IFB_t *glo_IFB_init();
-extern int glo_IFB_is_valid(const glo_IFB_t *glo_IFB);
-extern void glo_IFB_free(glo_IFB_t *glo_IFB);
-extern void glo_IFB_copy(const glo_IFB_t *glo_IFB_source, glo_IFB_t *glo_IFB_destination);
+glo_IFB_t *glo_IFB_init();
+int        glo_IFB_is_valid(const glo_IFB_t *glo_IFB);
+void       glo_IFB_free(glo_IFB_t *glo_IFB);
+void       glo_IFB_copy(const glo_IFB_t *glo_IFB_src, glo_IFB_t *glo_IFB_dst);
 
-extern void glo_IFB_reset(glo_IFB_t *glo_IFB);
-extern int glo_IFB_is_enough_sats(const rtk_t *rtk);
-extern void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk);
+void   glo_IFB_reset(glo_IFB_t *glo_IFB);
+int    glo_IFB_is_enough_sats(const rtk_t *rtk);
+void   glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk);
+double glo_IFB_get_glo_dt(const glo_IFB_t *glo_IFB);
+double glo_IFB_get_delta_glo_dt(const glo_IFB_t *glo_IFB);
+void   glo_IFB_send_signal_to_reset(glo_IFB_t *glo_IFB);
 
 /* -------------------------------------------------------------------------------------------------------------- */
 
