@@ -7,9 +7,30 @@
 #define MIN(x,y)    ( (x) <= (y) ? (x) : (y) )
 
 /* -------------------------------------------------------------------------------------------------------------- */
+/* model parameters */
+
+#define GLO_IFB_MIN_GLO_DT_SEARCH  -0.3   /* min glo_dt value while searching (cycles/frequency_number) */
+#define GLO_IFB_MAX_GLO_DT_SEARCH   0.3   /* max glo_dt value while searching (cycles/frequency_number) */
+#define GLO_IFB_SEARCH_STEP         0.02  /* glo_dt increment while searching (cycles/frequency_number) */
+
+#define GLO_IFB_MIN_SATS     8            /* min 'fix' sats for glo_dt update */
+#define GLO_IFB_MIN_GLO_SATS 4            /* min glonass 'fix' sats for glo_dt update  */
+
+#define GLO_IFB_MAX_ADJUSTMENT_COUNT   1000  /* counting barrier (epochs) */
+#define GLO_IFB_MAX_ADJUSTMENT_WINDOW  20    /* smoothing window (epochs) for glo_dt estimation during adjustment */
+#define GLO_IFB_MAX_FIX_OUTAGE         200   /* max fix outage (epochs) allowed for adjustment mode */
+#define GLO_IFB_VALIDATION_COUNT       200   /* prevent to switch to search mode
+                                                if adjustment_count is sufficient  */
+
+#define GLO_IFB_FREEZE_COUNT           200   /* freeze glo_IFB state if current count has reached a threshold */
+#define GLO_IFB_MAX_GLO_DT_DRIFT       0.05  /* max glo_dt drift allowed during multi-epoch adjustment */
+
+#define GLO_IFB_SIGNAL_TO_RESET        1
+
+/* -------------------------------------------------------------------------------------------------------------- */
 /* API */
 
-extern glo_IFB_t *glo_IFB_init()
+glo_IFB_t *glo_IFB_init()
 {
   glo_IFB_t *glo_IFB = malloc(sizeof(glo_IFB_t));
 
@@ -29,7 +50,7 @@ extern glo_IFB_t *glo_IFB_init()
   return glo_IFB;
 }
 
-extern int glo_IFB_is_valid(const glo_IFB_t *glo_IFB)
+int glo_IFB_is_valid(const glo_IFB_t *glo_IFB)
 {
   if ( glo_IFB == NULL ) {
 
@@ -51,14 +72,14 @@ extern int glo_IFB_is_valid(const glo_IFB_t *glo_IFB)
   return 1;
 }
 
-extern void glo_IFB_free(glo_IFB_t *glo_IFB)
+void glo_IFB_free(glo_IFB_t *glo_IFB)
 {
   assert( glo_IFB_is_valid(glo_IFB) );
 
   free(glo_IFB);
 }
 
-extern void glo_IFB_copy(const glo_IFB_t *glo_IFB_src, glo_IFB_t *glo_IFB_dest)
+void glo_IFB_copy(const glo_IFB_t *glo_IFB_src, glo_IFB_t *glo_IFB_dest)
 {
   assert( glo_IFB_is_valid(glo_IFB_src) );
   assert( glo_IFB_is_valid(glo_IFB_dest) );
@@ -67,7 +88,7 @@ extern void glo_IFB_copy(const glo_IFB_t *glo_IFB_src, glo_IFB_t *glo_IFB_dest)
   *glo_IFB_dest = *glo_IFB_src;
 }
 
-extern void glo_IFB_reset(glo_IFB_t *glo_IFB)
+void glo_IFB_reset(glo_IFB_t *glo_IFB)
 {
   assert( glo_IFB_is_valid(glo_IFB) );
 
@@ -80,7 +101,7 @@ extern void glo_IFB_reset(glo_IFB_t *glo_IFB)
   glo_IFB->signal_to_reset  = 0;
 }
 
-extern int glo_IFB_is_enough_sats(const rtk_t *rtk)
+int glo_IFB_is_enough_sats(const rtk_t *rtk)
 {
   int n_fix_sats = 0;
   int n_fix_glo  = 0;
@@ -91,10 +112,14 @@ extern int glo_IFB_is_enough_sats(const rtk_t *rtk)
   /* count number of satellites available for ambiguity resolution */
   for (sat = 0; sat < MAXSAT; sat++) {
 
-    if ( !rtk->ssat[sat].vsat[0] ) continue;
+    if ( !rtk->ssat[sat].vsat[0] ) { /* skip if sat is not valid */
 
+        continue;
+    }
+
+    /* note: we consider only L1 channel at now (means to use only [0] element in corresponding arrays) */
     if ( rtk->ssat[sat].fix[0] == 2
-      || rtk->ssat[sat].fix[0] == 3 ) { /* 'fix' of 'hold' satellite status */
+      || rtk->ssat[sat].fix[0] == 3 ) { /* 'fix' or 'hold' satellite status */
 
       n_fix_sats++;
       if ( rtk->ssat[sat].sys == SYS_GLO ) n_fix_glo++;
@@ -110,21 +135,21 @@ extern int glo_IFB_is_enough_sats(const rtk_t *rtk)
   return 1;
 }
 
-extern double glo_IFB_get_glo_dt(const glo_IFB_t *glo_IFB)
+double glo_IFB_get_glo_dt(const glo_IFB_t *glo_IFB)
 {
   assert( glo_IFB_is_valid(glo_IFB) );
 
   return glo_IFB->glo_dt;
 }
 
-extern double glo_IFB_get_delta_glo_dt(const glo_IFB_t *glo_IFB)
+double glo_IFB_get_delta_glo_dt(const glo_IFB_t *glo_IFB)
 {
   assert( glo_IFB_is_valid(glo_IFB) );
 
   return glo_IFB->delta_glo_dt;
 }
 
-extern void glo_IFB_send_signal_to_reset(glo_IFB_t *glo_IFB)
+void glo_IFB_send_signal_to_reset(glo_IFB_t *glo_IFB)
 {
   assert( glo_IFB_is_valid(glo_IFB) );
 
@@ -168,8 +193,15 @@ static double optimize_glo_dt_local(rtk_t *rtk)
 
   for (sat = 0; sat < MAXSAT; sat++) {
 
-    if ( rtk->ssat[sat].sys != SYS_GLO ) continue;
-    if ( !rtk->ssat[sat].vsat[0] )       continue;
+    if ( rtk->ssat[sat].sys != SYS_GLO ) { /* skip if sat type is not GLONASS */
+
+        continue;
+    }
+
+    if ( !rtk->ssat[sat].vsat[0] ) {       /* skip if sat is not valid */
+
+        continue;
+    }
 
     if ( rtk->ssat[sat].fix[0] == 2
       || rtk->ssat[sat].fix[0] == 3 ) { /* 'fix' of 'hold' satellite status */
@@ -190,7 +222,10 @@ static double optimize_glo_dt_local(rtk_t *rtk)
 
   assert( is_reference_defined );
 
-  for (i = 0; i < n_fix_glo; i++) design_matrix[i] = -(freq_num[i] - freq_num_reference) * (CLIGHT / FREQ1_GLO);
+  for (i = 0; i < n_fix_glo; i++) {
+
+    design_matrix[i] = -(freq_num[i] - freq_num_reference) * (CLIGHT / FREQ1_GLO);
+  }
 
   /* find optimum by solving least squares problem */
   lsq(design_matrix, residuals, 1, n_fix_glo, &delta_glo_dt, &variance);
@@ -338,7 +373,7 @@ static int check_reset_condition(const glo_IFB_t *glo_IFB, const rtk_t *rtk)
 /* -------------------------------------------------------------------------------------------------------------- */
 /* the main function */
 
-extern void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk)
+void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk)
 {
   double glo_dt_prev;
 
@@ -352,7 +387,7 @@ extern void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk)
   if ( rtk->sol.stat == SOLQ_FIX )   glo_IFB->fix_outage = 0;
   if ( glo_IFB->fix_outage > GLO_IFB_MAX_FIX_OUTAGE ) glo_IFB->fix_outage = GLO_IFB_MAX_FIX_OUTAGE;
 
-  /* check mode transition conditions and switch if it necessary */
+  /* check mode transition conditions and switch mode if necessary */
   switch ( glo_IFB->mode ) {
 
     case GLO_IFB_SEARCH_MODE:
@@ -373,6 +408,9 @@ extern void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk)
       }
       break;
 
+    case GLO_IFB_FROZEN_MODE:
+      break;
+
     default: break;
   }
 
@@ -385,6 +423,9 @@ extern void glo_IFB_process(glo_IFB_t *glo_IFB, rtk_t *rtk)
 
     case GLO_IFB_ADJUSTMENT_MODE:
       adjustment_mode_step(glo_IFB, rtk);
+      break;
+
+    case GLO_IFB_FROZEN_MODE:
       break;
 
     default: break;

@@ -2230,7 +2230,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
 /* ------------------------------------------------------------------------------ */
 /* rtk API functions */
 
-extern int rtk_is_valid(const rtk_t *rtk)
+int rtk_is_valid(const rtk_t *rtk)
 {
     if ( !rtk ) return 0;
     if ( (!rtk->x) || (!rtk->xa) ) return 0;
@@ -2258,7 +2258,7 @@ static void rtk_copy_states(const rtk_t *rtk_source, rtk_t *rtk_destination)
     memcpy(rtk_destination->Pa, rtk_source->Pa, SQR(rtk_source->na) * sizeof(double));
 }
 
-extern void rtk_copy(const rtk_t *rtk_source, rtk_t *rtk_destination)
+void rtk_copy(const rtk_t *rtk_source, rtk_t *rtk_destination)
 {
     double *x, *P;
     double *xa, *Pa;
@@ -2293,13 +2293,13 @@ extern void rtk_copy(const rtk_t *rtk_source, rtk_t *rtk_destination)
     }
 }
 
-extern void rtk_free(rtk_t *rtk)
+void rtk_free(rtk_t *rtk)
 {
     rtkfree(rtk);
     free(rtk);
 }
 
-extern rtk_t *rtk_init(const prcopt_t *opt)
+rtk_t *rtk_init(const prcopt_t *opt)
 {
     rtk_t *rtk = malloc(sizeof(rtk_t));
     if ( !rtk ) {
