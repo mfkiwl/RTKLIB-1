@@ -11,6 +11,7 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 include(../RTKLib.pri)
+INCLUDEPATH += GLONASS_IFB_CORRECTION/
 
 QMAKE_CFLAGS += -Wall -std=c99 -pedantic -Wno-unused-but-set-variable  -DTRACE -g
 DEFINES -= UNICODE
@@ -62,9 +63,11 @@ SOURCES += rtkcmn.c \
     rcv/ublox.c \
     rcv/cmr.c \
     rcv/tersus.c \
-    erb.c
+    erb.c \
+    GLONASS_IFB_CORRECTION/glonass_IFB_correction.c
 
-HEADERS += rtklib.h
+HEADERS += rtklib.h \
+    GLONASS_IFB_CORRECTION/glonass_IFB_correction.h
 
 unix {
     target.path = /usr/lib
