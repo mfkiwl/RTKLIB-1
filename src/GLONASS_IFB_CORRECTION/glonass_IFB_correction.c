@@ -324,6 +324,7 @@ static void switch_adjustment_to_search_mode(glo_IFB_t *glo_IFB)
   assert( glo_IFB->mode == GLO_IFB_ADJUSTMENT_MODE );
 
   glo_IFB->adjustment_count = 0;
+  glo_IFB->glo_dt           = 0.0;
   glo_IFB->glo_dt_initial   = 0.0;
   glo_IFB->mode             = GLO_IFB_SEARCH_MODE;
 }
