@@ -754,7 +754,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
                    const int *iu, const int *ir, int ns, const nav_t *nav)
 {
     double cp,pr,cp1,cp2,pr1,pr2,*bias,offset,lami,lam1,lam2,C1,C2;
-    int i,j,f,slip,reset,nf=NF(&rtk->opt),sysi;
+    int i,j,f,slip,reset,nf=NF(&rtk->opt);
     
     trace(3,"udbias  : tt=%.1f ns=%d\n",tt,ns);
     
@@ -875,7 +875,6 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
         for (i=0;i<ns;i++) {
             if (bias[i]==0.0||rtk->x[IB(sat[i],f,&rtk->opt)]!=0.0) continue;
             lami=nav->lam[sat[i]-1][f];
-            sysi=rtk->ssat[sat[i]-1].sys;
             initx(rtk,(bias[i]-rtk->com_bias)/lami,SQR(rtk->opt.std[0]),IB(sat[i],f,&rtk->opt));
             rtk->ssat[sat[i]-1].lock[f]=-rtk->opt.minlock;
         }
@@ -899,7 +898,7 @@ static void udstate(rtk_t *rtk, const obsd_t *obs, const int *sat,
         idx = IB(sat_no, 0, (&rtk->opt));
         if (rtk->x[idx] == 0) continue;
 
-        rtk->x[idx] -= rtk->ssat[sat_no-1].freq_num * glo_IFB_get_delta_glo_dt((glo_IFB_t *) rtk->glo_IFB);
+        rtk->x[idx] -= rtk->ssat[sat_no-1].freq_num * glo_IFB_get_delta_glo_dt(rtk->glo_IFB);
       }
     }
 
@@ -981,7 +980,7 @@ static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
               if ( (opt->glomodear == GLO_ARMODE_ON)
                 && (rtk->ssat[sat].sys == SYS_GLO) && (base == 0) ) {
 
-                y[i] -= rtk->ssat[sat].freq_num * glo_IFB_get_glo_dt((glo_IFB_t *) rtk->glo_IFB) * (CLIGHT / FREQ1_GLO);
+                y[i] -= rtk->ssat[sat].freq_num * glo_IFB_get_glo_dt(rtk->glo_IFB) * (CLIGHT / FREQ1_GLO);
               }
             }
 
@@ -2238,7 +2237,7 @@ int rtk_is_valid(const rtk_t *rtk)
 
     if ( rtk->glo_IFB != NULL ) {
 
-      if ( !glo_IFB_is_valid((glo_IFB_t *) rtk->glo_IFB) ) {
+      if ( !glo_IFB_is_valid(rtk->glo_IFB) ) {
 
         return 0;
       }
@@ -2289,7 +2288,7 @@ void rtk_copy(const rtk_t *rtk_source, rtk_t *rtk_destination)
 
     if ( (rtk_source->glo_IFB != NULL) && (rtk_destination->glo_IFB != NULL) ) {
 
-      glo_IFB_copy((glo_IFB_t *) rtk_source->glo_IFB, (glo_IFB_t *) rtk_destination->glo_IFB);
+      glo_IFB_copy(rtk_source->glo_IFB, rtk_destination->glo_IFB);
     }
 }
 
@@ -2560,7 +2559,7 @@ extern void rtkfree(rtk_t *rtk)
 
     if ( rtk->glo_IFB != NULL ) {
 
-        glo_IFB_free((glo_IFB_t *) rtk->glo_IFB);
+        glo_IFB_free(rtk->glo_IFB);
         rtk->glo_IFB = NULL;
     }
 }
@@ -2632,7 +2631,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     char msg[128]="";
     int sat, freq;
     int residual_maxiter = opt->residual_maxiter;
-    double delta_base_pos[3];
+    double delta_base_pos[VECTOR_3D_SIZE];
 
     trace(3,"rtkpos  : time=%s n=%d\n",time_str(obs[0].time,3),n);
     trace(4,"obs=\n"); traceobs(4,obs,n);
@@ -2644,14 +2643,14 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     }
 
     /* check base position shift */
-    if ( (opt->refpos != PMODE_MOVEB) && (norm(rtk->rb_prev, 3) > 1E-6) ) {
+    if ( (opt->refpos != PMODE_MOVEB) && (norm(rtk->rb_prev, VECTOR_3D_SIZE) > 1E-6) ) {
 
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < VECTOR_3D_SIZE; i++) {
 
             delta_base_pos[i] = rtk->rb[i] - rtk->rb_prev[i];
         }
 
-        if ( norm(delta_base_pos, 3) > RTK_BASE_POS_SHIFT_TO_RESET ) {
+        if ( norm(delta_base_pos, VECTOR_3D_SIZE) > RTK_BASE_POS_SHIFT_TO_RESET ) {
 
             rtk_reset_phase_bias_states(rtk);
 
@@ -2777,11 +2776,12 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 
     outsolstat(rtk, nav);
 
-    memcpy(rtk->rb_prev, rtk->rb, 6 * sizeof(double));
+    /* save base position (3D) and velocity (3D) as a previous base */
+    memcpy(rtk->rb_prev, rtk->rb, 2 * VECTOR_3D_SIZE * sizeof(double));
 
     if ( rtk->opt.glomodear == GLO_ARMODE_ON ) {
 
-      glo_IFB_process((glo_IFB_t *) rtk->glo_IFB, rtk);
+      glo_IFB_process(rtk->glo_IFB, rtk);
     }
 
     return 1;

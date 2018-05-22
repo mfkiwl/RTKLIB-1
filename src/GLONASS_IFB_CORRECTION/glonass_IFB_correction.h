@@ -18,7 +18,7 @@ typedef enum {
 
 } glo_IFB_mode_t;
 
-typedef struct {
+typedef struct glo_IFB_t {
 
   glo_IFB_mode_t mode;
   int            adjustment_count;

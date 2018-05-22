@@ -81,6 +81,8 @@ extern "C" {
 #define AU          149597870691.0      /* 1 AU (m) */
 #define AS2R        (D2R/3600.0)        /* arc sec to radian */
 
+#define VECTOR_3D_SIZE   3              /* size of 3D vector */
+
 #define OMGE        7.2921151467E-5     /* earth angular velocity (IS-GPS) (rad/s) */
 
 #define RE_WGS84    6378137.0           /* earth semimajor axis (WGS84) (m) */
@@ -1297,6 +1299,8 @@ typedef struct {        /* ambiguity control type */
     char flags[MAXSAT]; /* fix flags */
 } ambc_t;
 
+struct glo_IFB_t;
+
 typedef struct {        /* RTK control/result type */
     sol_t  sol;         /* RTK solution */
     double rb[6];       /* base position/velocity (ecef) (m|m/s) */
@@ -1316,7 +1320,7 @@ typedef struct {        /* RTK control/result type */
     prcopt_t opt;       /* processing options */
     int initial_mode;   /* initial positioning mode */
     smoothing_data_t *smoothing_data; /* data related to smoothing of code */
-    void *glo_IFB;      /* glonass IFB corrector */
+    struct glo_IFB_t *glo_IFB; /* glonass IFB corrector */
 } rtk_t;
 
 typedef struct half_cyc_tag {  /* half-cycle correction list type */
