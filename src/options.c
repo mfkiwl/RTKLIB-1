@@ -142,6 +142,7 @@ EXPORT opt_t sysopts[]={
     {"out-nmeaintv1",   1,  (void *)&solopt_.nmeaintv[0],"s"    },
     {"out-nmeaintv2",   1,  (void *)&solopt_.nmeaintv[1],"s"    },
     {"out-outstat",     3,  (void *)&solopt_.sstat,      STSOPT },
+    {"out-addit_info",  3,  (void *)&solopt_.out_additional_info, SWTOPT },
 
     {"stats-eratio1",   1,  (void *)&prcopt_.eratio[0],  ""     },
     {"stats-eratio2",   1,  (void *)&prcopt_.eratio[1],  ""     },

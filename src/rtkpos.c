@@ -2184,6 +2184,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                 rtk->sol.rr[i] = rtk->xa[i];
             }
         }
+
         rtk->sol.qr[3]=(float)rtk->Pa[1];
         rtk->sol.qr[4]=(float)rtk->Pa[1+2*rtk->na];
         rtk->sol.qr[5]=(float)rtk->Pa[2];
@@ -2685,6 +2686,12 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
 
       rtk->ssat[sat].freq_num = calc_glonass_frequency_number_via_wavelength(nav->lam[sat][0]);
     }
+
+    for (i = 0; i < VECTOR_3D_SIZE; i++) {
+
+        rtk->sol.pos_prev[i] = rtk->sol.rr[i];
+    }
+    rtk->sol.stat_prev = rtk->sol.stat;
     
     /* rover position by single point positioning */
     if (!pntpos(obs,nu,nav,rtk->smoothing_data,&rtk->opt,&rtk->sol,NULL,rtk->ssat,msg)) {
@@ -2696,6 +2703,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         }
     }
     if (time.time!=0) rtk->tt=timediff(rtk->sol.time,time);
+    rtk->sol.delta_time = timediff(rtk->sol.time, time);
         
     /* return to static start if long delay without rover data */
     if (fabs(rtk->tt)>300&&rtk->initial_mode==PMODE_STATIC_START) {

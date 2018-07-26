@@ -52,6 +52,8 @@
 #define SIGNED_SQR(x)   ((x)<0.0?-(x)*(x):(x)*(x))
 #define SQR(x)          ((x)*(x))
 #define SQRT(x)         ((x)<0.0?0.0:sqrt(x))
+#define MIN(x, y)       ((x) < (y) ? (x) : (y))
+#define MAX(x, y)       ((x) > (y) ? (x) : (y))
 
 #define MAXFIELD   64           /* max number of fields in a record */
 #define MAXNMEA    256          /* max length of nmea sentence */
@@ -1051,20 +1053,102 @@ static int verify_sat(const ssat_t * ssat, int sat, int solstat, int nfreq) {
         return ssat[sat].vsat[nfreq];
     }
 }
+
+#define UNAMBIGUOUS_HEADING_THRESH     0.5   /* [m/s] */
+
+/* restore heading with known position and velocity */
+static double restore_heading(const double position_ecef[VECTOR_3D_SIZE], const double velocity_ecef[VECTOR_3D_SIZE])
+{
+    double position_llh[VECTOR_3D_SIZE];
+    double velocity_enu[VECTOR_3D_SIZE];
+    double velocity_plane;
+    double heading = -1.0;
+
+    /* check if position is zero-defined */
+    if (norm(position_ecef, VECTOR_3D_SIZE) <= 0.0) {
+
+        return -1.0;
+    }
+
+    ecef2pos(position_ecef, position_llh);
+    ecef2enu(position_llh, velocity_ecef, velocity_enu);
+    velocity_plane = norm(velocity_enu, VECTOR_3D_SIZE - 1);
+
+    /* we can restore the heading if lateral velocity is definitely beyond a noise level */
+    if (velocity_plane > UNAMBIGUOUS_HEADING_THRESH) {
+
+        heading = atan2(velocity_enu[0], velocity_enu[1]) * R2D;
+        if (heading < 0.0) heading += 360.0;
+
+        heading = MAX(heading, 0.0);
+        heading = MIN(heading, 360.0);
+    }
+    else {
+
+        return -1.0;
+    }
+
+    return heading;
+}
+
+#define MAX_ADDITIONAL_HEADS     100
+#define MAX_ADDITIONAL_INFO      100
+
+static void out_additional_sol_heads(char buff[MAX_ADDITIONAL_HEADS])
+{
+    sprintf(buff, "%14s", "heading(deg)");
+}
+
+static void out_additional_sol_info(const sol_t *sol, char buff[MAX_ADDITIONAL_INFO])
+{
+    int i;
+    double velocity[VECTOR_3D_SIZE] = {0.0};
+    double heading = -1.0;
+
+    /* find velocity via FIX solution dispacement if available */
+    if ((sol->stat_prev == SOLQ_FIX) && (sol->stat == SOLQ_FIX)) {
+
+        if (sol->delta_time > 0.0) {
+
+            for (i = 0; i < VECTOR_3D_SIZE; i++) {
+
+                velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
+            }
+
+            heading = restore_heading(sol->rr, velocity);
+        }
+    }
+
+    if (heading >= 0.0) {
+
+        sprintf(buff, "  %4.2f", heading);
+    }
+    else {
+
+        sprintf(buff, "  ");
+    }
+}
+
 /* output solution as the form of x/y/z-ecef ---------------------------------*/
 static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
                    const solopt_t *opt)
 {
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
+    char additional_info[MAX_ADDITIONAL_INFO] = "";
     
     trace(3,"outecef:\n");
     
-    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n",
+    if (opt->out_additional_info) {
+
+        out_additional_sol_info(sol, additional_info);
+    }
+
+    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f%s%s\n",
                s,sep,sol->rr[0],sep,sol->rr[1],sep,sol->rr[2],sep,sol->stat,sep,
                sol->ns,sep,SQRT(sol->qr[0]),sep,SQRT(sol->qr[1]),sep,SQRT(sol->qr[2]),
                sep,sqvar(sol->qr[3]),sep,sqvar(sol->qr[4]),sep,sqvar(sol->qr[5]),
-               sep,sol->age,sep,sol->ratio);
+               sep,sol->age,sep,sol->ratio,sep,additional_info);
     return p-(char *)buff;
 }
 /* output solution as the form of lat/lon/height -----------------------------*/
@@ -1074,9 +1158,15 @@ static int outpos(unsigned char *buff, const char *s, const sol_t *sol,
     double pos[3],dms1[3],dms2[3],P[9],Q[9];
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
+    char additional_info[MAX_ADDITIONAL_INFO] = "";
     
     trace(3,"outpos  :\n");
     
+    if (opt->out_additional_info) {
+
+        out_additional_sol_info(sol, additional_info);
+    }
+
     ecef2pos(sol->rr,pos);
     soltocov(sol,P);
     covenu(pos,P,Q);
@@ -1091,10 +1181,10 @@ static int outpos(unsigned char *buff, const char *s, const sol_t *sol,
                    dms2[2]);
     }
     else p+=sprintf(p,"%s%s%14.9f%s%14.9f",s,sep,pos[0]*R2D,sep,pos[1]*R2D);
-    p+=sprintf(p,"%s%10.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n",
+    p+=sprintf(p,"%s%10.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f%s%s\n",
                sep,pos[2],sep,sol->stat,sep,sol->ns,sep,SQRT(Q[4]),sep,
                SQRT(Q[0]),sep,SQRT(Q[8]),sep,sqvar(Q[1]),sep,sqvar(Q[2]),
-               sep,sqvar(Q[5]),sep,sol->age,sep,sol->ratio);
+               sep,sqvar(Q[5]),sep,sol->age,sep,sol->ratio,sep,additional_info);
     return p-(char *)buff;
 }
 /* output solution as the form of e/n/u-baseline -----------------------------*/
@@ -1105,26 +1195,36 @@ static int outenu(unsigned char *buff, const char *s, const sol_t *sol,
     int i;
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
+    char additional_info[MAX_ADDITIONAL_INFO] = "";
     
     trace(3,"outenu  :\n");
     
+
+    if (opt->out_additional_info) {
+
+        out_additional_sol_info(sol, additional_info);
+    }
+
     for (i=0;i<3;i++) rr[i]=sol->rr[i]-rb[i];
     ecef2pos(rb,pos);
     soltocov(sol,P);
     covenu(pos,P,Q);
     ecef2enu(pos,rr,enu);
-    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n",
+    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f%s%s\n",
                s,sep,enu[0],sep,enu[1],sep,enu[2],sep,sol->stat,sep,sol->ns,sep,
                SQRT(Q[0]),sep,SQRT(Q[4]),sep,SQRT(Q[8]),sep,sqvar(Q[1]),
-               sep,sqvar(Q[5]),sep,sqvar(Q[2]),sep,sol->age,sep,sol->ratio);
+               sep,sqvar(Q[5]),sep,sqvar(Q[2]),sep,sol->age,sep,sol->ratio,sep,additional_info);
     return p-(char *)buff;
 }
 /* output solution in the form of nmea RMC sentence --------------------------*/
 extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
 {
     gtime_t time;
-    double ep[6],pos[3],enuv[3],dms1[3],dms2[3],vel,dir;
-    char *p=(char *)buff,*q,sum,dir_str[10] = "";
+    double ep[6],pos[3],dms1[3],dms2[3];
+    double velocity_enu[VECTOR_3D_SIZE];
+    double velocity_plane;
+    char *p=(char *)buff,*q,sum,heading_str[10] = "";
+    double heading = 0.0;
     
     trace(3,"outnmea_rmc:\n");
     
@@ -1137,20 +1237,23 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     time=gpst2utc(sol->time);
     if (time.sec>=0.995) {time.time++; time.sec=0.0;}
     time2epoch(time,ep);
-    ecef2pos(sol->rr,pos);
-    ecef2enu(pos,sol->rr+3,enuv);
-    vel=norm(enuv,2);
-    if (vel>=0.5) {
-        dir=atan2(enuv[0],enuv[1])*R2D;
-        if (dir<0.0) dir+=360.0;
-        sprintf(dir_str, "%4.2f", dir);
+
+    ecef2pos(sol->rr, pos);
+    ecef2enu(pos, sol->rr + VECTOR_3D_SIZE, velocity_enu);
+    velocity_plane = norm(velocity_enu, VECTOR_3D_SIZE - 1);
+
+    heading = restore_heading(sol->rr, sol->rr + VECTOR_3D_SIZE);
+
+    if (heading >= 0.0) {
+
+        sprintf(heading_str, "%4.2f", heading);
     }
 
     deg2dms(fabs(pos[0])*R2D,dms1,7);
     deg2dms(fabs(pos[1])*R2D,dms2,7);
     p+=sprintf(p,"$GNRMC,%02.0f%02.0f%05.2f,A,%02.0f%010.7f,%s,%03.0f%010.7f,%s,%4.2f,%s,%02.0f%02.0f%02d,,,%s",
                ep[3],ep[4],ep[5],dms1[0],dms1[1]+dms1[2]/60.0,pos[0]>=0?"N":"S",
-               dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",vel/KNOT2M,dir_str,
+               dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",velocity_plane/KNOT2M,heading_str,
                ep[2],ep[1],(int)ep[0]%100,
                sol->stat==SOLQ_DGPS||sol->stat==SOLQ_FLOAT||sol->stat==SOLQ_FIX?"D":"A");
     for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
@@ -1521,6 +1624,7 @@ extern int outprcopts(unsigned char *buff, const prcopt_t *opt)
     }
     return p-(char *)buff;
 }
+
 /* output solution header ------------------------------------------------------
 * output solution header to buffer
 * args   : unsigned char *buff IO output buffer
@@ -1531,6 +1635,7 @@ extern int outsolheads(unsigned char *buff, const solopt_t *opt)
 {
     const char *s1[]={"WGS84","Tokyo"},*s2[]={"ellipsoidal","geodetic"};
     const char *s3[]={"GPST","UTC ","JST "},*sep=opt2sep(opt);
+    char additional_heads[MAX_ADDITIONAL_HEADS] = "";
     char *p=(char *)buff;
     int timeu=opt->timeu<0?0:(opt->timeu>20?20:opt->timeu);
     
@@ -1539,6 +1644,12 @@ extern int outsolheads(unsigned char *buff, const solopt_t *opt)
     if (opt->posf==SOLF_NMEA||opt->posf==SOLF_STAT||opt->posf==SOLF_GSIF) {
         return 0;
     }
+
+    if (opt->out_additional_info) {
+
+        out_additional_sol_heads(additional_heads);
+    }
+
     if (opt->outhead) {
         p+=sprintf(p,"%s (",COMMENTH);
         if      (opt->posf==SOLF_XYZ) p+=sprintf(p,"x/y/z-ecef=WGS84");
@@ -1550,29 +1661,29 @@ extern int outsolheads(unsigned char *buff, const solopt_t *opt)
     
     if (opt->posf==SOLF_LLH) { /* lat/lon/hgt */
         if (opt->degf) {
-            p+=sprintf(p,"%16s%s%16s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s\n",
+            p+=sprintf(p,"%16s%s%16s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s%s%s\n",
                        "latitude(d'\")",sep,"longitude(d'\")",sep,"height(m)",sep,
                        "Q",sep,"ns",sep,"sdn(m)",sep,"sde(m)",sep,"sdu(m)",sep,
-                       "sdne(m)",sep,"sdeu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio");
+                       "sdne(m)",sep,"sdeu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
         }
         else {
-            p+=sprintf(p,"%14s%s%14s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s\n",
+            p+=sprintf(p,"%14s%s%14s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s%s%s\n",
                        "latitude(deg)",sep,"longitude(deg)",sep,"height(m)",sep,
                        "Q",sep,"ns",sep,"sdn(m)",sep,"sde(m)",sep,"sdu(m)",sep,
-                       "sdne(m)",sep,"sdeu(m)",sep,"sdun(m)",sep,"age(s)",sep,"ratio");
+                       "sdne(m)",sep,"sdeu(m)",sep,"sdun(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
         }
     }
     else if (opt->posf==SOLF_XYZ) { /* x/y/z-ecef */
-        p+=sprintf(p,"%14s%s%14s%s%14s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s\n",
+        p+=sprintf(p,"%14s%s%14s%s%14s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s%s%s\n",
                    "x-ecef(m)",sep,"y-ecef(m)",sep,"z-ecef(m)",sep,"Q",sep,"ns",sep,
                    "sdx(m)",sep,"sdy(m)",sep,"sdz(m)",sep,"sdxy(m)",sep,
-                   "sdyz(m)",sep,"sdzx(m)",sep,"age(s)",sep,"ratio");
+                   "sdyz(m)",sep,"sdzx(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
     }
     else if (opt->posf==SOLF_ENU) { /* e/n/u-baseline */
-        p+=sprintf(p,"%14s%s%14s%s%14s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s\n",
+        p+=sprintf(p,"%14s%s%14s%s%14s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s%s%s\n",
                    "e-baseline(m)",sep,"n-baseline(m)",sep,"u-baseline(m)",sep,
                    "Q",sep,"ns",sep,"sde(m)",sep,"sdn(m)",sep,"sdu(m)",sep,
-                   "sden(m)",sep,"sdnu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio");
+                   "sden(m)",sep,"sdnu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
     }
     else if (opt->posf==SOLF_ERB) { /* ERB protocol */
         p+=sprintf(p,"ERB protocol\n");

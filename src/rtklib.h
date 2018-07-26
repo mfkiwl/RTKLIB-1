@@ -976,15 +976,18 @@ typedef struct {        /* station parameter type */
 
 typedef struct {        /* solution type */
     gtime_t time;       /* time (GPST) */
+    double  delta_time; /* time span between current and previous solution */
     gtime_t eventime;   /* time of event (GPST) */
     double rr[6];       /* position/velocity (m|m/s) */
                         /* {x,y,z,vx,vy,vz} or {e,n,u,ve,vn,vu} */
+    double pos_prev[3]; /* previous position */
     float  qr[6];       /* position variance/covariance (m^2) */
                         /* {c_xx,c_yy,c_zz,c_xy,c_yz,c_zx} or */
                         /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
     double dtr[6];      /* receiver clock bias to time systems (s) */
     unsigned char type; /* type (0:xyz-ecef,1:enu-baseline) */
     unsigned char stat; /* solution status (SOLQ_???) */
+    unsigned char stat_prev; /* previous status */
     unsigned char ns;   /* number of valid satellites */
     float age;          /* age of differential (s) */
     float ratio;        /* AR ratio factor for valiation */
@@ -1202,6 +1205,7 @@ typedef struct {        /* solution options type */
     int geoid;          /* geoid model (0:EGM96,1:JGD2000) */
     int solstatic;      /* solution of static mode (0:all,1:single) */
     int sstat;          /* solution statistics level (0:off,1:states,2:residuals) */
+    int out_additional_info; /* output additional info (0:no,1:yes) */
     int trace;          /* debug trace level (0:off,1-5:debug) */
     double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
                         /* nmeaintv[0]:gprmc,gpgga,nmeaintv[1]:gpgsv */
