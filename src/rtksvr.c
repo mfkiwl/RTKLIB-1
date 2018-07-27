@@ -486,7 +486,7 @@ static void send_nmea(rtksvr_t *svr, unsigned int *tickreset)
     }
     else if (svr->nmeareq == NMEAREQ_SEND_SINGLE) { /* single-solution mode */
         if (norm(svr->rtk.sol.rr,3)<=0.0) return;
-        sol_nmea.stat=SOLQ_SINGLE;
+        sol_nmea.stat=svr->rtk.sol.stat;
         sol_nmea.time=utc2gpst(timeget());
         sol_nmea.ns = svr->rtk.sol.ns;
         matcpy(sol_nmea.rr,svr->rtk.sol.rr,3,1);
