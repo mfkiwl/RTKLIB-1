@@ -211,9 +211,9 @@ const prcopt_t prcopt_default={ /* defaults processing options */
     .smoothing_mode=0,      .smoothing_window=100,
     .smoothing_varratio=0.2,
     .base_multi_epoch=0,
-    .residual_mode=0,       .residual_maxiter=5,
-    .residual_reset_fix=0.2,.residual_reset_float=0.5,
-    .residual_block_fix_sat=0.05,
+    .residual_mode=0,        .residual_maxiter=2,
+    .residual_reset_fix=0.3, .residual_reset_float=1.0,
+    .residual_block_fix_sat=0.3,
 
     .std={30.0,0.03,0.3},
     .prn={1E-4,1E-3,1E-4,1E-1,1E-2,0.0},
