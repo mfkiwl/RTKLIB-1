@@ -1959,8 +1959,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
 {
     prcopt_t *opt=&rtk->opt;
     gtime_t time=obs[0].time;
-    double *rs,*dts,*var,*y,*e,*azel,*v,*H,*R,*xp,*Pp,*xa,*bias,dt,azeld[2*MAXSAT];
-    int i,j,f,n=nu+nr,ns,ny,nv,sat[MAXSAT],iu[MAXSAT],ir[MAXSAT],niter,prn;
+    double *rs,*dts,*var,*y,*e,*azel,*v,*H,*R,*xp,*Pp,*xa,*bias,dt;
+    int i,j,f,n=nu+nr,ns,ny,nv,sat[MAXSAT],iu[MAXSAT],ir[MAXSAT],niter, obs_is_valid[MAXOBS] = {0};
     int info,vflg[MAXOBS*NFREQ*2+1],svh[MAXOBS*2];
     int stat=rtk->opt.mode<=PMODE_DGPS?SOLQ_DGPS:SOLQ_FLOAT;
     int nf=opt->ionoopt==IONOOPT_IFLC?1:opt->nf;
@@ -1977,35 +1977,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     y=mat(nf*2,n);
     e=mat(3,n);
     azel=zeros(2,n);        /* [az, el] */
-
-    /* Filling additional fields of structure sol_t */
-    for (i=j=0;i<MAXSAT;i++) {
-        if (rtk->ssat[i].azel[1] <= 0) continue;
-        rtk->sol.azim[j] = rtk->ssat[i].azel[0] * R2D;
-        if (rtk->sol.azim[j] < 0.0) rtk->sol.azim[j] += 360.0;
-        rtk->sol.elev[j] = rtk->ssat[i].azel[1] * R2D;
-        rtk->sol.carPh[j] = obs[j].L[0];
-        rtk->sol.psRan[j] = obs[j].P[0];
-        rtk->sol.freqD[j] = obs[j].D[0];
-        rtk->sol.snr[j] = obs[j].SNR[0];
-        azeld[j*2] = rtk->ssat[i].azel[0];
-        azeld[1+j*2] = rtk->ssat[i].azel[1];
-        /*-- Type of satellite and its id --*/
-        switch (satsys(i+1,&prn)) {
-            case SYS_GPS: rtk->sol.typeSV[j] = 0; rtk->sol.idSV[j] = prn-MINPRNGPS+1; break;
-            case SYS_GLO: rtk->sol.typeSV[j] = 1; rtk->sol.idSV[j] = prn-MINPRNGLO+1; break;
-            case SYS_GAL: rtk->sol.typeSV[j] = 2; rtk->sol.idSV[j] = prn-MINPRNGAL+1; break;
-            case SYS_QZS: rtk->sol.typeSV[j] = 3; rtk->sol.idSV[j] = prn-MINPRNQZS+1; break;
-            case SYS_CMP: rtk->sol.typeSV[j] = 4; rtk->sol.idSV[j] = prn-MINPRNCMP+1; break;
-            case SYS_LEO: rtk->sol.typeSV[j] = 5; rtk->sol.idSV[j] = prn-MINPRNLEO+1; break;
-            case SYS_SBS: rtk->sol.typeSV[j] = 6; rtk->sol.idSV[j] = prn; break;
-        }
-        /*--------------------------------*/
-        j++;
-    }
-    dops(j,azeld,0.0,rtk->sol.dop);
-    rtk->sol.nSV = j;
-
 
     /* init satellite status arrays */
     for (i=0;i<MAXSAT;i++) {
@@ -2037,6 +2008,12 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         free(rs); free(dts); free(var); free(y); free(e); free(azel);
         return 0;
     }
+
+    for (i = 0; i < ns; i++) {
+        obs_is_valid[iu[i]] = 1;
+    }
+    fill_erb_solution_fields(&rtk->sol, rtk->ssat, obs, obs_is_valid);
+
     /* update kalman filter states (pos,vel,acc,ionosp, troposp, sat phase biases) */
     udstate(rtk,obs,sat,iu,ir,ns,nav);
     

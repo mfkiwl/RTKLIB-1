@@ -2034,6 +2034,8 @@ EXPORT int lexeph2pos(gtime_t time, int sat, const nav_t *nav, double *rs,
 EXPORT int lexioncorr(gtime_t time, const nav_t *nav, const double *pos,
                       const double *azel, double *delay, double *var);
 
+void fill_erb_solution_fields(sol_t *sol, const ssat_t ssat[MAXSAT], const obsd_t obs_data[MAXOBS], const int obs_is_valid[MAXOBS]);
+
 /* application defined functions ---------------------------------------------*/
 extern int showmsg(char *format,...);
 extern void settspan(gtime_t ts, gtime_t te);

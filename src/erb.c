@@ -339,3 +339,42 @@ extern int outerb(unsigned char *buff, const sol_t *sol, const double *rb)
 
     return p - (char *)buff;
 }
+
+void fill_erb_solution_fields(sol_t *sol, const ssat_t ssat[MAXSAT], const obsd_t obs_data[MAXOBS], const int obs_is_valid[MAXSAT]) {
+    int cur_sat, prn, i, j;
+    double azeld[MAXSAT];
+
+    /* Filling additional fields of structure sol_t */
+    for (i = j = 0; i < MAXSAT; i++) {
+
+        if (!obs_is_valid[i] || ssat[obs_data[i].sat - 1].azel[1] <= 0)
+            continue;
+
+        cur_sat = obs_data[i].sat - 1;
+        sol->azim[j] = ssat[cur_sat].azel[0] * R2D;
+        if (sol->azim[j] < 0.0)
+            sol->azim[j] += 360.0;
+
+        sol->elev[j] = ssat[cur_sat].azel[1] * R2D;
+        sol->carPh[j] = obs_data[i].L[0];
+        sol->psRan[j] = obs_data[i].P[0];
+        sol->freqD[j] = obs_data[i].D[0];
+        sol->snr[j] = obs_data[i].SNR[0];
+        azeld[j*2] = ssat[cur_sat].azel[0];
+        azeld[1+j*2] = ssat[cur_sat].azel[1];
+        /*-- Type of satellite and its id --*/
+        switch (satsys(cur_sat + 1, &prn)) {
+            case SYS_GPS: sol->typeSV[j] = 0; sol->idSV[j] = prn-MINPRNGPS+1; break;
+            case SYS_GLO: sol->typeSV[j] = 1; sol->idSV[j] = prn-MINPRNGLO+1; break;
+            case SYS_GAL: sol->typeSV[j] = 2; sol->idSV[j] = prn-MINPRNGAL+1; break;
+            case SYS_QZS: sol->typeSV[j] = 3; sol->idSV[j] = prn-MINPRNQZS+1; break;
+            case SYS_CMP: sol->typeSV[j] = 4; sol->idSV[j] = prn-MINPRNCMP+1; break;
+            case SYS_LEO: sol->typeSV[j] = 5; sol->idSV[j] = prn-MINPRNLEO+1; break;
+            case SYS_SBS: sol->typeSV[j] = 6; sol->idSV[j] = prn; break;
+        }
+        /*--------------------------------*/
+        j++;
+    }
+    dops(j, azeld, 0.0, sol->dop);
+    sol->nSV = j;
+}

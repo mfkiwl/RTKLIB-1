@@ -563,8 +563,9 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
 {
     prcopt_t opt_=*opt;
     double *rs,*dts,*var,*azel_,*resp;
-    int i,stat,vsat[MAXOBS]={0},svh[MAXOBS];
-    
+    int i, stat, vsat[MAXOBS] = {0}, svh[MAXOBS];
+    int obs_is_valid[MAXOBS] = {0};
+
     sol->stat=SOLQ_NONE;
     
     if (n<=0) {strcpy(msg,"no observation data"); return 0;}
@@ -607,6 +608,7 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[i].snr[0]=0;
         }
         for (i=0;i<n;i++) {
+            obs_is_valid[i] = 1;
             ssat[obs[i].sat-1].azel[0]=azel_[  i*2];
             ssat[obs[i].sat-1].azel[1]=azel_[1+i*2];
             ssat[obs[i].sat-1].snr[0]=obs[i].SNR[0];
@@ -614,6 +616,7 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[obs[i].sat-1].vs=1;
             ssat[obs[i].sat-1].resp[0]=resp[i];
         }
+        fill_erb_solution_fields(sol, ssat, obs, obs_is_valid);
     }
     free(rs); free(dts); free(var); free(azel_); free(resp);
     return stat;
