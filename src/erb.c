@@ -340,12 +340,13 @@ extern int outerb(unsigned char *buff, const sol_t *sol, const double *rb)
     return p - (char *)buff;
 }
 
-void fill_erb_solution_fields(sol_t *sol, const ssat_t ssat[MAXSAT], const obsd_t obs_data[MAXOBS], const int obs_is_valid[MAXSAT]) {
+void fill_erb_solution_fields(sol_t *sol, const ssat_t ssat[MAXSAT], const obsd_t obs_data[MAXOBS], const int obs_is_valid[MAXOBS]) {
+
     int cur_sat, prn, i, j;
-    double azeld[MAXSAT];
+    double azeld[2 * MAXSAT];
 
     /* Filling additional fields of structure sol_t */
-    for (i = j = 0; i < MAXSAT; i++) {
+    for (i = j = 0; i < MAXOBS; i++) {
 
         if (!obs_is_valid[i] || ssat[obs_data[i].sat - 1].azel[1] <= 0)
             continue;
