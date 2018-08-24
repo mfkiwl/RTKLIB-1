@@ -1054,10 +1054,9 @@ static int verify_sat(const ssat_t * ssat, int sat, int solstat, int nfreq) {
     }
 }
 
-#define UNAMBIGUOUS_HEADING_THRESH     0.5   /* [m/s] */
-
 /* restore heading with known position and velocity */
-static double restore_heading(const double position_ecef[VECTOR_3D_SIZE], const double velocity_ecef[VECTOR_3D_SIZE])
+static double restore_heading(const double position_ecef[VECTOR_3D_SIZE],
+                              const double velocity_ecef[VECTOR_3D_SIZE], double velocity_noise_level)
 {
     double position_llh[VECTOR_3D_SIZE];
     double velocity_enu[VECTOR_3D_SIZE];
@@ -1075,7 +1074,7 @@ static double restore_heading(const double position_ecef[VECTOR_3D_SIZE], const 
     velocity_plane = norm(velocity_enu, VECTOR_3D_SIZE - 1);
 
     /* we can restore the heading if lateral velocity is definitely beyond a noise level */
-    if (velocity_plane > UNAMBIGUOUS_HEADING_THRESH) {
+    if (velocity_plane > velocity_noise_level) {
 
         heading = atan2(velocity_enu[0], velocity_enu[1]) * R2D;
         if (heading < 0.0) heading += 360.0;
@@ -1094,6 +1093,10 @@ static double restore_heading(const double position_ecef[VECTOR_3D_SIZE], const 
 #define MAX_ADDITIONAL_HEADS     100
 #define MAX_ADDITIONAL_INFO      100
 
+#define VELOCITY_NOISE_LEVEL_FIX     0.3   /* [m/s] */
+#define VELOCITY_NOISE_LEVEL_FLOAT   0.5   /* [m/s] */
+#define MAX_FLOAT_POSITION_VARIANCE_FOR_HEADING   0.1   /* [m2] */
+
 static void out_additional_sol_heads(char buff[MAX_ADDITIONAL_HEADS])
 {
     sprintf(buff, "%14s", "heading(deg)");
@@ -1103,6 +1106,7 @@ static void out_additional_sol_info(const sol_t *sol, char buff[MAX_ADDITIONAL_I
 {
     int i;
     double velocity[VECTOR_3D_SIZE] = {0.0};
+    double float_pos_variance = 0.0;
     double heading = -1.0;
 
     /* find velocity via FIX solution dispacement if available */
@@ -1115,7 +1119,28 @@ static void out_additional_sol_info(const sol_t *sol, char buff[MAX_ADDITIONAL_I
                 velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
             }
 
-            heading = restore_heading(sol->rr, velocity);
+            heading = restore_heading(sol->rr, velocity, VELOCITY_NOISE_LEVEL_FIX);
+        }
+    }
+
+    /* find velocity via FLOAT solution dispacement if available */
+    if ((sol->stat_prev == SOLQ_FLOAT) && (sol->stat == SOLQ_FLOAT)) {
+
+        for (i = 0; i < VECTOR_3D_SIZE; i++) {
+
+            float_pos_variance += sol->qr[i];
+        }
+        float_pos_variance /= (double) VECTOR_3D_SIZE;
+
+        if ((sol->delta_time > 0.0)
+            && (float_pos_variance < MAX_FLOAT_POSITION_VARIANCE_FOR_HEADING)) {
+
+            for (i = 0; i < VECTOR_3D_SIZE; i++) {
+
+                velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
+            }
+
+            heading = restore_heading(sol->rr, velocity, VELOCITY_NOISE_LEVEL_FLOAT);
         }
     }
 
@@ -1225,6 +1250,7 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     double velocity_plane;
     char *p=(char *)buff,*q,sum,heading_str[10] = "";
     double heading = 0.0;
+    double velocity_noise_level;
     
     trace(3,"outnmea_rmc:\n");
     
@@ -1242,7 +1268,10 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     ecef2enu(pos, sol->rr + VECTOR_3D_SIZE, velocity_enu);
     velocity_plane = norm(velocity_enu, VECTOR_3D_SIZE - 1);
 
-    heading = restore_heading(sol->rr, sol->rr + VECTOR_3D_SIZE);
+    if (sol->stat == SOLQ_FIX) velocity_noise_level = VELOCITY_NOISE_LEVEL_FIX;
+    else                       velocity_noise_level = VELOCITY_NOISE_LEVEL_FLOAT;
+
+    heading = restore_heading(sol->rr, sol->rr + VECTOR_3D_SIZE, velocity_noise_level);
 
     if (heading >= 0.0) {
 
