@@ -6,9 +6,9 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>VCL</FrameworkType>
-        <ProjectVersion>18.2</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
-        <TargetedPlatforms>3</TargetedPlatforms>
+        <ProjectVersion>18.4</ProjectVersion>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -386,18 +386,18 @@
         <CppCompile Include="..\..\src\tides.c">
             <BuildOrder>39</BuildOrder>
         </CppCompile>
-        <FormResources Include="kmzconv.dfm"/>
-        <FormResources Include="extopt.dfm"/>
+        <FormResources Include="..\appcmn\timedlg.dfm"/>
+        <FormResources Include="..\appcmn\viewer.dfm"/>
         <FormResources Include="..\appcmn\vieweropt.dfm"/>
+        <FormResources Include="extopt.dfm"/>
+        <FormResources Include="kmzconv.dfm"/>
+        <FormResources Include="..\appcmn\aboutdlg.dfm"/>
+        <FormResources Include="..\appcmn\confdlg.dfm"/>
+        <FormResources Include="..\appcmn\keydlg.dfm"/>
+        <FormResources Include="..\appcmn\maskoptdlg.dfm"/>
+        <FormResources Include="..\appcmn\refdlg.dfm"/>
         <FormResources Include="postmain.dfm"/>
         <FormResources Include="postopt.dfm"/>
-        <FormResources Include="..\appcmn\keydlg.dfm"/>
-        <FormResources Include="..\appcmn\confdlg.dfm"/>
-        <FormResources Include="..\appcmn\aboutdlg.dfm"/>
-        <FormResources Include="..\appcmn\maskoptdlg.dfm"/>
-        <FormResources Include="..\appcmn\viewer.dfm"/>
-        <FormResources Include="..\appcmn\timedlg.dfm"/>
-        <FormResources Include="..\appcmn\refdlg.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

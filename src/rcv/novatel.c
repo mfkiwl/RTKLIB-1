@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * notvatel.c : NovAtel OEM6/OEM5/OEM4/OEM3 receiver functions
 *
-*          Copyright (C) 2007-2017 by T.TAKASU, All rights reserved.
+*          Copyright (C) 2007-2018 by T.TAKASU, All rights reserved.
 *
 * reference :
 *     [1] NovAtel, OM-20000094 Rev6 OEMV Family Firmware Reference Manual, 2008
@@ -51,6 +51,9 @@
 *                           improve unchange-test of beidou ephemeris
 *           2017/06/15 1.15 add output half-cycle-ambiguity status to LLI
 *                           improve slip-detection by lock-time rollback
+*           2018/10/10 1.16 fix problem on data souce for galileo ephemeris
+*                           output L2W instead of L2D for L2Pcodeless
+*                           test toc difference to output beidou ephemeris
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
@@ -156,6 +159,17 @@ static int obsindex(obs_t *obs, gtime_t time, int sat)
     obs->n++;
     return i;
 }
+/* ura value (m) to ura index ------------------------------------------------*/
+static int uraindex(double value)
+{
+    static const double ura_eph[]={
+        2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
+        3072.0,6144.0,0.0
+    };
+    int i;
+    for (i=0;i<15;i++) if (ura_eph[i]>=value) break;
+    return i;
+}
 /* decode oem4 tracking status -------------------------------------------------
 * deocode oem4 tracking status
 * args   : unsigned int stat I  tracking status field
@@ -212,7 +226,7 @@ static int decode_trackstat(unsigned int stat, int *sys, int *code, int *track,
         switch (sigtype) {
             case  0: freq=0; *code=CODE_L1C; break; /* L1C/A */
             case  5: freq=0; *code=CODE_L1P; break; /* L1P */
-            case  9: freq=1; *code=CODE_L2D; break; /* L2Pcodeless */
+            case  9: freq=1; *code=CODE_L2W; break; /* L2Pcodeless */
             case 14: freq=2; *code=CODE_L5Q; break; /* L5Q (OEM6) */
             case 17: freq=1; *code=CODE_L2X; break; /* L2C(M+L) */
             default: freq=-1; break;
@@ -754,7 +768,7 @@ static int decode_galephemerisb(raw_t *raw)
     dvs_e1b   =U1(p)&1; p+=1;
     dvs_e5a   =U1(p)&1; p+=1;
     dvs_e5b   =U1(p)&1; p+=1;
-    eph.sva   =U1(p);   p+=1+1; /* SISA */
+    eph.sva   =U1(p);   p+=1+1; /* SISA index */
     eph.iode  =U4(p);   p+=4;   /* IODNav */
     eph.toes  =U4(p);   p+=4;
     sqrtA     =R8(p);   p+=8;
@@ -795,7 +809,9 @@ static int decode_galephemerisb(raw_t *raw)
     eph.f0    =sel_nav?af0_fnav:af0_inav;
     eph.f1    =sel_nav?af1_fnav:af1_inav;
     eph.f2    =sel_nav?af2_fnav:af2_inav;
-    eph.code  =sel_nav?2:1; /* data source 1:I/NAV E1B,2:F/NAV E5a-I */
+    
+    /* set data source defined in rinex 3.03 */
+    eph.code=(sel_nav==0)?((1<<0)|(1<<9)):((1<<1)|(1<<8));
     
     if (raw->outtype) {
         msg=raw->msgtype+strlen(raw->msgtype);
@@ -1058,7 +1074,7 @@ static int decode_bdsephemerisb(raw_t *raw)
     eph.cic   =R8(p);   p+=8;
     eph.cis   =R8(p);
     eph.A     =sqrtA*sqrtA;
-    eph.sva   =uraindex(ura,SYS_CMP);
+    eph.sva   =uraindex(ura);
     
     if (raw->outtype) {
         msg=raw->msgtype+strlen(raw->msgtype);
@@ -1074,6 +1090,7 @@ static int decode_bdsephemerisb(raw_t *raw)
     
     if (!strstr(raw->opt,"-EPHALL")) {
         if (timediff(raw->nav.eph[eph.sat-1].toe,eph.toe)==0.0&&
+            timediff(raw->nav.eph[eph.sat-1].toc,eph.toc)==0.0&&
             raw->nav.eph[eph.sat-1].iode==eph.iode&&
             raw->nav.eph[eph.sat-1].iodc==eph.iodc) return 0; /* unchanged */
     }

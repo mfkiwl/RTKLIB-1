@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * rinex.c : rinex functions
 *
-*          Copyright (C) 2007-2014 by T.TAKASU, All rights reserved.
+*          Copyright (C) 2007-2018 by T.TAKASU, All rights reserved.
 *
 * reference :
 *     [1] W.Gurtner and L.Estey, RINEX The Receiver Independent Exchange Format
@@ -20,6 +20,10 @@
 *         International GNSS Service (IGS), RINEX Working Group and Radio
 *         Technical Commission for Maritime Services Special Committee 104
 *         (RTCM-SC104), December 10, 2012
+*     [8] RINEX The Receiver Independent Exchange Format Version 3.03,
+*         International GNSS Service (IGS), RINEX Working Group and Radio
+*         Technical Commission for Maritime Services Special Committee 104
+*         (RTCM-SC104), July 14, 2015
 *
 * version : $Revision:$
 * history : 2006/01/16 1.0  new
@@ -86,6 +90,8 @@
 *           2016/09/17 1.26 fix bug on fit interval in QZSS RINEX nav
 *                           URA output value complient to RINEX 3.03
 *           2016/10/10 1.27 add api outrnxinavh()
+*           2018/10/10 1.28 support galileo sisa value for rinex nav output
+*                           fix bug on handling beidou B1 code in rinex 3.03
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
@@ -111,6 +117,15 @@ static const char syscodes[]="GREJSCI"; /* satellite system codes */
 static const char obscodes[]="CLDS";    /* obs type codes */
 
 static const char frqcodes[]="1256789"; /* frequency codes */
+
+static const double ura_eph[]={         /* ura values (ref [3] 20.3.3.3.1.1) */
+    2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
+    3072.0,6144.0,0.0
+};
+static const double ura_nominal[]={     /* ura nominal values */
+    2.0,2.8,4.0,5.7,8.0,11.3,16.0,32.0,64.0,128.0,256.0,512.0,1024.0,
+    2048.0,4096.0,8192.0
+};
 
 /* type definition -----------------------------------------------------------*/
 typedef struct {                        /* signal index type */
@@ -174,6 +189,27 @@ static int sat2code(int sat, char *code)
         default: return 0;
     }
     return 1;
+}
+/* ura index to ura nominal value (m) ----------------------------------------*/
+static double uravalue(int sys, int sva)
+{
+    if (sys==SYS_GAL) {
+        if (sva<= 49) return sva*0.01;
+        if (sva<= 74) return 0.5+(sva- 50)*0.02;
+        if (sva<= 99) return 1.0+(sva- 75)*0.04;
+        if (sva<=125) return 2.0+(sva-100)*0.16;
+        return -1.0; /* unknown or NAPA */
+    }
+    else {
+        return 0<=sva&&sva<15?ura_nominal[sva]:8192.0;
+    }
+}
+/* ura value (m) to ura index ------------------------------------------------*/
+static int uraindex(double value)
+{
+    int i;
+    for (i=0;i<15;i++) if (ura_eph[i]>=value) break;
+    return i;
 }
 /* initialize station parameter ----------------------------------------------*/
 static void init_sta(sta_t *sta)
@@ -358,8 +394,8 @@ static void decode_obsh(FILE *fp, char *buff, double ver, int *tsys,
         }
         *tobs[i][nt]='\0';
         
-        /* change beidou B1 code: 3.02 draft -> 3.02/3.03 */
-        if (i==5) {
+        /* change beidou B1 code: 3.02 */
+        if (i==5&&fabs(ver-3.02)<1e-3) {
             for (j=0;j<nt;j++) if (tobs[i][j][1]=='2') tobs[i][j][1]='1';
         }
         /* if unknown code in ver.3, set default code */
@@ -1092,7 +1128,7 @@ static int decode_eph(double ver, int sat, gtime_t toc, const double *data,
         
         eph->code=(int)data[20];      /* GPS: codes on L2 ch */
         eph->svh =(int)data[24];      /* sv health */
-        eph->sva=uraindex(data[23],sys);  /* ura (m->index) */
+        eph->sva=uraindex(data[23]);  /* ura (m->index) */
         eph->flag=(int)data[22];      /* GPS: L2 P data flag */
         
         eph->tgd[0]=   data[25];      /* TGD */
@@ -1123,7 +1159,7 @@ static int decode_eph(double ver, int sat, gtime_t toc, const double *data,
                                       /* bit   4-5: E5a HS */
                                       /* bit     6: E5b DVS */
                                       /* bit   7-8: E5b HS */
-        eph->sva =uraindex(data[23],sys); /* ura (m->index) */
+        eph->sva =uraindex(data[23]); /* ura (m->index) */
         
         eph->tgd[0]=   data[25];      /* BGD E5a/E1 */
         eph->tgd[1]=   data[26];      /* BGD E5b/E1 */
@@ -1140,7 +1176,7 @@ static int decode_eph(double ver, int sat, gtime_t toc, const double *data,
         eph->ttr=adjweek(eph->ttr,toc);
         
         eph->svh =(int)data[24];      /* satH1 */
-        eph->sva=uraindex(data[23],sys);  /* ura (m->index) */
+        eph->sva=uraindex(data[23]);  /* ura (m->index) */
         
         eph->tgd[0]=   data[25];      /* TGD1 B1/B3 */
         eph->tgd[1]=   data[26];      /* TGD2 B2/B3 */
@@ -1152,7 +1188,7 @@ static int decode_eph(double ver, int sat, gtime_t toc, const double *data,
         eph->toe=adjweek(gpst2time(eph->week,data[11]),toc);
         eph->ttr=adjweek(gpst2time(eph->week,data[27]),toc);
         eph->svh =(int)data[24];      /* sv health */
-        eph->sva=uraindex(data[23],sys);  /* ura (m->index) */
+        eph->sva=uraindex(data[23]);  /* ura (m->index) */
         eph->tgd[0]=   data[25];      /* TGD */
     }
     if (eph->iode<0||1023<eph->iode) {
@@ -1246,7 +1282,7 @@ static int decode_seph(double ver, int sat, gtime_t toc, double *data,
     seph->acc[0]=data[5]*1E3; seph->acc[1]=data[9]*1E3; seph->acc[2]=data[13]*1E3;
     
     seph->svh=(int)data[6];
-    seph->sva=uraindex(data[10],SYS_SBS);
+    seph->sva=uraindex(data[10]);
     
     return 1;
 }
@@ -1861,6 +1897,7 @@ static void outobstype_ver2(FILE *fp, const rnxopt_t *opt)
 static void outobstype_ver3(FILE *fp, const rnxopt_t *opt)
 {
     const char label[]="SYS / # / OBS TYPES";
+    char tobs[8];
     int i,j;
     
     trace(3,"outobstype_ver3:\n");
@@ -1873,7 +1910,14 @@ static void outobstype_ver3(FILE *fp, const rnxopt_t *opt)
         for (j=0;j<opt->nobs[i];j++) {
             if (j>0&&j%13==0) fprintf(fp,"      ");
             
-            fprintf(fp," %3s",opt->tobs[i][j]);
+            strcpy(tobs,opt->tobs[i][j]);
+            
+            /* beidou B1x -> 1x (3.02), 2x (other) */
+            if (navsys[i]==SYS_CMP) {
+                if (opt->rnxver==3.02&&tobs[1]=='2') tobs[1]='1';
+                if (opt->rnxver!=3.02&&tobs[1]=='1') tobs[1]='2';
+            }
+            fprintf(fp," %3s", tobs);
             
             if (j%13==12) fprintf(fp,"  %-20s\n",label);
         }
@@ -2421,8 +2465,8 @@ extern int outrnxnavb(FILE *fp, const rnxopt_t *opt, const eph_t *eph)
     outnavf(fp,eph->week   ); /* GPS/QZS: GPS week, GAL: GAL week, BDS: BDT week */
     outnavf(fp,eph->flag   );
     fprintf(fp,"\n%s",sep  );
-    
-    outnavf(fp,uravalue(eph->sva,sys));
+
+    outnavf(fp,uravalue(sys,eph->sva));
     outnavf(fp,eph->svh    );
     outnavf(fp,eph->tgd[0] ); /* GPS/QZS:TGD, GAL:BGD E5a/E1, BDS: TGD1 B1/B3 */
     if (sys==SYS_GAL||sys==SYS_CMP) {
@@ -2624,7 +2668,7 @@ extern int outrnxhnavb(FILE *fp, const rnxopt_t *opt, const seph_t *seph)
     outnavf(fp,seph->pos[1]/1E3   );
     outnavf(fp,seph->vel[1]/1E3   );
     outnavf(fp,seph->acc[1]/1E3   );
-    outnavf(fp,uravalue(seph->sva,SYS_SBS));
+    outnavf(fp,uravalue(SYS_SBS,seph->sva));
     fprintf(fp,"\n%s",sep         );
     
     outnavf(fp,seph->pos[2]/1E3   );

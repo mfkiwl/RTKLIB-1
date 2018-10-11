@@ -6,7 +6,7 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>VCL</FrameworkType>
-        <ProjectVersion>18.2</ProjectVersion>
+        <ProjectVersion>18.4</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
@@ -345,20 +345,20 @@
             <BuildOrder>26</BuildOrder>
             <BuildOrder>12</BuildOrder>
         </CppCompile>
-        <FormResources Include="..\appcmn\refdlg.dfm"/>
         <FormResources Include="..\appcmn\keydlg.dfm"/>
+        <FormResources Include="..\appcmn\refdlg.dfm"/>
         <FormResources Include="..\appcmn\serioptdlg.dfm"/>
-        <FormResources Include="..\appcmn\viewer.dfm"/>
         <FormResources Include="..\appcmn\tcpoptdlg.dfm"/>
-        <FormResources Include="..\appcmn\cmdoptdlg.dfm"/>
+        <FormResources Include="..\appcmn\viewer.dfm"/>
         <FormResources Include="..\appcmn\aboutdlg.dfm"/>
+        <FormResources Include="..\appcmn\cmdoptdlg.dfm"/>
         <FormResources Include="..\appcmn\confdlg.dfm"/>
-        <FormResources Include="..\appcmn\ftpoptdlg.dfm"/>
         <FormResources Include="..\appcmn\fileoptdlg.dfm"/>
+        <FormResources Include="..\appcmn\ftpoptdlg.dfm"/>
         <FormResources Include="..\appcmn\vieweropt.dfm"/>
         <FormResources Include="svroptdlg.dfm"/>
-        <FormResources Include="mondlg.dfm"/>
         <FormResources Include="convdlg.dfm"/>
+        <FormResources Include="mondlg.dfm"/>
         <FormResources Include="svrmain.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
