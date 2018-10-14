@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1000,6 +1001,7 @@ typedef struct {        /* solution type */
                         /* {c_xx,c_yy,c_zz,c_xy,c_yz,c_zx} or */
                         /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
     double velocity_tdpd[VECTOR_3D_SIZE]; /* velocity by time-differenced phases */
+    bool is_velocity_tdpd_defined;
     double dtr[6];      /* receiver clock bias to time systems (s) */
     unsigned char type; /* type (0:xyz-ecef,1:enu-baseline) */
     unsigned char stat; /* solution status (SOLQ_???) */

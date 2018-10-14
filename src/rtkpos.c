@@ -2618,6 +2618,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     trace(4,"obs=\n"); traceobs(4,obs,n);
 
     memset(rtk->sol.velocity_tdpd, 0, VECTOR_3D_SIZE * sizeof(double));
+    rtk->sol.is_velocity_tdpd_defined = false;
 
     /* set base station position */
     if (opt->refpos<=POSOPT_RINEX&&opt->mode!=PMODE_SINGLE&&
@@ -2706,6 +2707,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     if ((rtk->tt != 0.0) && (tdpd_status == LSQ_ROBUST_SUCCEED)) {
         vector3_copy(tdpd_output.displacement, rtk->sol.velocity_tdpd);
         vector3_multiply(1.0 / rtk->tt, rtk->sol.velocity_tdpd);
+        rtk->sol.is_velocity_tdpd_defined = true;
     }
 
     /* store obs data as a previous obs data */

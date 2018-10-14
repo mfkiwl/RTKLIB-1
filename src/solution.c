@@ -1095,6 +1095,7 @@ static double restore_heading(const double position_ecef[VECTOR_3D_SIZE],
 
 #define VELOCITY_NOISE_LEVEL_FIX     0.3   /* [m/s] */
 #define VELOCITY_NOISE_LEVEL_FLOAT   0.5   /* [m/s] */
+#define VELOCITY_NOISE_LEVEL_TDPD    0.3   /* [m/s] */
 #define MAX_FLOAT_POSITION_VARIANCE_FOR_HEADING   0.1   /* [m2] */
 
 static void out_additional_sol_heads(char buff[MAX_ADDITIONAL_HEADS])
@@ -1109,13 +1110,24 @@ static void out_additional_sol_info(const sol_t *sol, char buff[MAX_ADDITIONAL_I
     double float_pos_variance = 0.0;
     double heading = -1.0;
 
+    /* find heading via TDPD velocity */
+    if (sol->is_velocity_tdpd_defined) {
+        heading = restore_heading(sol->rr, sol->velocity_tdpd, VELOCITY_NOISE_LEVEL_TDPD);
+
+        if (heading >= 0.0) {
+            sprintf(buff, "  %4.2f", heading);
+        }
+        else {
+            sprintf(buff, "  ");
+        }
+
+        return;
+    }
+
     /* find velocity via FIX solution dispacement if available */
     if ((sol->stat_prev == SOLQ_FIX) && (sol->stat == SOLQ_FIX)) {
-
         if (sol->delta_time > 0.0) {
-
             for (i = 0; i < VECTOR_3D_SIZE; i++) {
-
                 velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
             }
 
@@ -1125,18 +1137,14 @@ static void out_additional_sol_info(const sol_t *sol, char buff[MAX_ADDITIONAL_I
 
     /* find velocity via FLOAT solution dispacement if available */
     if ((sol->stat_prev == SOLQ_FLOAT) && (sol->stat == SOLQ_FLOAT)) {
-
         for (i = 0; i < VECTOR_3D_SIZE; i++) {
-
             float_pos_variance += sol->qr[i];
         }
         float_pos_variance /= (double) VECTOR_3D_SIZE;
 
         if ((sol->delta_time > 0.0)
             && (float_pos_variance < MAX_FLOAT_POSITION_VARIANCE_FOR_HEADING)) {
-
             for (i = 0; i < VECTOR_3D_SIZE; i++) {
-
                 velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
             }
 
