@@ -952,7 +952,7 @@ static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
             y[0] = C1 * obs->L[0] * lam[0] + C2 * obs->L[1] * lam[1] - r - dant_if;
         }
 
-        if ( (opt->smoothing_mode) && rtk->smoothing_data ) {
+        if ((opt->smoothing_mode == CSMOOTHOPT_MEAS_DOMAIN) && rtk->smoothing_data) {
             P1 = rtk->smoothing_data->P_smooth[rcv][sat][0];
             P2 = rtk->smoothing_data->P_smooth[rcv][sat][1];
         }
@@ -2504,6 +2504,8 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt)
 
     rtk->smoothing_data = NULL;
 
+    rtk->position_domain_smoothing_data.count = 0;
+
     for (sat = 0; sat < MAXSAT; sat++) {
         for (freq = 0; freq < rtk->opt.nf; freq++) {
             rtk->ssat[sat].to_reset[freq] = 0;
@@ -2649,7 +2651,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     time=rtk->sol.time; /* previous epoch */
 
     /* carrier-smoothing of code measurements */
-    if (opt->smoothing_mode) {
+    if (opt->smoothing_mode == CSMOOTHOPT_MEAS_DOMAIN) {
         for (i = 0; i < (nu + nr); i++) {
             sat_id = obsd_get_sat_id(&obs[i]);
             for (freq = 0; freq < opt->nf; freq++) {
@@ -2711,6 +2713,10 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         memset(obsd_prev, 0.0, MAXSAT * sizeof(obsd_t));
         memcpy(obsd_prev, obs, nu * sizeof(obsd_t));
         n_obsd_prev = nu;
+    }
+
+    if (opt->smoothing_mode == CSMOOTHOPT_POS_DOMAIN) {
+        pntpos_position_domain_smoothing(rtk, tdpd_output.displacement, tdpd_status);
     }
 
     /* return to static start if long delay without rover data */

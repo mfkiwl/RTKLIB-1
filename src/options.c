@@ -59,6 +59,7 @@ static char snrmask_[NFREQ][1024];
 #define POSOPT  "0:llh,1:xyz,2:single,3:posfile,4:rinexhead,5:rtcm,6:raw"
 #define TIDEOPT "0:off,1:on,2:otl"
 #define PHWOPT  "0:off,1:on,2:precise"
+#define CSMOOTHOPT "0:off,1:meas-domain,2:pos-domain"
 
 EXPORT opt_t sysopts[]={
     {"pos1-posmode",    3,  (void *)&prcopt_.mode,       MODOPT },
@@ -113,11 +114,11 @@ EXPORT opt_t sysopts[]={
     {"pos2-niter",      0,  (void *)&prcopt_.niter,      ""     },
     {"pos2-baselen",    1,  (void *)&prcopt_.baseline[0],"m"    },
     {"pos2-basesig",    1,  (void *)&prcopt_.baseline[1],"m"    },
-    
-    {"smooth-mode",     3,  (void *)&prcopt_.smoothing_mode,SWTOPT},
+
+    {"smooth-mode",     3,  (void *)&prcopt_.smoothing_mode,CSMOOTHOPT},
     {"smooth-window",   1,  (void *)&prcopt_.smoothing_window,"s"},
     {"smooth-varratio", 1,  (void *)&prcopt_.smoothing_varratio,""},
-    
+
     {"base-multi_epoch",3,  (void *)&prcopt_.base_multi_epoch,SWTOPT},
 
     {"resid-mode",      3,  (void *)&prcopt_.residual_mode,SWTOPT},

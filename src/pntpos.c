@@ -86,7 +86,7 @@ static double prange(const obsd_t *obs, const nav_t *nav, const smoothing_data_t
     }
     gamma=SQR(lam[j])/SQR(lam[i]); /* f1^2/f2^2 */
     
-    if ( (opt->smoothing_mode) && smoothing_data ) {
+    if ( (opt->smoothing_mode == CSMOOTHOPT_MEAS_DOMAIN) && smoothing_data ) {
         P1 = smoothing_data->P_smooth[rcv][sat][i];
         P2 = smoothing_data->P_smooth[rcv][sat][j];
     }
@@ -277,7 +277,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const smoothing_data_t *s
         
         /* error variance */
         weight = 1.0;
-        if ( opt->smoothing_mode ) {
+        if ( opt->smoothing_mode == CSMOOTHOPT_MEAS_DOMAIN ) {
             /* note: assuming freq == 0 for 'single' regime */
             weight = smoothing_weight_from_count(smoothing_data, opt, rcv, sat, 0);
         }

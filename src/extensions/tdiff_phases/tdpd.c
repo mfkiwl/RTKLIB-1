@@ -419,6 +419,100 @@ static void prepare_tdpd_input(const tdpd_consecutive_data_t *consecutive_data,
     calculate_tdiff_phases(consecutive_data, &satellites_geometry, tdpd_input);
 }
 
+/* position-domain carrier-smoothed single solution */
+void pntpos_position_domain_smoothing(rtk_t *rtk, double displacement_tdpd[VECTOR_3D_SIZE],
+    lsq_robust_status_t tdpd_status)
+{
+    assert(rtk_is_valid(rtk));
+    assert(displacement_tdpd != NULL);
+
+    position_domain_smoothing_t *pds = &rtk->position_domain_smoothing_data;
+    double age          = fabs(timediff(rtk->sol.time, pds->time_start));
+    double dt           = timediff(rtk->sol.time, pds->time_previous_pntpos);
+    double weight;
+    bool pntpos_success_status = (rtk->sol.stat == SOLQ_SINGLE);
+    bool tdpd_success_status   = (tdpd_status == LSQ_ROBUST_SUCCEED);
+
+    bool is_filter_out_of_date = fabs(dt) > TDPD_SMOOTHING_MAX_PNTPOS_DELAY;
+
+    /* calculate velocity via known displacement */
+    if (tdpd_success_status && (rtk->tt != 0.0)) {
+        pds->time_previous_tdpd = rtk->sol.time;
+
+        vector3_copy(displacement_tdpd, pds->velocity_tdpd);
+        vector3_multiply(1.0 / rtk->tt, pds->velocity_tdpd);
+    }
+
+    double dt_extrapolation    = timediff(rtk->sol.time, pds->time_previous_tdpd);
+    double displ_extrapolation = vector3_norm(pds->velocity_tdpd) * dt_extrapolation;
+    bool is_velocity_tdpd_out_of_date =
+        (dt_extrapolation > TDPD_SMOOTHING_MAX_EXTRAPOLATION_TIME)
+        || (displ_extrapolation > TDPD_SMOOTHING_MAX_EXTRAPOLATION_DISPL);
+
+    /* repair solution with allowing to use a previous velocity */
+    bool is_displacement_tdpd_available = tdpd_success_status;
+    if ((!tdpd_success_status) && (!is_velocity_tdpd_out_of_date)) {
+        vector3_copy(pds->velocity_tdpd, displacement_tdpd);
+        vector3_multiply(rtk->tt, displacement_tdpd);
+
+        is_displacement_tdpd_available = true;
+    }
+
+    double pos_extrapolated[VECTOR_3D_SIZE];
+    vector3_sum(pds->position_smoothed, displacement_tdpd, pos_extrapolated);
+
+    /* check pntpos residual and reject if it is too big */
+    double pos_residual[VECTOR_3D_SIZE] = {0.0};
+    if (is_displacement_tdpd_available && pntpos_success_status && (pds->count > 0)
+        && (!is_filter_out_of_date) && (age > rtk->opt.smoothing_window)) {
+        vector3_diff(rtk->sol.rr, pos_extrapolated, pos_residual);
+
+        if (vector3_norm(pos_residual) > TDPD_SMOOTHING_MAX_RESIDUAL) {
+            pntpos_success_status = false;
+        }
+    }
+
+    bool is_initialization   = (pds->count == 0) && pntpos_success_status;
+    bool is_reinitialization = (is_filter_out_of_date || (!is_displacement_tdpd_available))
+                                && pntpos_success_status;
+
+    bool actions_needed       = (fabs(dt) != 0.0) || (pds->count == 0);
+    bool actions_not_possible = ((!is_displacement_tdpd_available) && (!pntpos_success_status));
+
+    if (actions_needed && (!actions_not_possible)) {
+        if (is_initialization || is_reinitialization) {
+            pds->count = 1;
+            vector3_copy(rtk->sol.rr, pds->position_smoothed);
+            pds->time_start    = rtk->sol.time;
+            pds->time_previous_pntpos = rtk->sol.time;
+        }
+        else if (pntpos_success_status) {
+            if ((age <= rtk->opt.smoothing_window)
+                    && tdpd_success_status) {
+                pds->count++;
+            }
+
+            weight = 1.0 / (pds->count);
+
+            vector3_linear_combination(weight, rtk->sol.rr,
+                1 - weight, pos_extrapolated, pds->position_smoothed);
+
+            pds->time_previous_pntpos = rtk->sol.time;
+        }
+        else if (is_displacement_tdpd_available) { /* pntpos failed and TDPD displ available */
+            /* if pntpos failed repair solution with TDPD displacement */
+            vector3_add(pds->position_smoothed, displacement_tdpd);
+            rtk->sol.stat = SOLQ_SINGLE;
+        }
+    }
+
+    /* copy position and velocity to rtk->sol */
+    vector3_copy(pds->position_smoothed, rtk->sol.rr);
+    if (is_displacement_tdpd_available) {
+        vector3_copy(pds->velocity_tdpd, rtk->sol.rr + VECTOR_3D_SIZE);
+    }
+}
+
 lsq_robust_status_t estimate_displacement_by_tdiff_phases_rtkpos_wrapper(rtk_t *rtk,
   const obsd_t *obsd, int n_obsd, const obsd_t *obsd_prev, int n_obsd_prev, const nav_t *nav,
   tdpd_problem_output_t *output)

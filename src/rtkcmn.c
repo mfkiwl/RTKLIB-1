@@ -208,7 +208,7 @@ const prcopt_t prcopt_default={ /* defaults processing options */
     .refpos=3,          .eratio={300.0,100.0},
     .err={100.0,0.003,0.003,0.0,1.0},
     .posopt[4]=1, /* raim_fde */
-    .smoothing_mode=0,      .smoothing_window=100,
+    .smoothing_mode=CSMOOTHOPT_POS_DOMAIN, .smoothing_window=100,
     .smoothing_varratio=0.2,
     .base_multi_epoch=0,
     .residual_mode=0,        .residual_maxiter=2,
@@ -4107,4 +4107,3 @@ extern int input_lexr(raw_t *raw, unsigned char data) {return 0;}
 extern int input_lexrf(raw_t *raw, FILE *fp) {return 0;}
 extern int gen_lexr(const char *msg, unsigned char *buff) {return 0;}
 #endif /* EXTLEX */
-

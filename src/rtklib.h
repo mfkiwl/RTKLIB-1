@@ -515,6 +515,10 @@ extern "C" {
 
 #define IMUFMT_KVH  1                   /* imu data format KVH */
 
+#define CSMOOTHOPT_NONE        0
+#define CSMOOTHOPT_MEAS_DOMAIN 1
+#define CSMOOTHOPT_POS_DOMAIN  2
+
 #define P2_5        0.03125             /* 2^-5 */
 #define P2_6        0.015625            /* 2^-6 */
 #define P2_11       4.882812500000000E-04 /* 2^-11 */
@@ -595,6 +599,17 @@ typedef struct {         /* data related to smoothing of code */
     int     direction [MAXRCV_SMOOTH][MAXSAT][MAXFREQ];  /* 1 : forward, -1 : backward */
     unsigned char slip[MAXRCV_SMOOTH][MAXSAT][MAXFREQ];  /* cycle-slip flag */
 } smoothing_data_t;
+
+typedef struct {
+
+    gtime_t time_start;
+    gtime_t time_previous_pntpos;
+    gtime_t time_previous_tdpd;
+    int count;
+    double position_smoothed[VECTOR_3D_SIZE];
+    double velocity_tdpd[VECTOR_3D_SIZE];
+
+} position_domain_smoothing_t;
 
 typedef struct {        /* observation data */
     int n,nmax;         /* number of obervation data/allocated */
@@ -1326,6 +1341,7 @@ typedef struct {        /* RTK control/result type */
     int initial_mode;   /* initial positioning mode */
     smoothing_data_t *smoothing_data; /* data related to smoothing of code */
     struct glo_IFB_t *glo_IFB; /* glonass IFB corrector */
+    position_domain_smoothing_t position_domain_smoothing_data;
 } rtk_t;
 
 typedef struct half_cyc_tag {  /* half-cycle correction list type */
