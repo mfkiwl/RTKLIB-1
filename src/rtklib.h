@@ -984,6 +984,7 @@ typedef struct {        /* solution type */
     float  qr[6];       /* position variance/covariance (m^2) */
                         /* {c_xx,c_yy,c_zz,c_xy,c_yz,c_zx} or */
                         /* {c_ee,c_nn,c_uu,c_en,c_nu,c_ue} */
+    double velocity_tdpd[VECTOR_3D_SIZE]; /* velocity by time-differenced phases */
     double dtr[6];      /* receiver clock bias to time systems (s) */
     unsigned char type; /* type (0:xyz-ecef,1:enu-baseline) */
     unsigned char stat; /* solution status (SOLQ_???) */
@@ -2034,7 +2035,9 @@ EXPORT int lexeph2pos(gtime_t time, int sat, const nav_t *nav, double *rs,
 EXPORT int lexioncorr(gtime_t time, const nav_t *nav, const double *pos,
                       const double *azel, double *delay, double *var);
 
+/* auxiliary functions */
 void fill_erb_solution_fields(sol_t *sol, const ssat_t ssat[MAXSAT], const obsd_t obs_data[MAXOBS], const int obs_is_valid[MAXOBS]);
+int obsd_get_sat_id(const obsd_t *obsd);
 
 /* application defined functions ---------------------------------------------*/
 extern int showmsg(char *format,...);

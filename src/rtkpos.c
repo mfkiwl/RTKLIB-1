@@ -40,17 +40,16 @@
 *                           fix bug on slip detection of backward filter
 *           2016/08/20 1.22 fix bug on ddres() function
 *-----------------------------------------------------------------------------*/
-#include <stdarg.h>
 #include "rtklib.h"
-#include "glonass_IFB_correction.h"
+#include <stdarg.h>
+#include <stdbool.h>
+#include "robust_lsq.h"
+#include "rtklib_math.h"
+#include "extensions/glo_ifb/glo_ifb.h"
+#include "extensions/tdiff_phases/tdpd.h"
 
 
 /* constants/macros ----------------------------------------------------------*/
-
-#define SQR(x)      ((x)*(x))
-#define SQRT(x)     ((x)<=0.0?0.0:sqrt(x))
-#define MIN(x,y)    ((x)<=(y)?(x):(y))
-#define ROUND(x)    (int)floor((x)+0.5)
 
 #define VAR_POS     SQR(30.0) /* initial variance of receiver pos (m^2) */
 #define VAR_VEL     SQR(10.0) /* initial variance of receiver vel ((m/s)^2) */
@@ -107,6 +106,8 @@ static int statlevel=0;          /* rtk status output level (0:off) */
 static FILE *fp_stat=NULL;       /* rtk status file pointer */
 static char file_stat[1024]="";  /* rtk status file original path */
 static gtime_t time_stat={0};    /* rtk status file time */
+static obsd_t obsd_prev[MAXSAT] = {0.0};
+static int n_obsd_prev = 0;
 
 static int calc_glonass_frequency_number_via_wavelength(double lam_L1)
 {
@@ -1926,7 +1927,7 @@ static int valpos(rtk_t *rtk, const double *v, const double *R, const int *vflg,
         freq=vflg[i]&0xF;
         stype=type==0?"L":(type==1?"L":"C");
         errmsg(rtk,"large residual (sat=%2d-%2d %s%d v=%6.3f sig=%.3f)\n",
-              sat1,sat2,stype,freq+1,v[i],SQRT(R[i+i*nv]));
+              sat1,sat2,stype,freq+1,v[i],sqrt(MAX(R[i+i*nv], 0.0)));
     }
 #if 0 /* omitted v.2.4.0 */
     if (stat&&nv>NP(opt)) {
@@ -2607,12 +2608,14 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     gtime_t time_base_last;
     int i,nu,nr;
     char msg[128]="";
-    int sat, freq;
+    int sat_id, freq;
     int residual_maxiter = opt->residual_maxiter;
     double delta_base_pos[VECTOR_3D_SIZE];
 
     trace(3,"rtkpos  : time=%s n=%d\n",time_str(obs[0].time,3),n);
     trace(4,"obs=\n"); traceobs(4,obs,n);
+
+    memset(rtk->sol.velocity_tdpd, 0, VECTOR_3D_SIZE * sizeof(double));
 
     /* set base station position */
     if (opt->refpos<=POSOPT_RINEX&&opt->mode!=PMODE_SINGLE&&
@@ -2644,44 +2647,72 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     for (nr=0;nu+nr<n&&obs[nu+nr].rcv==2;nr++);
 
     time=rtk->sol.time; /* previous epoch */
-    
+
     /* carrier-smoothing of code measurements */
     if (opt->smoothing_mode) {
         for (i = 0; i < (nu + nr); i++) {
-            sat = obs[i].sat - 1;
+            sat_id = obsd_get_sat_id(&obs[i]);
             for (freq = 0; freq < opt->nf; freq++) {
-                smoothing_carrier(obs[i], rtk, freq, nav->lam[sat][freq], opt->smoothing_window);
+                smoothing_carrier(obs[i], rtk, freq, nav->lam[sat_id][freq], opt->smoothing_window);
             }
         }
     }
 
     /* calc glonass frequency numbers */
-    for (sat = 0; sat < MAXSAT; sat++) {
+    for (sat_id = 0; sat_id < MAXSAT; sat_id++) {
+      if (rtk->ssat[sat_id].sys != SYS_GLO) continue;
+      if (nav->lam[sat_id][0] == 0.0)       continue;
 
-      if ( rtk->ssat[sat].sys != SYS_GLO ) continue;
-      if ( nav->lam[sat][0] == 0.0 )       continue;
-
-      rtk->ssat[sat].freq_num = calc_glonass_frequency_number_via_wavelength(nav->lam[sat][0]);
+      rtk->ssat[sat_id].freq_num = calc_glonass_frequency_number_via_wavelength(nav->lam[sat_id][0]);
     }
 
-    for (i = 0; i < VECTOR_3D_SIZE; i++) {
-
-        rtk->sol.pos_prev[i] = rtk->sol.rr[i];
+    /* store previous solution state */
+    if (rtk->sol.stat != SOLQ_NONE) {
+        for (i = 0; i < VECTOR_3D_SIZE; i++) {
+            rtk->sol.pos_prev[i] = rtk->sol.rr[i];
+        }
+        rtk->sol.stat_prev = rtk->sol.stat;
     }
-    rtk->sol.stat_prev = rtk->sol.stat;
-    
+
     /* rover position by single point positioning */
     if (!pntpos(obs,nu,nav,rtk->smoothing_data,&rtk->opt,&rtk->sol,NULL,rtk->ssat,msg)) {
         errmsg(rtk,"point pos error (%s)\n",msg);
-        
+
         if (!rtk->opt.dynamics) {
+            /* store obs data as a previous obs data */
+            if (timediff(obs[0].time, obsd_prev[0].time) != 0.0) {
+                memset(obsd_prev, 0.0, MAXSAT * sizeof(obsd_t));
+                memcpy(obsd_prev, obs, nu * sizeof(obsd_t));
+                n_obsd_prev = nu;
+            }
+
             outsolstat(rtk,nav);
             return 0;
         }
     }
+
     if (time.time!=0) rtk->tt=timediff(rtk->sol.time,time);
-    rtk->sol.delta_time = timediff(rtk->sol.time, time);
-        
+    if (time.time!=0) rtk->sol.delta_time = timediff(rtk->sol.time, time);
+
+    /* estimate displacement by time-differenced phases */
+    lsq_robust_status_t tdpd_status = LSQ_ROBUST_FAIL;
+    tdpd_problem_output_t tdpd_output;
+
+    tdpd_status = estimate_displacement_by_tdiff_phases_rtkpos_wrapper(rtk, obs, nu,
+        obsd_prev, n_obsd_prev, nav, &tdpd_output);
+
+    if ((rtk->tt != 0.0) && (tdpd_status == LSQ_ROBUST_SUCCEED)) {
+        vector3_copy(tdpd_output.displacement, rtk->sol.velocity_tdpd);
+        vector3_multiply(1.0 / rtk->tt, rtk->sol.velocity_tdpd);
+    }
+
+    /* store obs data as a previous obs data */
+    if (timediff(obs[0].time, obsd_prev[0].time) != 0.0) {
+        memset(obsd_prev, 0.0, MAXSAT * sizeof(obsd_t));
+        memcpy(obsd_prev, obs, nu * sizeof(obsd_t));
+        n_obsd_prev = nu;
+    }
+
     /* return to static start if long delay without rover data */
     if (fabs(rtk->tt)>300&&rtk->initial_mode==PMODE_STATIC_START) {
         rtk->opt.mode=PMODE_STATIC_START;

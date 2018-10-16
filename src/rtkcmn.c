@@ -447,6 +447,15 @@ extern int satno(int sys, int prn)
     }
     return 0;
 }
+
+inline int obsd_get_sat_id(const obsd_t *obsd)
+{
+    assert(obsd != NULL);
+
+    /* change legacy [1, MAXSAT] indexation to [0, MAXSAT-1] indexation which is more convenient */
+    return obsd->sat - 1;
+}
+
 /* satellite number to satellite system ----------------------------------------
 * convert satellite number to satellite system
 * args   : int    sat       I   satellite number (1-MAXSAT)

@@ -1,15 +1,17 @@
 DESTDIR	= /usr/local
 
 APPS = rtkrcv rnx2rtkp str2str convbin pos2kml
-# source files
 
+# source files
 SRC_DIR_1	 = src
 SRC_DIR_2	 = src/rcv
 SRC_DIR_MATH     = src/math
 SRC_DIR_MATH_LSQ = src/math/lsq
-SRC_DIR_GLO_IFB_PACK = src/GLONASS_IFB_CORRECTION
-SRC_DIR_APPS     = $(addprefix app/,$(APPS))
-SRC_DIRS	 = $(SRC_DIR_1) $(SRC_DIR_2) $(SRC_DIR_MATH) $(SRC_DIR_MATH_LSQ) $(SRC_DIR_GLO_IFB_PACK) $(SRC_DIR_APPS)
+SRC_DIR_GLO_IFB_PACK = src/extensions/glo_ifb
+SRC_DIR_TDPD_PACK= src/extensions/tdiff_phases
+SRC_DIR_APPS     = $(addprefix ./app/,$(APPS))
+SRC_DIRS	 = $(SRC_DIR_1) $(SRC_DIR_2) $(SRC_DIR_MATH) $(SRC_DIR_MATH_LSQ) $(SRC_DIR_GLO_IFB_PACK) \
+	$(SRC_DIR_TDPD_PACK) $(SRC_DIR_APPS)
 IERS_DIR	 = lib/iers
 vpath %.c $(SRC_DIRS)
 
@@ -18,18 +20,20 @@ SRC_NAMES_2  = $(notdir $(wildcard $(SRC_DIR_2)/*.c))
 SRC_NAMES_MATH = $(notdir $(wildcard $(SRC_DIR_MATH)/*.c))
 SRC_NAMES_MATH_LSQ = $(notdir $(wildcard $(SRC_DIR_MATH_LSQ)/*.c))
 SRC_NAMES_GLO_IFB_PACK = $(notdir $(wildcard $(SRC_DIR_GLO_IFB_PACK)/*.c))
+SRC_NAMES_TDPD_PACK = $(notdir $(wildcard $(SRC_DIR_TDPD_PACK)/*.c))
 SRC_NAMES_RTKRCV = rtkrcv.c vt.c
 SRC_NAMES_RNX2RTKP = rnx2rtkp.c
 SRC_NAMES_POS2KML = pos2kml.c
 SRC_NAMES_CONVBIN = convbin.c
 SRC_NAMES_STR2STR = str2str.c
-SRC_NAMES    = $(SRC_NAMES_1) $(SRC_NAMES_2) $(SRC_NAMES_MATH) $(SRC_NAMES_MATH_LSQ) $(SRC_NAMES_GLO_IFB_PACK)
+SRC_NAMES    = $(SRC_NAMES_1) $(SRC_NAMES_2) $(SRC_NAMES_MATH) $(SRC_NAMES_MATH_LSQ) \
+	$(SRC_NAMES_GLO_IFB_PACK) $(SRC_NAMES_TDPD_PACK)
 
 # object files
 OBJ_NAMES =$(patsubst %.c,%.o,$(SRC_NAMES))
 
 # common compile options
-INCLUDEDIR := -I$(SRC_DIR_1) -I$(SRC_DIR_MATH) -I$(SRC_DIR_MATH_LSQ) -I$(SRC_DIR_GLO_IFB_PACK)
+INCLUDEDIR := -I$(SRC_DIR_1) -I$(SRC_DIR_MATH) -I$(SRC_DIR_MATH_LSQ) -I$(SRC_DIR_GLO_IFB_PACK) -I$(SRC_DIR_TDPD_PACK)
 OPTIONS	   = -DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=3 -DSVR_REUSEADDR
 CFLAGS_CMN = -std=c99 -pedantic -Wall -Werror -fpic -fno-strict-overflow -Wno-error=unused-but-set-variable \
 					-Wno-error=unused-function -Wno-error=unused-result $(INCLUDEDIR) $(OPTIONS)

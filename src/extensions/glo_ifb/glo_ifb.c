@@ -2,7 +2,7 @@
  *   GLONASS INTER-FREQUENCY PHASE BIASES (IFB) CORRECTION MODULE
  */
 
-#include "glonass_IFB_correction.h"
+#include "glo_ifb.h"
 
 #define MIN(x,y)    ( (x) <= (y) ? (x) : (y) )
 
