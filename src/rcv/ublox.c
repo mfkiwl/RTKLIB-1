@@ -89,6 +89,7 @@
 
 #define ROUND(x)    (int)floor((x)+0.5)
 
+#define UBX_PARSING_ERROR        -1
 #define UBX_PARSING_NOT_COMPLETE -2
 
 /* get fields (little-endian) ------------------------------------------------*/
@@ -1194,21 +1195,29 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
     trace(4,"input_ubxf:\n");
 
     /* synchronize frame */
-    if (raw->nbyte==0) {
+    if (raw->nbyte == 0) {
         for (i=0;;i++) {
             if (!stream->port) {
-                if ((byte_data=fgetc(fp))==EOF) return -2;
-                data = (unsigned char)byte_data;
+                if ((byte_data = fgetc(fp)) == EOF) {
+                    return UBX_PARSING_NOT_COMPLETE;
+                }
+                data = (unsigned char) byte_data;
             } else {
                 bytes = strread(stream, buff, 1);
-                if (bytes <= 0) return -2;
+                if (bytes <= 0) {
+                    return UBX_PARSING_NOT_COMPLETE;
+                }
                 data = buff[0];
             }
+
             if (sync_ubx(raw->buff, data)) {
                 raw->nbyte = 2;
                 break;
             }
-            if (i>=4096) return 0;
+
+            if (i>=4096) {
+                return 0;
+            }
         }
     }
 
@@ -1230,15 +1239,18 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
         /* payload length excludes sync chars, class, ID, length and checksum fields */
         if ((raw->len = payload_length + 8) > MAXRAWLEN) {
             trace(2, "ubx length error: len=%d\n", raw->len);
-            raw->nbyte = 0;
-            return -1;
+            raw->nbyte = 0;  /* reset nbyte to enter synchronize frame in next iteration */
+            return UBX_PARSING_ERROR;
         }
     }
 
+    size_t expected_length = raw->len - 6;  /* length of the payload and checksum fields */
+
     if (!stream->port) {
-        if (fread(raw->buff+6,1,raw->len-6,fp)<(size_t)(raw->len-6)) return -2;
+        if (fread(raw->buff + 6, 1, expected_length, fp) < expected_length) {
+            return UBX_PARSING_NOT_COMPLETE;
+        }
     } else {
-        size_t expected_length = raw->len - 6;  /* length of the payload and checksum fields */
         int bytes_read = strread(stream, raw->buff + raw->nbyte, expected_length);
 
         if (raw->nbyte < expected_length)  {
@@ -1248,7 +1260,7 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
         }
     }
 
-    raw->nbyte=0;
+    raw->nbyte = 0;
     
     /* decode ubx raw message */
     return decode_ubx(raw);
