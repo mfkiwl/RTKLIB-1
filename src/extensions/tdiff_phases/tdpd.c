@@ -86,6 +86,7 @@ typedef struct {
     double sat_pos[MAXSAT][VECTOR_3D_SIZE];
     double sat_pos_prev[MAXSAT][VECTOR_3D_SIZE];
     double los[MAXSAT][VECTOR_3D_SIZE];
+    double los_prev[MAXSAT][VECTOR_3D_SIZE];
 
 } tdpd_satellites_geometry_t;
 
@@ -329,6 +330,8 @@ static void define_satellites_geometry_tdpd(const tdpd_consecutive_data_t *conse
 
         vector3_copy(&sat_pos_prev[2 * VECTOR_3D_SIZE * obsd_id],
                      &sat_geom->sat_pos_prev[sat_id][0]);
+        geodist(&sat_geom->sat_pos_prev[sat_id][0],
+                approx_pos, &sat_geom->los_prev[sat_id][0]);
     }
 }
 
@@ -353,7 +356,7 @@ static void calculate_tdiff_phases(const tdpd_consecutive_data_t *consecutive_da
     bool is_obsd_valid_tdpd, is_obsd_prev_valid_tdpd;
     int obsd_id, obsd_prev_id;
     const obsd_t *obsd_curr, *obsd_prev;
-    double sat_displacement[VECTOR_3D_SIZE];
+    double geometry_adjustment, range_adjustment;
     rtk_t *rtk = consecutive_data->rtk;
 
     for (int sat_id = 0; sat_id < MAXSAT; sat_id++) {
@@ -374,12 +377,17 @@ static void calculate_tdiff_phases(const tdpd_consecutive_data_t *consecutive_da
             &sat_geom->sat_pos_prev[sat_id][0]);
 
         if (is_obsd_valid_tdpd && is_obsd_prev_valid_tdpd) {
-            vector3_diff(&sat_geom->sat_pos[sat_id][0], &sat_geom->sat_pos_prev[sat_id][0],
-                         sat_displacement);
-
             tdiff_phases[sat_id]  = obsd_curr->L[0] - obsd_prev->L[0];
             tdiff_phases[sat_id] *= consecutive_data->nav->lam[sat_id][0];
-            tdiff_phases[sat_id] -= vector3_scalar_product(sat_displacement, &sat_geom->los[sat_id][0]);
+
+            geometry_adjustment =
+                vector3_scalar_product(consecutive_data->approx_position, &sat_geom->los[sat_id][0])
+              - vector3_scalar_product(consecutive_data->approx_position, &sat_geom->los_prev[sat_id][0]);
+            range_adjustment =
+                vector3_scalar_product(&sat_geom->sat_pos[sat_id][0], &sat_geom->los[sat_id][0])
+              - vector3_scalar_product(&sat_geom->sat_pos_prev[sat_id][0], &sat_geom->los_prev[sat_id][0]);
+
+            tdiff_phases[sat_id] -= geometry_adjustment - range_adjustment;
             is_tdiff_phase_defined[sat_id] = true;
         }
     }
