@@ -1221,13 +1221,18 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
         }
     }
 
-    if (sync_chars_read) {
+    if (raw->nbyte < 6 && raw->nbyte >= 2) {
+        int bytes_to_read = 6 - raw->nbyte;
         if (!stream->port) {
-            if (fread(raw->buff + raw->nbyte, 1, 4, fp) < 4) {
+            int service_bytes = fread(raw->buff + raw->nbyte, 1, bytes_to_read, fp);
+            if (service_bytes < bytes_to_read) {
+                raw->nbyte += service_bytes;
                 return UBX_PARSING_NOT_COMPLETE;
             }
         } else {
-            if (strread(stream, raw->buff + raw->nbyte, 4) < 4) {
+            int service_bytes = strread(stream, raw->buff + raw->nbyte, bytes_to_read);
+            if (service_bytes < bytes_to_read) {
+                raw->nbyte += service_bytes;
                 return UBX_PARSING_NOT_COMPLETE;
             }
         }
@@ -1235,9 +1240,10 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
         raw->nbyte = 6;
         payload_length = U2(raw->buff + 4);
         trace(4, "input_ubxf: payload length: %u\n", payload_length);
+        /* raw->len consists of payload length, sync chars, class, ID, length and checksum fields */
+        raw->len = payload_length + 8;
 
-        /* payload length excludes sync chars, class, ID, length and checksum fields */
-        if ((raw->len = payload_length + 8) > MAXRAWLEN) {
+        if (raw->len > MAXRAWLEN) {
             trace(2, "ubx length error: len=%d\n", raw->len);
             raw->nbyte = 0;  /* reset nbyte to enter synchronize frame in next iteration */
             return UBX_PARSING_ERROR;
@@ -1251,11 +1257,11 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
             return UBX_PARSING_NOT_COMPLETE;
         }
     } else {
-        int bytes_read = strread(stream, raw->buff + raw->nbyte, expected_length);
+        int bytes_read = strread(stream, raw->buff + raw->nbyte, raw->len - raw->nbyte);
+        raw->nbyte += bytes_read;
 
-        if (raw->nbyte < expected_length)  {
+        if (raw->nbyte < raw->len)  {
             trace(4, "input_ubxf: bytes read = %d, expected length = %d\n", bytes_read, expected_length);
-            raw->nbyte += bytes_read;
             return UBX_PARSING_NOT_COMPLETE;
         }
     }
