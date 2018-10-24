@@ -148,6 +148,14 @@ static int ubx_sys(int ind)
     }
     return 0;
 }
+/* select the correct function when reading the data from file/stream */
+static int read_raw_data_stream(FILE *fp, stream_t *stream, unsigned char *buff, int n) {
+    if (!stream->port) {
+        return fread(buff, 1, n, fp);
+    } else {
+        return strread(stream, buff, n);
+    }
+}
 /* 8-bit week -> full week ---------------------------------------------------*/
 static void adj_utcweek(gtime_t time, double *utc)
 {
@@ -1188,7 +1196,8 @@ extern int input_ubx(raw_t *raw, unsigned char data)
 *-----------------------------------------------------------------------------*/
 extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
 {
-    int i,byte_data,bytes;
+    int payload_read_length;
+    int bytes;
     unsigned char data, buff[1];
     unsigned short payload_length;
 
@@ -1196,50 +1205,40 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
 
     /* synchronize frame */
     if (raw->nbyte == 0) {
-        for (i=0;;i++) {
-            if (!stream->port) {
-                if ((byte_data = fgetc(fp)) == EOF) {
-                    return UBX_PARSING_NOT_COMPLETE;
-                }
-                data = (unsigned char) byte_data;
-            } else {
-                bytes = strread(stream, buff, 1);
-                if (bytes <= 0) {
-                    return UBX_PARSING_NOT_COMPLETE;
-                }
-                data = buff[0];
+        for (int i=0;;i++) {
+            bytes = read_raw_data_stream(fp, stream, buff, 1);
+
+            if (bytes <= 0) {
+                return UBX_PARSING_NOT_COMPLETE;
             }
+
+            data = buff[0];
 
             if (sync_ubx(raw->buff, data)) {
                 raw->nbyte = 2;
                 break;
             }
 
-            if (i>=4096) {
+            if (i >= MAXRAWLEN) {
                 return 0;
             }
         }
     }
 
+    /* read class/ID/length bytes after getting sync chars */
     if (raw->nbyte < 6 && raw->nbyte >= 2) {
         int bytes_to_read = 6 - raw->nbyte;
-        if (!stream->port) {
-            int service_bytes = fread(raw->buff + raw->nbyte, 1, bytes_to_read, fp);
-            if (service_bytes < bytes_to_read) {
-                raw->nbyte += service_bytes;
-                return UBX_PARSING_NOT_COMPLETE;
-            }
-        } else {
-            int service_bytes = strread(stream, raw->buff + raw->nbyte, bytes_to_read);
-            if (service_bytes < bytes_to_read) {
-                raw->nbyte += service_bytes;
-                return UBX_PARSING_NOT_COMPLETE;
-            }
+        int bytes_read = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, bytes_to_read);
+
+        if (bytes_read < bytes_to_read) {
+            raw->nbyte += bytes_read;
+            return UBX_PARSING_NOT_COMPLETE;
         }
 
         raw->nbyte = 6;
         payload_length = U2(raw->buff + 4);
         trace(4, "input_ubxf: payload length: %u\n", payload_length);
+
         /* raw->len consists of payload length, sync chars, class, ID, length and checksum fields */
         raw->len = payload_length + 8;
 
@@ -1250,20 +1249,12 @@ extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
         }
     }
 
-    size_t expected_length = raw->len - 6;  /* length of the payload and checksum fields */
+    payload_read_length = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, raw->len - raw->nbyte);
+    raw->nbyte += payload_read_length;
 
-    if (!stream->port) {
-        if (fread(raw->buff + 6, 1, expected_length, fp) < expected_length) {
-            return UBX_PARSING_NOT_COMPLETE;
-        }
-    } else {
-        int bytes_read = strread(stream, raw->buff + raw->nbyte, raw->len - raw->nbyte);
-        raw->nbyte += bytes_read;
-
-        if (raw->nbyte < raw->len)  {
-            trace(4, "input_ubxf: bytes read = %d, expected length = %d\n", bytes_read, expected_length);
-            return UBX_PARSING_NOT_COMPLETE;
-        }
+    if (raw->nbyte < raw->len)  {
+        trace(4, "input_ubxf: bytes read = %d, expected = %d\n", raw->nbyte, raw->len);
+        return UBX_PARSING_NOT_COMPLETE;
     }
 
     raw->nbyte = 0;
