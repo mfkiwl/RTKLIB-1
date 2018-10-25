@@ -89,9 +89,6 @@
 
 #define ROUND(x)    (int)floor((x)+0.5)
 
-#define UBX_PARSING_ERROR        -1
-#define UBX_PARSING_NOT_COMPLETE -2
-
 /* get fields (little-endian) ------------------------------------------------*/
 #define U1(p) (*((unsigned char *)(p)))
 #define I1(p) (*((signed char *)(p)))
@@ -102,6 +99,14 @@ static float          R4(unsigned char *p) {float          r; memcpy(&r,p,4); re
 static double         R8(unsigned char *p) {double         r; memcpy(&r,p,8); return r;}
 
 static double         I8(unsigned char *p) {return I4(p+4)*4294967296.0+U4(p);}
+
+enum
+{
+    UBX_PARSING_NOT_COMPLETE = -2,
+    UBX_PARSING_ERROR = -1,
+    UBX_PARSING_LENGTH_EXCEED = 0,
+    UBX_PARSING_COMPLETE = 1,
+};
 
 /* set fields (little-endian) ------------------------------------------------*/
 static void setU1(unsigned char *p, unsigned char  u) {*p=u;}
@@ -1188,77 +1193,108 @@ extern int input_ubx(raw_t *raw, unsigned char data)
     /* decode ublox raw message */
     return decode_ubx(raw);
 }
+/* parse sync chars from file/stream UBX message */
+static int read_sync_chars(raw_t * const raw, FILE *fp, stream_t *stream) {
+    unsigned char buff[1];
+    unsigned char data;
+    int bytes;
+
+    for (int i = 0; i < MAXRAWLEN; i++) {
+        bytes = read_raw_data_stream(fp, stream, buff, 1);
+
+        if (bytes <= 0) {
+            return UBX_PARSING_NOT_COMPLETE;
+        }
+
+        data = buff[0];
+
+        if (sync_ubx(raw->buff, data)) {
+            raw->nbyte = 2;
+            trace(4, "read_sync_chars: sync chars are received \n");
+            return UBX_PARSING_COMPLETE;
+        }
+    }
+
+    return UBX_PARSING_LENGTH_EXCEED;
+}
+/* parse class, ID, length bytes from file/stream UBX message  */
+static int read_service_chars(raw_t * const raw, FILE *fp, stream_t *stream) {
+    int bytes_to_read = 6 - raw->nbyte;
+    unsigned short payload_length = 0;
+
+    int bytes_read = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, bytes_to_read);
+
+    if (bytes_read < bytes_to_read) {
+        raw->nbyte += bytes_read;
+        return UBX_PARSING_NOT_COMPLETE;
+    }
+
+    raw->nbyte = 6;
+    payload_length = U2(raw->buff + 4);
+    trace(4, "read_service_chars: payload length: %u\n", payload_length);
+
+    /* raw->len consists of payload length, sync chars, class, ID, length and checksum fields */
+    raw->len = payload_length + 8;
+
+    if (raw->len > MAXRAWLEN) {
+        trace(2, "ubx length error: len=%d\n", raw->len);
+        raw->nbyte = 0;  /* reset nbyte to enter synchronize frame in next iteration */
+        return UBX_PARSING_ERROR;
+    }
+
+    return UBX_PARSING_COMPLETE;
+}
+/* read payload of the file/stream message */
+static int read_payload(raw_t * const raw, FILE *fp, stream_t *stream) {
+    int payload_read_length;
+
+    payload_read_length = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, raw->len - raw->nbyte);
+    raw->nbyte += payload_read_length;
+
+    if (raw->nbyte < raw->len)  {
+        trace(4, "read_payload: bytes read = %d, expected = %d\n", raw->nbyte, raw->len);
+        return UBX_PARSING_NOT_COMPLETE;
+    }
+
+    return UBX_PARSING_COMPLETE;
+}
 /* input ublox raw message from file -------------------------------------------
 * fetch next ublox raw data and input a message from file/socket
 * args   : raw_t  *raw   IO     receiver raw data control struct
 *          FILE   *fp    I      file pointer
 * return : status(-2: end of file, -1...9: same as above)
 *-----------------------------------------------------------------------------*/
-extern int input_ubxf(raw_t *raw, FILE *fp, stream_t *stream)
+extern int input_ubxf(raw_t * const raw, FILE *fp, stream_t *stream)
 {
-    int payload_read_length;
-    int bytes;
-    unsigned char data, buff[1];
-    unsigned short payload_length;
-
     trace(4,"input_ubxf:\n");
 
     /* synchronize frame */
     if (raw->nbyte == 0) {
-        for (int i=0;;i++) {
-            bytes = read_raw_data_stream(fp, stream, buff, 1);
+        int sync_read_status = read_sync_chars(raw, fp, stream);
 
-            if (bytes <= 0) {
-                return UBX_PARSING_NOT_COMPLETE;
-            }
-
-            data = buff[0];
-
-            if (sync_ubx(raw->buff, data)) {
-                raw->nbyte = 2;
-                break;
-            }
-
-            if (i >= MAXRAWLEN) {
-                return 0;
-            }
+        if (sync_read_status != UBX_PARSING_COMPLETE) {
+            return sync_read_status;
         }
     }
 
     /* read class/ID/length bytes after getting sync chars */
     if (raw->nbyte < 6 && raw->nbyte >= 2) {
-        int bytes_to_read = 6 - raw->nbyte;
-        int bytes_read = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, bytes_to_read);
+        int service_read_status = read_service_chars(raw, fp, stream);
 
-        if (bytes_read < bytes_to_read) {
-            raw->nbyte += bytes_read;
-            return UBX_PARSING_NOT_COMPLETE;
-        }
-
-        raw->nbyte = 6;
-        payload_length = U2(raw->buff + 4);
-        trace(4, "input_ubxf: payload length: %u\n", payload_length);
-
-        /* raw->len consists of payload length, sync chars, class, ID, length and checksum fields */
-        raw->len = payload_length + 8;
-
-        if (raw->len > MAXRAWLEN) {
-            trace(2, "ubx length error: len=%d\n", raw->len);
-            raw->nbyte = 0;  /* reset nbyte to enter synchronize frame in next iteration */
-            return UBX_PARSING_ERROR;
+        if (service_read_status != UBX_PARSING_COMPLETE) {
+            return service_read_status;
         }
     }
 
-    payload_read_length = read_raw_data_stream(fp, stream, raw->buff + raw->nbyte, raw->len - raw->nbyte);
-    raw->nbyte += payload_read_length;
+    /* read payload */
+    int payload_read_status = read_payload(raw, fp, stream);
 
-    if (raw->nbyte < raw->len)  {
-        trace(4, "input_ubxf: bytes read = %d, expected = %d\n", raw->nbyte, raw->len);
-        return UBX_PARSING_NOT_COMPLETE;
+    if (payload_read_status != UBX_PARSING_COMPLETE) {
+        return payload_read_status;
     }
 
     raw->nbyte = 0;
-    
+
     /* decode ubx raw message */
     return decode_ubx(raw);
 }
