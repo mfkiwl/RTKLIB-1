@@ -1068,6 +1068,14 @@ static int decode_timtm2(raw_t *raw)
     int time, timeBase, newRisingEdge, newFallingEdge;
     unsigned char *p=raw->buff+6;
 
+    /*
+    *  We'll use this counter to keep track of u-blox events.
+    *  if there was an event, but no TM2 message, the counters
+    *  will fall out of sync. That will indicate there's a missing
+    *  Time mark.
+    */
+    static int internal_falling_edge_counter = 0;
+
     trace(4, "decode_timtm2: len=%d\n", raw->len);
 
     if (raw->outtype) {
@@ -1075,7 +1083,7 @@ static int decode_timtm2(raw_t *raw)
     }
     ch = U1(p);
     flags = *(p+1);
-    count = U2(p+2);
+    count = U2(p+2); /* this is an internal rising edge counter */
     wnR = U2(p+4);
     wnF = U2(p+6);
     towMsR = U4(p+8);
@@ -1090,6 +1098,11 @@ static int decode_timtm2(raw_t *raw)
     time =           ((flags >> 6) & 0x01);
     newRisingEdge =  ((flags >> 7) & 0x01);
 
+    if (internal_falling_edge_counter == 0) {
+        /* initialize this only once */
+        internal_falling_edge_counter = count - 1;
+    }
+
     if (newFallingEdge)
     {
         eventime = gpst2time(wnF,towMsF*1E-3+towSubMsF*1E-9);
@@ -1098,9 +1111,23 @@ static int decode_timtm2(raw_t *raw)
         raw->obs.rcvcount = count;
         raw->obs.tmcount++;
         raw->obs.data[0].timevalid = time;
+
+        internal_falling_edge_counter++;
     } else {
         raw->obs.flag = 0;
+        raw->obs.rcvcount = count;
     }
+
+    /*
+    *  Usually, the event is a U-shaped signal.
+    *  We might get more falling edges than rising edges
+    *  at some point, but not vice versa.
+    */
+    if (internal_falling_edge_counter < count) {
+        raw->obs.tm_missed_flag = 1;
+        internal_falling_edge_counter++;
+    }
+
     return 0;
 }
 
