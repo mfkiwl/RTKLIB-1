@@ -149,14 +149,14 @@ install:
 	cp $(addprefix $(BUILD_DIR)/, $(APPS)) $(addprefix $(DESTDIR), /bin)
 
 
-clean:
+clean: clean_qt
 	rm -rf build/
 	@$(MAKE) -C $(IERS_DIR)/gcc clean
 
 include $(wildcard $(patsubst %,$(DEPDIR)/%.d,$(basename $(SRC_NAMES))))
 
 ####################################################################
-LINUX_DEPLOY_QT = linuxdeployqt-continuous-x86_64.AppImage
+LINUX_DEPLOY_QT = $(realpath squashfs-root/usr/bin/linuxdeployqt)
 qt_apps: qmake make_qt
 
 qmake:
@@ -169,8 +169,15 @@ clean_qt:
 	make -f QtMakefile clean -j `nproc`
 	rm QtMakefile
 	rm -rf build/Qt
+	rm -rf $(LINUX_DEPLOY_QT)
+	rm -rf ./linuxdeployqt-continuous-x86_64.AppImage
 
-qt_appimages: qt_apps
+linuxdeployqt-continuous-x86_64.AppImage:
+	curl -LOJ 'https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage'
+	chmod +x linuxdeployqt-continuous-x86_64.AppImage
+	./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract
+
+qt_appimages: qt_apps linuxdeployqt-continuous-x86_64.AppImage
 	./util/build_scripts/AppImageDeploy.sh $(LINUX_DEPLOY_QT)
 
 qt_debs: qt_apps
