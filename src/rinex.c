@@ -100,6 +100,8 @@
 #define MINFREQ_GLO -7                  /* min frequency number glonass */
 #define MAXFREQ_GLO 13                  /* max frequency number glonass */
 #define NINCOBS     262144              /* inclimental number of obs data */
+#define RINEX_EVENT_TIME_VALID      0   /* time valid flag for rinex events */
+#define RINEX_EVENT_TIME_INVALID    1   /* time valid flag for rinex events */
 
 static const int navsys[]={             /* satellite systems */
     SYS_GPS,SYS_GLO,SYS_GAL,SYS_QZS,SYS_SBS,SYS_CMP,SYS_IRN,0
@@ -2054,24 +2056,31 @@ static int obsindex(double ver, int sys, const unsigned char *code,
 }
 /* output rinex event time ---------------------------------------------------*/
 static void outrinexevent(FILE *fp, const rnxopt_t *opt, const obsd_t *obs,
-                          const double epdiff)
+                          const double epdiff, int force_invalid)
 {
-    int n;
+    int event_time_valid_flag;
     double epe[6];
 
     time2epoch(obs[0].eventime,epe);
-    n = obs->timevalid ? 0 : 1;
+
+    if (force_invalid == 1) {
+        event_time_valid_flag = RINEX_EVENT_TIME_INVALID;
+    } else {
+        event_time_valid_flag = obs->timevalid ? RINEX_EVENT_TIME_VALID : RINEX_EVENT_TIME_INVALID;
+    }
 
     if (opt->rnxver<=2.99) { /* ver.2 */
         if (epdiff < 0) fprintf(fp,"\n");
         fprintf(fp," %02d %2.0f %2.0f %2.0f %2.0f%11.7f  %d%3d",
-                (int)epe[0]%100,epe[1],epe[2],epe[3],epe[4],epe[5],5,n);
+                (int)epe[0]%100,epe[1],epe[2],epe[3],epe[4],epe[5],5,event_time_valid_flag);
         if (epdiff >= 0) fprintf(fp,"\n");
     } else { /* ver.3 */
         fprintf(fp,"> %04.0f %2.0f %2.0f %2.0f %2.0f%11.7f  %d%3d\n",
-                epe[0],epe[1],epe[2],epe[3],epe[4],epe[5],5,n);
+                epe[0],epe[1],epe[2],epe[3],epe[4],epe[5],5,event_time_valid_flag);
     }
-    if (n) fprintf(fp,"%-60.60s%-20s\n"," Time mark is not valid","COMMENT");
+
+    if (event_time_valid_flag == RINEX_EVENT_TIME_INVALID)
+        fprintf(fp,"%-60.60s%-20s\n"," Time mark is not valid","COMMENT");
 }
 /* output rinex obs body -------------------------------------------------------
 * output rinex obs body
