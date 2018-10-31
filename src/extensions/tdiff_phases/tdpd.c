@@ -387,7 +387,7 @@ static void calculate_tdiff_phases(const tdpd_consecutive_data_t *consecutive_da
                 vector3_scalar_product(&sat_geom->sat_pos[sat_id][0], &sat_geom->los[sat_id][0])
               - vector3_scalar_product(&sat_geom->sat_pos_prev[sat_id][0], &sat_geom->los_prev[sat_id][0]);
 
-            tdiff_phases[sat_id] -= geometry_adjustment - range_adjustment;
+            tdiff_phases[sat_id] += geometry_adjustment - range_adjustment;
             is_tdiff_phase_defined[sat_id] = true;
         }
     }
