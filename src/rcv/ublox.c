@@ -1064,9 +1064,11 @@ static int decode_timtm2(raw_t *raw)
     gtime_t eventime;
     uint8_t ch, flags;
     uint16_t count, wnR, wnF;
-    uint32_t towMsR, towSubMsR, towMsF, towSubMsF, accEst;
-    int time, timeBase, newRisingEdge, newFallingEdge;
+    uint16_t receiver_count = 0;
     unsigned char *p=raw->buff+6;
+    int time_mark_count_difference = 0;
+    int time, timeBase, newRisingEdge, newFallingEdge;
+    uint32_t towMsR, towSubMsR, towMsF, towSubMsF, accEst;
 
     /*
     *  We'll use this counter to keep track of u-blox events.
@@ -1098,9 +1100,11 @@ static int decode_timtm2(raw_t *raw)
     time =           ((flags >> 6) & 0x01);
     newRisingEdge =  ((flags >> 7) & 0x01);
 
+    receiver_count = count;
+
     if (internal_falling_edge_counter == 0) {
         /* initialize this only once */
-        internal_falling_edge_counter = count - 1;
+        internal_falling_edge_counter = receiver_count - 1;
     }
 
     if (newFallingEdge)
@@ -1108,14 +1112,14 @@ static int decode_timtm2(raw_t *raw)
         eventime = gpst2time(wnF,towMsF*1E-3+towSubMsF*1E-9);
         raw->obs.flag = 5; /* Event flag */
         raw->obs.data[0].eventime = eventime;
-        raw->obs.rcvcount = count;
+        raw->obs.rcvcount = receiver_count;
         raw->obs.tmcount++;
         raw->obs.data[0].timevalid = time;
 
         internal_falling_edge_counter++;
     } else {
         raw->obs.flag = 0;
-        raw->obs.rcvcount = count;
+        raw->obs.rcvcount = receiver_count;
     }
 
     /*
@@ -1123,9 +1127,10 @@ static int decode_timtm2(raw_t *raw)
     *  We might get more falling edges than rising edges
     *  at some point, but not vice versa.
     */
-    if (internal_falling_edge_counter < count) {
-        raw->obs.tm_missed_flag = 1;
-        internal_falling_edge_counter++;
+    if (internal_falling_edge_counter < receiver_count) {
+        time_mark_count_difference = receiver_count - internal_falling_edge_counter;
+        raw->obs.tm_missed_flag = time_mark_count_difference;
+        internal_falling_edge_counter += time_mark_count_difference;
     }
 
     return 0;
