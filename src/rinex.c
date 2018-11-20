@@ -2084,16 +2084,16 @@ static void outrinexevent(FILE *fp, const rnxopt_t *opt, const obsd_t *obs,
 }
 /* output rinex obs body -------------------------------------------------------
 * output rinex obs body
-* args   : FILE   *fp       I   output file pointer
-*          rnxopt_t *opt    I   rinex options
-*          obsd_t *obs      I   observation data
-*          int    n         I   number of observation data
-*          int    flag      I   epoch flag (0:ok,1:power failure,>1:event flag)
-*          int    tm_missed I   time mark missed flag
+* args   : FILE   *fp             I   output file pointer
+*          rnxopt_t *opt          I   rinex options
+*          obsd_t *obs            I   observation data
+*          int    n               I   number of observation data
+*          int    flag            I   epoch flag (0:ok,1:power failure,>1:event flag)
+*          int    missed_tm_count I   time mark missed flag
 * return : status (1:ok, 0:output error)
 *-----------------------------------------------------------------------------*/
 extern int outrnxobsb(FILE *fp, const rnxopt_t *opt, const obsd_t *obs, int n,
-                      int flag, int tm_missed)
+                      int flag, int missed_tm_count)
 {
     const char *mask;
     double epdiff,ep[6];
@@ -2124,10 +2124,11 @@ extern int outrnxobsb(FILE *fp, const rnxopt_t *opt, const obsd_t *obs, int n,
     epdiff = timediff(obs[0].time,obs[0].eventime);
 
     /* we might detect that we missed a TM by comparing counters
-     * if so, let's output an invalid one */
-    if (tm_missed) {
+     * if so, let's output a right number of invalid ones */
+    while (missed_tm_count > 0) {
         trace(4, "outrnxobsb: outputting invalid TM info!\n");
         outrinexevent(fp, opt, obs, epdiff, 1);
+        missed_tm_count--;
     }
 
     /* if epoch of event less than epoch of observation, then first output
