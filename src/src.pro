@@ -11,7 +11,7 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 include(../RTKLib.pri)
-INCLUDEPATH += GLONASS_IFB_CORRECTION/
+INCLUDEPATH += math/ math/lsq/ extensions/glo_ifb/ extensions/tdiff_phases/
 
 QMAKE_CFLAGS += -Wall -std=c99 -pedantic -Wno-unused-but-set-variable  -DTRACE -g
 DEFINES -= UNICODE
@@ -64,10 +64,24 @@ SOURCES += rtkcmn.c \
     rcv/cmr.c \
     rcv/tersus.c \
     erb.c \
-    GLONASS_IFB_CORRECTION/glonass_IFB_correction.c
+    math/rtklib_math.c \
+    math/lsq/irls.c \
+    math/lsq/lsq.c \
+    math/lsq/ols.c \
+    math/lsq/ransac.c \
+    math/lsq/robust_lsq.c \
+    extensions/glo_ifb/glo_ifb.c \
+    extensions/tdiff_phases/tdpd.c \
 
 HEADERS += rtklib.h \
-    GLONASS_IFB_CORRECTION/glonass_IFB_correction.h
+    math/rtklib_math.h \
+    math/lsq/robust_lsq.h \
+    math/lsq/ransac.h \
+    math/lsq/ols.h \
+    math/lsq/lsq.h \
+    math/lsq/irls.h \
+    extensions/glo_ifb/glo_ifb.h \
+    extensions/tdiff_phases/tdpd.h \
 
 unix {
     target.path = /usr/lib
