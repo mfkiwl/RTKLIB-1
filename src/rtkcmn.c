@@ -589,6 +589,13 @@ extern int testsnr(int base, int freq, double el, double snr,
     int i;
     
     if (!mask->ena[base]||freq<0||freq>=NFREQ) return 0;
+
+    /* treat 0 SNRs as missing data
+     * some NTRIP casters do not send them
+     * in otherwise valid observations */
+    if (snr == 0.0) {
+        return 0;
+    }
     
     a=(el*R2D+5.0)/10.0;
     i=(int)floor(a); a-=i;
