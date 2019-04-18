@@ -961,7 +961,7 @@ static void *rtksvrthread(void *arg)
 
     tracet(3,"rtksvrthread:\n");
 
-    svr->state=1; obs.data=data;
+    obs.data=data;
     svr->tick=tickget();
     ticknmea=tick1hz=svr->tick-1000;
     tickreset=svr->tick-MIN_INT_RESET;
@@ -1396,6 +1396,10 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
         sprintf(errmsg,"thread create error\n");
         return 0;
     }
+
+    /* start rtk server */
+    svr->state = 1;
+
     return 1;
 }
 /* stop rtk server -------------------------------------------------------------
