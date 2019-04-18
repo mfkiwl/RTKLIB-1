@@ -1779,6 +1779,9 @@ int main(int argc, char **argv)
     if (!savenav(NAVIFILE,&svr.nav)) {
         fprintf(stderr,"navigation data save error: %s\n",NAVIFILE);
     }
+
+    rtksvrfree(&svr);
+
     traceclose();
     return 0;
 }
