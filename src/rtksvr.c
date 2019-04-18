@@ -1422,8 +1422,6 @@ extern void rtksvrstop(rtksvr_t *svr, char **cmds)
 
     /* stop rtk server */
     svr->state=0;
-
-    obs_queue_free(svr->base_queue);
     
     /* free rtk server thread */
 #ifdef WIN32
@@ -1432,6 +1430,8 @@ extern void rtksvrstop(rtksvr_t *svr, char **cmds)
 #else
     pthread_join(svr->thread,NULL);
 #endif
+
+    obs_queue_free(svr->base_queue);
 }
 /* open output/log stream ------------------------------------------------------
 * open output/log stream
