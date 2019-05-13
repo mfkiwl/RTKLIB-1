@@ -6,7 +6,7 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>VCL</FrameworkType>
-        <ProjectVersion>18.4</ProjectVersion>
+        <ProjectVersion>18.6</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Application</AppType>
@@ -142,7 +142,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
-        <AppEnableHighDPI>true</AppEnableHighDPI>
+        <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
@@ -163,12 +163,12 @@
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <Icon_MainIcon>rtkpost_win64_Icon.ico</Icon_MainIcon>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <AppEnableHighDPI>true</AppEnableHighDPI>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib</LinkPackageStatics>
         <BT_BuildType>Debug</BT_BuildType>
+        <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
     </PropertyGroup>
     <ItemGroup>
         <CppCompile Include="..\appcmn\aboutdlg.cpp">
@@ -488,9 +488,8 @@
                 <Platform value="Win64">True</Platform>
             </Platforms>
             <Deployment Version="3">
-                <DeployFile LocalName="..\..\src\rcv\ss2.c" Configuration="Release" Class="ProjectFile">
-                    <Platform Name="Win64">
-                        <RemoteDir>.\</RemoteDir>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c260.dll" Class="DependencyModule">
+                    <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -508,6 +507,11 @@
                 <DeployFile LocalName="..\..\src\options.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32260.dll" Class="DependencyModule">
+                    <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -529,9 +533,8 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\src\ephemeris.c" Configuration="Release" Class="ProjectFile">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32240mt.dll" Class="DependencyModule">
                     <Platform Name="Win32">
-                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -546,12 +549,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32240mt.dll" Class="DependencyModule">
+                <DeployFile LocalName="..\..\src\rtcm2.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\src\rtcm2.c" Configuration="Release" Class="ProjectFile">
+                <DeployFile LocalName="..\..\src\ephemeris.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -719,6 +723,11 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile Condition="'$(DynamicRTL)'=='true'" LocalName="$(BDS)\Redist\osx64\libcgcrtl.dylib" Class="DependencyModule">
+                    <Platform Name="OSX64">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="..\..\src\rtcm3e.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
@@ -740,6 +749,11 @@
                 <DeployFile LocalName="..\..\src\ppp.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin64\cc64260mt.dll" Class="DependencyModule">
+                    <Platform Name="Win64">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -905,15 +919,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\src\stream.c" Configuration="Release" Class="ProjectFile">
-                    <Platform Name="Win64">
-                        <RemoteDir>.\</RemoteDir>
+                <DeployFile Condition="'$(DynamicRTL)'=='true'" LocalName="$(BDS)\Redist\osx64\libcgstl.dylib" Class="DependencyModule">
+                    <Platform Name="OSX64">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\src\rcv\cmr.c" Configuration="Release" Class="ProjectFile">
-                    <Platform Name="Win64">
-                        <RemoteDir>.\</RemoteDir>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32260mt.dll" Class="DependencyModule">
+                    <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -964,15 +976,19 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin64\cc64260.dll" Class="DependencyModule">
+                    <Platform Name="Win64">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="..\..\src\postpos.c" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\src\erb.c" Configuration="Release" Class="ProjectFile">
-                    <Platform Name="Win64">
-                        <RemoteDir>.\</RemoteDir>
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c260mt.dll" Class="DependencyModule">
+                    <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -1001,11 +1017,8 @@
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
                     </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectOSXResource">
-                    <Platform Name="OSX32">
-                        <RemoteDir>Contents\Resources</RemoteDir>
-                        <Operation>1</Operation>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="AndroidClassesDexFile">
@@ -1014,16 +1027,15 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="AdditionalDebugSymbols">
-                    <Platform Name="Win32">
-                        <RemoteDir>Contents\MacOS</RemoteDir>
-                        <Operation>0</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimulator">
+                <DeployClass Name="AndroidFileProvider">
+                    <Platform Name="Android">
+                        <RemoteDir>res\xml</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="OSX32">
-                        <RemoteDir>Contents\MacOS</RemoteDir>
+                </DeployClass>
+                <DeployClass Name="AndroidGDBServer">
+                    <Platform Name="Android">
+                        <RemoteDir>library\lib\armeabi-v7a</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -1050,8 +1062,15 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Required="true" Name="ProjectOutput">
-                    <Platform Name="iOSDevice64">
+                <DeployClass Name="AndroidSplashStylesV21">
+                    <Platform Name="Android">
+                        <RemoteDir>res\values-v21</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="Android_DefaultAppIcon">
+                    <Platform Name="Android">
+                        <RemoteDir>res\drawable</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="iOSDevice32">
@@ -1108,8 +1127,13 @@
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="iOSDevice64">
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
+                        <Extensions>.framework</Extensions>
+                    </Platform>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
                     </Platform>
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
@@ -1129,6 +1153,16 @@
                     <Platform Name="Android">
                         <RemoteDir>library\lib\armeabi</RemoteDir>
                         <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.dll;.bpl</Extensions>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="iPhone_Launch320">
@@ -1146,8 +1180,19 @@
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="iOSDevice64">
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
                         <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.bpl</Extensions>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="File">
+                    <Platform Name="Android">
+                        <Operation>0</Operation>
                     </Platform>
                     <Platform Name="iOSDevice32">
                         <Operation>1</Operation>
@@ -1161,8 +1206,15 @@
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="OSX32">
-                        <RemoteDir>Contents\MacOS</RemoteDir>
-                        <Operation>1</Operation>
+                        <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
+                        <Operation>0</Operation>
+                    </Platform>
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
+                        <Operation>0</Operation>
+                    </Platform>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="iPad_Launch1536">
@@ -1317,18 +1369,41 @@
                     <Platform Name="iOSDevice64">
                         <Operation>0</Operation>
                     </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectOSXDebug">
+                    <Platform Name="OSX64">
+                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectOSXEntitlements">
                     <Platform Name="OSX32">
                         <RemoteDir>Contents\Resources\StartUp\</RemoteDir>
                         <Operation>0</Operation>
                     </Platform>
-                    <Platform Name="iOSDevice32">
-                        <Operation>0</Operation>
+                    <Platform Name="OSX64">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="Android">
-                        <Operation>0</Operation>
+                </DeployClass>
+                <DeployClass Name="ProjectOSXInfoPList">
+                    <Platform Name="OSX32">
+                        <RemoteDir>Contents</RemoteDir>
+                        <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="iOSSimulator">
-                        <Operation>0</Operation>
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectOSXResource">
+                    <Platform Name="OSX32">
+                        <RemoteDir>Contents\Resources</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\Resources</RemoteDir>
+                        <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="AndroidServiceOutput">
@@ -1363,7 +1438,13 @@
                     </Platform>
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                    <Platform Name="OSX64">
+                        <RemoteDir>Contents\MacOS</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="Android_SplashImage960">
@@ -1408,6 +1489,7 @@
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
             </Deployment>
         </BorlandProject>
