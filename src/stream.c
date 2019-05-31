@@ -578,6 +578,17 @@ static int statexserial(serial_t *serial, char *msg)
 #endif
     return state;
 }
+#ifndef WIN32
+/* add serial fd to fd_set ---------------------------------------------------*/
+static int add2fdsserial(serial_t *serial, fd_set *fds)
+{
+    tracet(4, "add2fdsserial:\n");
+
+    FD_SET(serial->dev, fds);
+
+    return serial->dev;
+}
+#endif
 /* parse time tag file header ------------------------------------------------*/
 static int timetag_parse_header(FILE *fp_tag, gtime_t *time_write, unsigned int *tick_first)
 {
@@ -1433,6 +1444,28 @@ static int statextcpsvr(tcpsvr_t *tcpsvr, char *msg)
     }
     return state;
 }
+#ifndef WIN32
+/* add all available tcpsvr fds to fd_set ------------------------------------*/
+static int add2fdstcpsvr(tcpsvr_t *tcpsvr, fd_set *fds)
+{
+    int fd_max = -1;
+
+    tracet(4,"add2fdstcpsvr: state=%d\n",tcpsvr->svr.state);
+
+    for (int i = 0; i < MAXCLI; i++) {
+        if (tcpsvr->cli[i].state != 2)
+            continue;
+
+        FD_SET(tcpsvr->cli[i].sock, fds);
+
+        if (tcpsvr->cli[i].sock > fd_max) {
+            fd_max = tcpsvr->cli[i].sock;
+        }
+    }
+
+    return fd_max;
+}
+#endif
 /* connect server ------------------------------------------------------------*/
 static int consock(tcpcli_t *tcpcli, char *msg)
 {
@@ -1577,6 +1610,17 @@ static int statextcpcli(tcpcli_t *tcpcli, char *msg)
 {
     return tcpcli?tcpcli->svr.state:0;
 }
+#ifndef WIN32
+/* add tcp client fd to fd_set -----------------------------------------------*/
+static int add2fdstcpcli(tcpcli_t *tcpcli, fd_set *fds)
+{
+    tracet(4, "add2fdstcpcli: sock=%d state=%d\n", tcpcli->svr.sock, tcpcli->svr.state);
+
+    FD_SET(tcpcli->svr.sock, fds);
+
+    return tcpcli->svr.sock;
+}
+#endif
 /* base64 encoder ------------------------------------------------------------*/
 static int encbase64(char *str, const unsigned char *byte, int n)
 {
@@ -1872,6 +1916,17 @@ static int statexntrip(ntrip_t *ntrip, char *msg)
     p+=statextcp(&ntrip->tcp->svr,p);
     return state;
 }
+#ifndef WIN32
+/* add ntrip fd to fd_set ----------------------------------------------------*/
+static int add2fdsntrip(ntrip_t *ntrip, fd_set *fds)
+{
+    tracet(3, "add2fdsntrip:\n");
+
+    FD_SET(ntrip->tcp->svr.sock, fds);
+
+    return ntrip->tcp->svr.sock;
+}
+#endif
 /* open ntrip-caster ---------------------------------------------------------*/
 static ntripc_t *openntripc(const char *path, int type, char *msg)
 {
@@ -2224,6 +2279,28 @@ static int statexntripc(ntripc_t *ntripc, char *msg)
     }
     return state;
 }
+#ifndef WIN32
+/* add all available ntrip-caster fds to fd_set ------------------------------*/
+static int add2fdsntripc(ntripc_t *ntripc, fd_set *fds)
+{
+    int fd_max = -1;
+
+    tracet(4, "add2fdsntripc:\n");
+
+    for (int i = 0;i < MAXCLI; i++) {
+        if (!ntripc->con[i].state)
+            continue;
+
+        FD_SET(ntripc->tcp->cli[i].sock, fds);
+
+        if (ntripc->tcp->cli[i].sock > fd_max) {
+            fd_max = ntripc->tcp->cli[i].sock;
+        }
+    }
+
+    return fd_max;
+}
+#endif
 /* generate udp socket -------------------------------------------------------*/
 static udp_t *genudp(int type, int port, const char *saddr, char *msg)
 {
@@ -3236,6 +3313,79 @@ extern int strstatx(stream_t *stream, char *msg)
     strunlock(stream);
     return state;
 }
+/* get stream fd ---------------------------------------------------------------
+* get file descriptor of stream
+* args   : stream_t *stream I   stream: STR_SERIAL,STR_TCPSVR,STR_TCPCLI,
+*                                       STR_NTRIPSVR,STR_NTRIPCLI,STR_NTRIPC_C,
+*                                       STR_NTRIPC_S
+* return : fd
+*-----------------------------------------------------------------------------*/
+extern int strgetfd(stream_t *stream)
+{
+    int fd = -1;
+
+    tracet(4,"strgetfd:\n");
+
+    if (strstat(stream, NULL) < 1) {
+        return fd;
+    }
+
+    strlock(stream);
+
+    switch (stream->type) {
+        case STR_SERIAL  : fd = ((serial_t *)stream->port)->dev;           break;
+        case STR_TCPSVR  : fd = ((tcpsvr_t *)stream->port)->svr.port;      break;
+        case STR_TCPCLI  : fd = ((tcpcli_t *)stream->port)->svr.port;      break;
+        case STR_NTRIPSVR:
+        case STR_NTRIPCLI: fd = ((ntrip_t  *)stream->port)->tcp->svr.port; break;
+        case STR_NTRIPC_C:
+        case STR_NTRIPC_S: fd = ((ntripc_t *)stream->port)->tcp->svr.port; break;
+        default:
+            abort(); // Not implemented for other streams
+    }
+
+    strunlock(stream);
+
+    return fd;
+}
+#ifndef WIN32
+/* add stream fds to fd_set ----------------------------------------------------
+* add all stream available fds to fd_set
+* args   : stream_t *stream I   stream: STR_SERIAL,STR_TCPSVR,STR_TCPCLI,
+*                                       STR_NTRIPSVR,STR_NTRIPCLI,STR_NTRIPC_C,
+*                                       STR_NTRIPC_S
+*          void *fds        I   fds: should be fd_set*
+* return : fd_max
+*-----------------------------------------------------------------------------*/
+extern int stradd2fds(stream_t *stream, void *fds)
+{
+    int fd_max = -1;
+
+    tracet(4, "stradd2fds:\n");
+
+    if (strstat(stream, NULL) < 1) {
+        return fd_max;
+    }
+
+    strlock(stream);
+
+    switch (stream->type) {
+        case STR_SERIAL  : fd_max = add2fdsserial((serial_t *)stream->port, (fd_set*)fds); break;
+        case STR_TCPSVR  : fd_max = add2fdstcpsvr((tcpsvr_t *)stream->port, (fd_set*)fds); break;
+        case STR_TCPCLI  : fd_max = add2fdstcpcli((tcpcli_t *)stream->port, (fd_set*)fds); break;
+        case STR_NTRIPSVR:
+        case STR_NTRIPCLI: fd_max = add2fdsntrip ((ntrip_t  *)stream->port, (fd_set*)fds); break;
+        case STR_NTRIPC_C:
+        case STR_NTRIPC_S: fd_max = add2fdsntripc((ntripc_t *)stream->port, (fd_set*)fds); break;
+        default:
+            abort(); // Not implemented for other streams
+    }
+
+    strunlock(stream);
+
+    return fd_max;
+}
+#endif
 /* get stream statistics summary -----------------------------------------------
 * get stream statistics summary
 * args   : stream_t *stream I   stream

@@ -1934,6 +1934,8 @@ EXPORT int  strwrite (stream_t *stream, unsigned char *buff, int n);
 EXPORT void strsync  (stream_t *stream1, stream_t *stream2);
 EXPORT int  strstat  (stream_t *stream, char *msg);
 EXPORT int  strstatx (stream_t *stream, char *msg);
+EXPORT int  strgetfd (stream_t *stream);
+EXPORT int  stradd2fds(stream_t *stream, void *fds);
 EXPORT void strsum   (stream_t *stream, int *inb, int *inr, int *outb, int *outr);
 EXPORT int  strgetsel(stream_t *stream, char *sel);
 EXPORT int  strsetsel(stream_t *stream, const char *sel);
