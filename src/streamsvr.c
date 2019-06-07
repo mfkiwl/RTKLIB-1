@@ -486,12 +486,12 @@ static void *strsvrthread(void *arg)
     svr->tick=tickget();
     tick_nmea=svr->tick-1000;
     
-    for (cyc=0;svr->state;cyc++) {
+    for (cyc=0;atomic_load(&svr->state)/*svr->state*/;cyc++) {
         tick=tickget();
         
         /* read data from input stream */
-        while ((n=strread(svr->stream,svr->buff,svr->buffsize))>0&&svr->state) {
-            
+        while ((n=strread(svr->stream,svr->buff,svr->buffsize))>0 &&
+               atomic_load(&svr->state)/*svr->state*/) {
             /* get stream selection */
             strgetsel(svr->stream,sel);
             
@@ -622,8 +622,8 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, char **paths,
     char file1[MAXSTRPATH],file2[MAXSTRPATH],*p;
     
     trace(2,"strsvrstart: cmds_periodic=%s\n",cmds_periodic[0]);
-    
-    if (svr->state) return 0;
+
+    if (/*svr->state*/atomic_load(&svr->state)) return 0;
     
     strinitcom();
     
@@ -705,7 +705,9 @@ extern void strsvrstop(strsvr_t *svr, char **cmds)
     for (i=0;i<svr->nstr;i++) {
         if (cmds[i]) strsendcmd(svr->stream+i,cmds[i]);
     }
-    svr->state=0;
+
+    /*svr->state = 0*/
+    atomic_sub_fetch(&svr->state, 1);
     
 #ifdef WIN32
     WaitForSingleObject(svr->thread,10000);

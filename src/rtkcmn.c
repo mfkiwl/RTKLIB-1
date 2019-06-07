@@ -4101,6 +4101,15 @@ extern int rtk_uncompress(const char *file, char *uncfile)
     return stat;
 }
 
+extern int atomic_load(int* ptr)
+{
+    return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+}
+extern int atomic_sub_fetch(int* ptr, int val)
+{
+    return __atomic_sub_fetch(ptr, val, __ATOMIC_SEQ_CST);
+}
+
 #ifdef SHARED
 /* dummy application functions for shared library ----------------------------*/
 extern int showmsg(char *format,...) {return 0;}

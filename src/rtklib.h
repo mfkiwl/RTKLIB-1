@@ -2065,6 +2065,11 @@ extern int showmsg(char *format,...);
 extern void settspan(gtime_t ts, gtime_t te);
 extern void settime(gtime_t time);
 
+/* atomic operations */
+/* https://gcc.gnu.org/onlinedocs/gcc-4.9.4/gcc/_005f_005fatomic-Builtins.html */
+extern int atomic_load(int* ptr);
+extern int atomic_sub_fetch(int* ptr, int val);
+
 #ifdef __cplusplus
 }
 #endif
