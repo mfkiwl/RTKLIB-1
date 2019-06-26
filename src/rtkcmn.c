@@ -733,7 +733,14 @@ extern void setbitu(unsigned char *buff, int pos, int len, unsigned int data)
 }
 extern void setbits(unsigned char *buff, int pos, int len, int data)
 {
-    if (data<0) data|=1<<(len-1); else data&=~(1<<(len-1)); /* set sign bit */
+    if (len < 32) {
+        if (data < 0) {
+            data |= 1 << (len - 1);
+        } else {
+            data &= ~(1 << (len - 1)); /* set sign bit */
+        }
+    }
+
     setbitu(buff,pos,len,(unsigned int)data);
 }
 /* crc-32 parity ---------------------------------------------------------------
