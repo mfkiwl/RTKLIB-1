@@ -260,7 +260,10 @@ extern int input_rtcm3(rtcm_t *rtcm, unsigned char data)
 {
     unsigned char len_sync = 0;
     trace(5, "input_rtcm3: data=%02x\n", data);
-    
+
+    /* reset decoder status */
+    rtcm->curr_msg_type = -1;
+
     /* synchronize frame */
     if (rtcm->nbyte == 0) {
 

@@ -2429,6 +2429,7 @@ extern int decode_rtcm3(rtcm_t *rtcm)
         case 2070: ret=decode_ssr7(rtcm,SYS_CMP); break; /* tentative */
     }
     if (ret>=0) {
+        rtcm->curr_msg_type = type;
         type-=1000;
         if      (   1<=type&&type<= 299) rtcm->nmsg3[type    ]++; /* 1001-1299 */
         else if (1000<=type&&type<=1099) rtcm->nmsg3[type-700]++; /* 2000-2099 */
