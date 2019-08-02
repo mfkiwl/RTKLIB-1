@@ -3326,7 +3326,7 @@ extern int strgetfd(stream_t *stream)
 
     tracet(4,"strgetfd:\n");
 
-    if (strstat(stream, NULL) < 1) {
+    if (strstat(stream, NULL) < 3) {
         return fd;
     }
 
@@ -3363,7 +3363,7 @@ extern int stradd2fds(stream_t *stream, void *fds)
 
     tracet(4, "stradd2fds:\n");
 
-    if (strstat(stream, NULL) < 1) {
+    if (strstat(stream, NULL) < 3) {
         return fd_max;
     }
 
