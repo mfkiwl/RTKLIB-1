@@ -1750,21 +1750,15 @@ extern unsigned int tickget(void)
     return (unsigned int)timeGetTime();
 #else
     struct timespec tp={0};
-    struct timeval  tv={0};
-    
-#ifdef CLOCK_MONOTONIC_RAW
-    /* linux kernel > 2.6.28 */
+
     if (!clock_gettime(CLOCK_MONOTONIC_RAW,&tp)) {
         return tp.tv_sec*1000u+tp.tv_nsec/1000000u;
     }
-    else {
-        gettimeofday(&tv,NULL);
-        return tv.tv_sec*1000u+tv.tv_usec/1000u;
-    }
-#else
+
+    abort();
+    /* struct timeval  tv={0};
     gettimeofday(&tv,NULL);
-    return tv.tv_sec*1000u+tv.tv_usec/1000u;
-#endif
+    return tv.tv_sec*1000u+tv.tv_usec/1000u; */
 #endif /* WIN32 */
 }
 /* sleep ms --------------------------------------------------------------------
