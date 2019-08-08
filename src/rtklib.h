@@ -2008,6 +2008,12 @@ EXPORT void strconvfree(strconv_t *conv);
 EXPORT void strsvrsetsrctbl(strsvr_t *svr, const char *file);
 
 /* rtk server functions ------------------------------------------------------*/
+EXPORT obs_queue_t *obs_queue_init();
+EXPORT void obs_queue_free(obs_queue_t *obs_queue);
+
+EXPORT void rtksvrstep(rtksvr_t *svr, sol_t *sol, gtime_t *time_base,
+                       gtime_t *time_rover, gtime_t *time_last, double maxage,
+                       int navsys, obs_t* obs, int write_sol);
 EXPORT int  rtksvrinit  (rtksvr_t *svr);
 EXPORT void rtksvrfree  (rtksvr_t *svr);
 EXPORT int  rtksvrstart (rtksvr_t *svr, int cycle, int buffsize, int *strs,

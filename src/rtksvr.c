@@ -709,7 +709,7 @@ static int obs_sort_data_by_sat(obs_t *obs)
 
 /* obs queue manipulation functions ---------------------------------------*/
 
-static obs_queue_t *obs_queue_init()
+extern obs_queue_t *obs_queue_init()
 {
     int i, j, sat, freq;
     obs_queue_t *obs_queue = malloc(sizeof(obs_queue_t));
@@ -758,7 +758,7 @@ static int obs_queue_is_valid(obs_queue_t *obs_queue)
     return 1;
 }
 
-static void obs_queue_free(obs_queue_t *obs_queue)
+extern void obs_queue_free(obs_queue_t *obs_queue)
 {
     int i;
     assert( obs_queue_is_valid(obs_queue) );
@@ -941,11 +941,9 @@ static void *rtksvrthread(void *arg)
     obs_t obs;
     obsd_t data[MAXOBS*2];
     sol_t sol={{0}};
-    double tt;
     unsigned int tick,ticknmea,tick1hz,tickreset;
     unsigned char *p,*q;
-    char msg[128];
-    int i,j,n,fobs[3]={0},cycle,cputime, stream_number;
+    int i,n,cycle,cputime, stream_number;
     gtime_t time_base, time_rover, time_last;
     double maxage = svr->rtk.opt.maxtdiff;
     int    navsys = svr->rtk.opt.navsys; 
@@ -999,102 +997,7 @@ static void *rtksvrthread(void *arg)
         }
         
         rtksvrlock(svr);
-
-        for (stream_number = 0; stream_number < N_INPUTSTR; stream_number++) {
-            if (svr->format[stream_number] == STRFMT_SP3 ||
-                svr->format[stream_number] == STRFMT_RNXCLK)
-            {
-                /* decode download file */
-                decodefile(svr, stream_number);
-            }
-            else
-            {
-                /* decode receiver raw/rtcm data */
-                fobs[stream_number] = decoderaw(svr, stream_number);
-            }
-        }
-
-        while ( (fobs[0] > 0) && (svr->obs[0][fobs[0]-1].n <= 0) ) { /* skip empty rover obs */
-                
-            fobs[0]--;
-        }
-        while ( (fobs[1] > 0) && (svr->obs[1][fobs[1]-1].n <= 0) ) { /* skip empty base obs */
-            
-            fobs[1]--;
-        }
-        
-        /* averaging single base pos */
-        if (fobs[1]>0&&svr->rtk.opt.refpos==POSOPT_SINGLE) {
-            if ((svr->rtk.opt.maxaveep<=0||svr->nave<svr->rtk.opt.maxaveep)&&
-                /* todo: code smoothing */
-                pntpos(svr->obs[1][0].data,svr->obs[1][0].n,&svr->nav,NULL,
-                       &svr->rtk.opt,&sol,NULL,NULL,msg)) {
-                svr->nave++;
-                for (i=0;i<3;i++) {
-                    svr->rb_ave[i]+=(sol.rr[i]-svr->rb_ave[i])/svr->nave;
-                }
-            }
-            for (i=0;i<3;i++) svr->rtk.opt.rb[i]=svr->rb_ave[i];
-        }
-        
-        /* add received base obs to the queue */
-        if ( (fobs[1] > 0) && (svr->rtk.opt.base_multi_epoch) ) {
-            
-            obs_queue_add(svr->base_queue, &svr->obs[1][0], fobs[1]);
-            
-            if ( fobs[0] <= 0 ) { /* no rover data */
-                
-                if ( svr->obs[0][0].n > 0 ) time_rover = obs_get_time(&svr->obs[0][0]);
-                else { time_rover.time = 0; time_rover.sec = 0.0; }
-                time_base  = obs_get_time(&svr->obs[1][fobs[1]-1]);
-                time_last  = ( timediff(time_rover, time_base) > 0.0 ) ? time_rover : time_base;
-                obs_queue_get_projection(svr->base_queue, &svr->obs[1][0], navsys, time_last, maxage);
-            }
-        }
-        
-        for (i=0;i<fobs[0];i++) { /* for each rover observation data */
-            
-            obs.n=0;
-            /* load rover data */
-            for (j=0;j<svr->obs[0][i].n&&obs.n<MAXOBS*2;j++) {
-                obs.data[obs.n++]=svr->obs[0][i].data[j];
-            }
-            if ( obs.n <= 0 ) continue; 
-            
-            /* get optimal base obs from the queue to svr->obs[1][0] */
-            if ( svr->rtk.opt.base_multi_epoch ) {
-                time_rover = obs_get_time(&svr->obs[0][i]);
-                obs_queue_get_projection(svr->base_queue, &svr->obs[1][0], navsys, time_rover, maxage);
-            }
-            /* load base data */
-            for (j=0;j<svr->obs[1][0].n&&obs.n<MAXOBS*2;j++) {
-                obs.data[obs.n++]=svr->obs[1][0].data[j];
-            }
-            /* carrier phase bias correction */
-            if (!strstr(svr->rtk.opt.pppopt,"-DIS_FCB")) {
-                corr_phase_bias(obs.data,obs.n,&svr->nav);
-            }
-            /* rtk positioning */
-            rtkpos(&svr->rtk,obs.data,obs.n,&svr->nav);
-
-            if (svr->rtk.sol.stat!=SOLQ_NONE) {
-
-                /* adjust current time */
-                tt=(int)(tickget()-tick)/1000.0+DTTOL;
-                timeset(gpst2utc(timeadd(svr->rtk.sol.time,tt)));
-
-                /* write solution */
-                writesol(svr,i);
-            }
-            /* if cpu overload, inclement obs outage counter and break */
-            if ((int)(tickget()-tick)>=svr->cycle) {
-                svr->prcout+=fobs[0]-i-1;
-#if 0 /* omitted v.2.4.1 */
-                break;
-#endif
-            }
-        }
-        
+        rtksvrstep(svr, &sol, &time_base, &time_rover, &time_last, maxage, navsys, &obs, 1);
         rtksvrunlock(svr);
         
         /* send null solution if no solution (1hz) */
@@ -1130,6 +1033,113 @@ static void *rtksvrthread(void *arg)
     }
     return 0;
 }
+
+/* do one rtk server step ----------------------------------------------------*/
+extern void rtksvrstep(rtksvr_t *svr, sol_t *sol, gtime_t *time_base,
+                       gtime_t *time_rover, gtime_t *time_last, double maxage,
+                       int navsys, obs_t* obs, int write_sol)
+{
+    int fobs[3] = {0};
+    char msg[128];
+    double tt;
+    unsigned int tick = tickget();
+
+    for (int stream_number = 0; stream_number < N_INPUTSTR; stream_number++) {
+        if (svr->format[stream_number] == STRFMT_SP3 ||
+            svr->format[stream_number] == STRFMT_RNXCLK)
+        {
+            /* decode download file */
+            decodefile(svr, stream_number);
+        }
+        else
+        {
+            /* decode receiver raw/rtcm data */
+            fobs[stream_number] = decoderaw(svr, stream_number);
+        }
+    }
+
+    while ( (fobs[0] > 0) && (svr->obs[0][fobs[0]-1].n <= 0) ) { /* skip empty rover obs */
+
+        fobs[0]--;
+    }
+    while ( (fobs[1] > 0) && (svr->obs[1][fobs[1]-1].n <= 0) ) { /* skip empty base obs */
+
+        fobs[1]--;
+    }
+
+    /* averaging single base pos */
+    if (fobs[1]>0&&svr->rtk.opt.refpos==POSOPT_SINGLE) {
+        if ((svr->rtk.opt.maxaveep<=0||svr->nave<svr->rtk.opt.maxaveep)&&
+            /* todo: code smoothing */
+            pntpos(svr->obs[1][0].data,svr->obs[1][0].n,&svr->nav,NULL,
+                   &svr->rtk.opt,sol,NULL,NULL,msg)) {
+            svr->nave++;
+            for (int i=0;i<3;i++) {
+                svr->rb_ave[i]+=(sol->rr[i]-svr->rb_ave[i])/svr->nave;
+            }
+        }
+        for (int i=0;i<3;i++) svr->rtk.opt.rb[i]=svr->rb_ave[i];
+    }
+
+    /* add received base obs to the queue */
+    if ( (fobs[1] > 0) && (svr->rtk.opt.base_multi_epoch) ) {
+
+        obs_queue_add(svr->base_queue, &svr->obs[1][0], fobs[1]);
+
+        if ( fobs[0] <= 0 ) { /* no rover data */
+
+            if ( svr->obs[0][0].n > 0 ) *time_rover = obs_get_time(&svr->obs[0][0]);
+            else { time_rover->time = 0; time_rover->sec = 0.0; }
+            *time_base  = obs_get_time(&svr->obs[1][fobs[1]-1]);
+            *time_last  = ( timediff(*time_rover, *time_base) > 0.0 ) ? *time_rover : *time_base;
+            obs_queue_get_projection(svr->base_queue, &svr->obs[1][0], navsys, *time_last, maxage);
+        }
+    }
+
+    for (int i=0;i<fobs[0];i++) { /* for each rover observation data */
+
+        obs->n=0;
+        /* load rover data */
+        for (int j=0;j<svr->obs[0][i].n&&obs->n<MAXOBS*2;j++) {
+            obs->data[obs->n++]=svr->obs[0][i].data[j];
+        }
+        if ( obs->n <= 0 ) continue;
+
+        /* get optimal base obs from the queue to svr->obs[1][0] */
+        if ( svr->rtk.opt.base_multi_epoch ) {
+            *time_rover = obs_get_time(&svr->obs[0][i]);
+            obs_queue_get_projection(svr->base_queue, &svr->obs[1][0], navsys, *time_rover, maxage);
+        }
+        /* load base data */
+        for (int j=0;j<svr->obs[1][0].n&&obs->n<MAXOBS*2;j++) {
+            obs->data[obs->n++]=svr->obs[1][0].data[j];
+        }
+        /* carrier phase bias correction */
+        if (!strstr(svr->rtk.opt.pppopt,"-DIS_FCB")) {
+            corr_phase_bias(obs->data,obs->n,&svr->nav);
+        }
+        /* rtk positioning */
+        rtkpos(&svr->rtk,obs->data,obs->n,&svr->nav);
+
+        if (write_sol && svr->rtk.sol.stat!=SOLQ_NONE) {
+
+            /* adjust current time */
+            tt=(int)(tickget()-tick)/1000.0+DTTOL;
+            timeset(gpst2utc(timeadd(svr->rtk.sol.time,tt)));
+
+            /* write solution */
+            writesol(svr,i);
+        }
+        /* if cpu overload, inclement obs outage counter and break */
+        if ((int)(tickget()-tick)>=svr->cycle) {
+            svr->prcout+=fobs[0]-i-1;
+#if 0 /* omitted v.2.4.1 */
+            break;
+#endif
+        }
+    }
+}
+
 /* initialize rtk server -------------------------------------------------------
 * initialize rtk server
 * args   : rtksvr_t *svr    IO rtk server
