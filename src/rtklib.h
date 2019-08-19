@@ -69,7 +69,7 @@ extern "C" {
 
 #define VER_RTKLIB  "2.4.3 Emlid"       /* library version */
 
-#define PATCH_LEVEL "b32"               /* patch level */
+#define PATCH_LEVEL "b33"               /* patch level */
 
 #define COPYRIGHT_RTKLIB \
             "Copyright (C) 2007-2019 T.Takasu\nAll rights reserved."
