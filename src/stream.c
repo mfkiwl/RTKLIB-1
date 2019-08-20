@@ -195,6 +195,7 @@ typedef struct {            /* ntrip control type */
     char str[NTRIP_MAXSTR]; /* mountpoint string for server */
     unsigned char buff[NTRIP_MAXRSP]; /* response buffer */
     tcpcli_t *tcp;          /* tcp client */
+    unsigned int treq;      /* send request tick */
 } ntrip_t;
 
 typedef struct {            /* ntrip caster connection type */
@@ -1658,6 +1659,7 @@ static int reqntrip_s(ntrip_t *ntrip, char *msg)
     tracet(2,"reqntrip_s: send request state=%d ns=%d\n",ntrip->state,p-buff);
     tracet(5,"reqntrip_s: n=%d buff=\n%s\n",p-buff,buff);
     ntrip->state=1;
+    ntrip->treq=tickget();
     return 1;
 }
 /* send ntrip client request -------------------------------------------------*/
@@ -1687,6 +1689,7 @@ static int reqntrip_c(ntrip_t *ntrip, char *msg)
     tracet(2,"reqntrip_c: send request state=%d ns=%d\n",ntrip->state,p-buff);
     tracet(5,"reqntrip_c: n=%d buff=\n%s\n",p-buff,buff);
     ntrip->state=1;
+    ntrip->treq=tickget();
     return 1;
 }
 /* test ntrip server response ------------------------------------------------*/
@@ -1757,7 +1760,7 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
             tracet(2,"rspntrip_c: receive source table nb=%d\n",ntrip->nb);
             return 1;
         }
-        sprintf(msg,"no mountp. reconnect...");
+        sprintf(msg,"no mount point");
         tracet(2,"rspntrip_c: no mount point nb=%d\n",ntrip->nb);
         ntrip->nb=0;
         ntrip->buff[0]='\0';
@@ -1767,7 +1770,7 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
     else if ((p=strstr((char *)ntrip->buff,NTRIP_RSP_HTTP))) { /* http response */
         if ((q=strchr(p,'\r'))) *q='\0'; else ntrip->buff[128]='\0';
         strcpy(msg,p);
-        tracet(1,"rspntrip_s: %s nb=%d\n",msg,ntrip->nb);
+        tracet(1,"rspntrip_c: %s nb=%d\n",msg,ntrip->nb);
         ntrip->nb=0;
         ntrip->buff[0]='\0';
         ntrip->state=0;
@@ -1775,7 +1778,7 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
     }
     else if (ntrip->nb>=NTRIP_MAXRSP) { /* buffer overflow */
         sprintf(msg,"response overflow");
-        tracet(1,"rspntrip_s: response overflow nb=%d\n",ntrip->nb);
+        tracet(1,"rspntrip_c: response overflow nb=%d\n",ntrip->nb);
         ntrip->nb=0;
         ntrip->buff[0]='\0';
         ntrip->state=0;
@@ -1797,6 +1800,11 @@ static int waitntrip(ntrip_t *ntrip, char *msg)
     if (ntrip->tcp->svr.state<2) ntrip->state=0; /* tcp disconnected */
     
     if (ntrip->state==0) { /* send request */
+        /* wait send request */
+        if (ntrip->tcp->tirecon > 0 && (int)(tickget() - ntrip->treq) < ntrip->tcp->tirecon) {
+            return 0;
+        }
+        /* send request */
         if (!(ntrip->type==0?reqntrip_s(ntrip,msg):reqntrip_c(ntrip,msg))) {
             return 0;
         }
