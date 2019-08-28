@@ -1862,7 +1862,7 @@ extern bool calcheading(const sol_t *sol, double *value)
 
     /* find heading via TDPD velocity */
     if (sol->is_velocity_tdpd_defined) {
-        heading = restore_heading(sol->rr, sol->velocity_tdpd, VELOCITY_NOISE_LEVEL_TDPD);
+        heading = restore_heading(sol->rr, sol->velocity_tdpd, 0.0);
 
         if (heading >= 0.0) {
             *value = heading;
@@ -1879,7 +1879,7 @@ extern bool calcheading(const sol_t *sol, double *value)
                 velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
             }
 
-            heading = restore_heading(sol->rr, velocity, VELOCITY_NOISE_LEVEL_FIX);
+            heading = restore_heading(sol->rr, velocity, 0.0);
         }
     }
 
@@ -1896,7 +1896,7 @@ extern bool calcheading(const sol_t *sol, double *value)
                 velocity[i] = (sol->rr[i] - sol->pos_prev[i]) / sol->delta_time;
             }
 
-            heading = restore_heading(sol->rr, velocity, VELOCITY_NOISE_LEVEL_FLOAT);
+            heading = restore_heading(sol->rr, velocity, 0.0);
         }
     }
 
