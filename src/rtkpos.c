@@ -2514,14 +2514,15 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt)
     }
 
 
-  if ( opt->glomodear == GLO_ARMODE_ON ) {
+    if (opt->glomodear == GLO_ARMODE_ON) {
+        rtk->glo_IFB = glo_IFB_init();
 
-    rtk->glo_IFB = glo_IFB_init();
-  }
-  else {
-
-    rtk->glo_IFB = NULL;
-  }
+        if (!rtk->glo_IFB) {
+            fatalerr("glo_IFB_init memory allocation error\n");
+        }
+    } else {
+        rtk->glo_IFB = NULL;
+    }
 }
 /* free rtk control ------------------------------------------------------------
 * free memory for rtk control struct

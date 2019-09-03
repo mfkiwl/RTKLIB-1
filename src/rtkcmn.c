@@ -389,7 +389,7 @@ extern int gmf_(double *mjd, double *lat, double *lon, double *hgt, double *zd,
 #endif
 
 /* fatal error ---------------------------------------------------------------*/
-static void fatalerr(const char *format, ...)
+extern void fatalerr(const char *format, ...)
 {
     char msg[1024];
     va_list ap;

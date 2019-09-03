@@ -1576,6 +1576,7 @@ EXPORT int  smoother(const double *xf, const double *Qf, const double *xb,
 EXPORT void matprint (const double *A, int n, int m, int p, int q);
 EXPORT void matfprint(const double *A, int n, int m, int p, int q, FILE *fp);
 
+EXPORT void fatalerr(const char *format, ...);
 EXPORT void add_fatal(fatalfunc_t *func);
 
 /* time and string functions -------------------------------------------------*/
