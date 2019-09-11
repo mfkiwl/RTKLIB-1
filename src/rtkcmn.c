@@ -1501,11 +1501,11 @@ extern gtime_t timeget(void)
     ep[3]=ts.wHour; ep[4]=ts.wMinute; ep[5]=ts.wSecond+ts.wMilliseconds*1E-3;
 #else
     struct timeval tv;
-    struct tm *tt;
+    struct tm tt;
     
-    if (!gettimeofday(&tv,NULL)&&(tt=gmtime(&tv.tv_sec))) {
-        ep[0]=tt->tm_year+1900; ep[1]=tt->tm_mon+1; ep[2]=tt->tm_mday;
-        ep[3]=tt->tm_hour; ep[4]=tt->tm_min; ep[5]=tt->tm_sec+tv.tv_usec*1E-6;
+    if (!gettimeofday(&tv,NULL)&&gmtime_r(&tv.tv_sec, &tt)) {
+        ep[0]=tt.tm_year+1900; ep[1]=tt.tm_mon+1; ep[2]=tt.tm_mday;
+        ep[3]=tt.tm_hour; ep[4]=tt.tm_min; ep[5]=tt.tm_sec+tv.tv_usec*1E-6;
     }
 #endif
     time=epoch2time(ep);
