@@ -53,7 +53,7 @@ static unsigned int getbitu2(const unsigned char *buff, int p1, int l1, int p2,
 static int getbits2(const unsigned char *buff, int p1, int l1, int p2, int l2)
 {
     if (getbitu(buff,p1,1))
-        return (int)((getbits(buff,p1,l1)<<l2)+getbitu(buff,p2,l2));
+        return (int)(((unsigned int)getbits(buff,p1,l1)<<l2)+getbitu(buff,p2,l2));
     else
         return (int)getbitu2(buff,p1,l1,p2,l2);
 }
