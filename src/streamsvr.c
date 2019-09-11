@@ -467,25 +467,15 @@ static void *strsvrthread(void *arg)
 #endif
 {
     strsvr_t *svr=(strsvr_t *)arg;
-    sol_t sol_nmea={{0}};
-    unsigned int tick,tick_nmea;
+    unsigned int tick;
     unsigned char buff[1024];
     char sel[256];
     int i,n,cyc;
 
-   /* This "fake" solution structure is passed to strsendnmea
-   * when inpstr2-nmeareq is set to latlon*/
-   sol_t latlon_sol={{0}};
-   latlon_sol.stat=SOLQ_SINGLE;
-   latlon_sol.time=utc2gpst(timeget());
-   for (i=0;i<3;i++)
-       latlon_sol.rr[i]=svr->nmeapos[i];
-    
     tracet(3,"strsvrthread:\n");
     
     svr->tick=tickget();
-    tick_nmea=svr->tick-1000;
-    
+
     for (cyc=0;atomic_load(&svr->state)/*svr->state*/;cyc++) {
         tick=tickget();
         
@@ -528,14 +518,6 @@ static void *strsvrthread(void *arg)
         /* write periodic command to input stream */
         for (i=0;i<svr->nstr;i++) {
             periodic_cmd(cyc*svr->cycle,svr->cmds_periodic[i],svr->stream+i);
-        }
-        /* write nmea messages to input stream */
-        if (svr->nmeacycle>0&&(int)(tick-tick_nmea)>=svr->nmeacycle) {
-            sol_nmea.stat=SOLQ_SINGLE;
-            sol_nmea.time=utc2gpst(timeget());
-            matcpy(sol_nmea.rr,svr->nmeapos,3,1);
-            strsendnmea(svr->stream,&sol_nmea);
-            tick_nmea=tick;
         }
         sleepms(svr->cycle-(int)(tickget()-tick));
     }
