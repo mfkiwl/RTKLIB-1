@@ -3,13 +3,8 @@
 
 #include <math.h>
 
-#define SQR(x)      ((x) * (x))
-#define MIN(x, y)   (((x) <= (y)) ? (x) : (y))
-#define MAX(x, y)   (((x) >= (y)) ? (x) : (y))
-#define ROUND(x)    ((int) floor((x) + 0.5))
 #define LOGIC_XOR(x, y) (((x) && (!(y))) || ((!(x)) && (y)))
 #define IS_IN_BOUNDS(x, lo, hi) (((x) >= (lo)) && ((x) <= (hi)))
-
 #define VECTOR_3D_SIZE   3
 
 /* basic vector operations */

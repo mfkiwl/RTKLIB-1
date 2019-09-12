@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#define MAX(x, y)   (((x) >= (y)) ? (x) : (y))
 #define MIN_INLIERS_PROPORTION_FOR_IRLS   0.80
 
 bool lsq_robust_options_is_valid(const lsq_robust_options_t *options)

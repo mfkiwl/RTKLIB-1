@@ -695,7 +695,8 @@ static int openfile_(file_t *file, gtime_t time, char *msg)
 {    
     FILE *fp;
     char *rw,tagpath[MAXSTRPATH+4]="";
-    
+    char tagh[TIMETAGH_LEN+1]="";
+
     tracet(3,"openfile_: path=%s time=%s\n",file->path,time_str(time,0));
     
     file->time=utc2gpst(timeget());
@@ -939,7 +940,7 @@ static int readfile(file_t *file, unsigned char *buff, int nmax, char *msg)
         else { /* master (or slave with no master initialized) */
             assert( file->start >= 0.0 );
             assert( file->speed >  0.0 );
-            tick_system = tickget();
+            unsigned int tick_system = tickget();
             assert( tick_system >= file->tick );
             t = (unsigned int) ((tick_system - file->tick) * file->speed + file->start * 1000.0);
         }

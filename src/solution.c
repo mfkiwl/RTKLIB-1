@@ -459,9 +459,9 @@ static int decode_solllh(char *buff, const solopt_t *opt, sol_t *sol)
         Q[0]=val[i]*val[i]; i++; /* sde */
         Q[8]=val[i]*val[i]; i++; /* sdu */
         if (i+3<n) {
-            Q[1]=Q[3]=SIGNED_SQR(val[i]); i++; /* sdne */
-            Q[2]=Q[6]=SIGNED_SQR(val[i]); i++; /* sdeu */
-            Q[5]=Q[7]=SIGNED_SQR(val[i]); i++; /* sdun */
+            Q[1]=Q[3]=SQR(val[i]); i++; /* sdne */
+            Q[2]=Q[6]=SQR(val[i]); i++; /* sdeu */
+            Q[5]=Q[7]=SQR(val[i]); i++; /* sdun */
         }
         covecef(pos,Q,P);
         covtosol(P,sol);
@@ -546,7 +546,7 @@ static int decode_solsss(char *buff, sol_t *sol)
     sol->time=gpst2time(week,tow);
     for (i=0;i<6;i++) {
         sol->rr[i]=i<3?pos[i]:0.0;
-        sol->qr[i]=i<3?(float)SIGNED_SQR(std[i]):0.0f;
+        sol->qr[i]=i<3?(float)SQR(std[i]):0.0f;
         sol->dtr[i]=0.0;
     }
     sol->ns=0;
@@ -1175,7 +1175,6 @@ static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
 {
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
-    char additional_info[MAX_ADDITIONAL_INFO] = "";
     
     trace(3,"outecef:\n");
 
@@ -1725,13 +1724,13 @@ extern int outsolheads(unsigned char *buff, const solopt_t *opt)
             p+=sprintf(p,"%16s%s%16s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s",
                        "latitude(d'\")",sep,"longitude(d'\")",sep,"height(m)",sep,
                        "Q",sep,"ns",sep,"sdn(m)",sep,"sde(m)",sep,"sdu(m)",sep,
-                       "sdne(m)",sep,"sdeu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
+                       "sdne(m)",sep,"sdeu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio");
         }
         else {
             p+=sprintf(p,"%14s%s%14s%s%10s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s",
                        "latitude(deg)",sep,"longitude(deg)",sep,"height(m)",sep,
                        "Q",sep,"ns",sep,"sdn(m)",sep,"sde(m)",sep,"sdu(m)",sep,
-                       "sdne(m)",sep,"sdeu(m)",sep,"sdun(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
+                       "sdne(m)",sep,"sdeu(m)",sep,"sdun(m)",sep,"age(s)",sep,"ratio");
         }
         if (opt->outvel) {
             p+=sprintf(p,"%s%10s%s%10s%s%10s%s%9s%s%8s%s%8s%s%8s%s%8s%s%8s",
@@ -1755,7 +1754,7 @@ extern int outsolheads(unsigned char *buff, const solopt_t *opt)
         p+=sprintf(p,"%14s%s%14s%s%14s%s%3s%s%3s%s%8s%s%8s%s%8s%s%8s%s%8s%s%8s%s%6s%s%6s",
                    "e-baseline(m)",sep,"n-baseline(m)",sep,"u-baseline(m)",sep,
                    "Q",sep,"ns",sep,"sde(m)",sep,"sdn(m)",sep,"sdu(m)",sep,
-                   "sden(m)",sep,"sdnu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio",sep,additional_heads);
+                   "sden(m)",sep,"sdnu(m)",sep,"sdue(m)",sep,"age(s)",sep,"ratio");
     }
     else if (opt->posf==SOLF_ERB) { /* ERB protocol */
         p+=sprintf(p,"ERB protocol\n");

@@ -53,6 +53,7 @@
 
 #define SQR(x)      ((x)*(x))
 #define SQRT(x)     ((x)<=0.0||(x)!=(x)?0.0:sqrt(x))
+#define MAX(x,y)    ((x)>=(y)?(x):(y))
 #define MIN(x,y)    ((x)<=(y)?(x):(y))
 #define ROUND(x)    (int)floor((x)+0.5)
 

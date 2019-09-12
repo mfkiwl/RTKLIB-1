@@ -11,6 +11,8 @@
 #include <math.h>
 #include <stdbool.h>
 
+#define MAX(x, y)   (((x) >= (y)) ? (x) : (y))
+
 bool lsq_reweighted_options_is_valid(const lsq_reweighted_options_t *options)
 {
   if (options == NULL) {

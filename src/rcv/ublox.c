@@ -254,7 +254,7 @@ static int decode_rxmrawx(raw_t *raw)
 {
     gtime_t time;
     double tow,cp1,pr1,tadj=0.0,toff=0.0,freq,tn;
-    int i,j,sys,prn,sat,n=0,nsat,week,tstat,lockt,halfv,halfc,fcn;
+    int i,j,sys,prn,sat,n=0,nsat,week,tstat,lockt,slip,halfv,halfc,fcn;
     int cpstd,prstd,std_slip=0;
     char *q;
     unsigned char *p=raw->buff+6;

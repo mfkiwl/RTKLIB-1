@@ -12,6 +12,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define SQR(x)      ((x) * (x))
+
 /* init new input data with thinning the existent */
 lsq_input_t *lsq_input_init_consensus(const lsq_input_t *lsq_input, const double residuals[],
                                              double outlier_thres)

@@ -3,6 +3,8 @@
 #include "rtklib.h"
 #include "rtklib_math.h"
 
+#define SQR(x)      ((x) * (x))
+
 /* OLS by normal equations */
 
 void lsq_ols_standard(const lsq_input_t *input_data, lsq_sol_t *solution)

@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <math.h>
 
+#define SQR(x)      ((x) * (x))
+
 /* basic vector operations */
 
 void vector_copy(const double vec_src[], double vec_dst[], int length)
