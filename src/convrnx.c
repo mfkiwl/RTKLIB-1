@@ -778,6 +778,15 @@ static void set_obstype(int format, rnxopt_t *opt)
         {0},
         {0}
     };
+    static const unsigned char codes_ubx[NSATSYS][8]={ /* u-blox */
+        {CODE_L1C,CODE_L2X},
+        {CODE_L1C,CODE_L2C},
+        {CODE_L1X,CODE_L7X},
+        {CODE_L1C,CODE_L2X},
+        {CODE_L1C},
+        {CODE_L1I,CODE_L7I},
+        {0}
+    };
     static const unsigned char codes_other[NSATSYS][8]={ /* others */
         {CODE_L1C},
         {CODE_L1C},
@@ -804,6 +813,7 @@ static void set_obstype(int format, rnxopt_t *opt)
             case STRFMT_RT17 : codes=codes_rt17 [i]; break;
             case STRFMT_CMR  : codes=codes_cmr  [i]; break;
             case STRFMT_RINEX: codes=codes_rinex[i]; break;
+            case STRFMT_UBX:   codes=codes_ubx[i];   break;
             default:           codes=codes_other[i]; break;
         }
         /* set observation types in rinex option */
