@@ -2,27 +2,27 @@ language: C
 
 matrix:
   include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - gfortran-5
-      env:
-         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-            - gfortran-6
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+#    - os: linux
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#          packages:
+#            - g++-5
+#            - gfortran-5
+#      env:
+#         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+#
+#    - os: linux
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#          packages:
+#            - g++-6
+#            - gfortran-6
+#      env:
+#        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
     - os: linux
       addons:
@@ -49,9 +49,9 @@ before_install:
 
 script:
     - make release -j `nproc`
-    - make prerelease -j `nproc`
-    - make debug -j `nproc`
+    - # make prerelease -j `nproc`
+    - # make debug -j `nproc`
     - make qt_apps -j `nproc`
-    - make qt_debs -j `nproc`
-    - make qt_appimages -j `nproc`
+    - # make qt_debs -j `nproc`
+    - # make qt_appimages -j `nproc`
 
