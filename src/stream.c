@@ -3193,9 +3193,9 @@ extern int strwrite(stream_t *stream, unsigned char *buff, int n)
     }
     if (ns < 0) {
         if (stream->type == STR_SERIAL) {
-            strunlock(stream);
             closeserial_failed_fd(stream);
         }
+        strunlock(stream);
         return 0;
     }
 
