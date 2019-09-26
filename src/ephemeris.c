@@ -114,7 +114,7 @@ static double var_uraeph(int sys, int ura)
         return SQR(STD_GAL_NAPA);
     }
     else { /* gps ura (ref [1] 20.3.3.3.1.1) */
-        return ura<0||15<ura?SQR(6144.0):SQR(ura_value[ura]);
+        return ura<0||14<ura?SQR(6144.0):SQR(ura_value[ura]);
     }
 }
 /* variance by ura ssr (ref [4]) ---------------------------------------------*/
