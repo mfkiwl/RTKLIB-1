@@ -360,7 +360,7 @@ void MonitorDialog::ShowRtk(void)
     double *del,*off1,*off2,rt[3]={0},dop[4]={0};
 	double azel[MAXSAT*2],pos[3],vel[3];
     int i,j,k,cycle,state,rtkstat,nsat0,nsat1,prcout,nave;
-    unsigned long thread;
+    unsigned long long thread;
 	int cputime,nb[3]={0},nmsg[3][10]={{0}},ne;
     char tstr[64],id[32],s1[64]="-",s2[64]="-",s3[64]="-";
 	char file[1024]="";
@@ -369,9 +369,8 @@ void MonitorDialog::ShowRtk(void)
     QString ephopt []={tr("Broadcast"),tr("Precise"),tr("Broadcast+SBAS"),tr("Broadcat+SSR APC"),tr("Broadcast+SSR CoM"),tr("QZSS LEX"),""};
 	
 	rtksvrlock(&rtksvr); // lock
-	
 	rtk=rtksvr.rtk;
-    thread=(unsigned long)rtksvr.thread;
+    thread=(unsigned long long)rtksvr.thread;
 	cycle=rtksvr.cycle;
 	state=rtksvr.state;
 	rtkstat=rtksvr.rtk.sol.stat;
