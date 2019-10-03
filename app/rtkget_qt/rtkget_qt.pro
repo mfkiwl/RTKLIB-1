@@ -21,12 +21,7 @@ macx{
     LIBS += /usr/local/lib/libpng.a $${RTKLIB}
 }
 win32 {
-    CONFIG(debug) {
-        RTKLIB = ../../src/debug/libRTKLib.a
-    } else {
-        RTKLIB =../../src/release/libRTKLib.a
-    }
-
+    RTKLIB =../../src/libRTKLib.a
     LIBS+= $${RTKLIB} -lWs2_32 -lwinmm
 }
 

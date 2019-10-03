@@ -13,6 +13,8 @@ CONFIG += staticlib
 include(../RTKLib.pri)
 INCLUDEPATH += math/ math/lsq/ extensions/glo_ifb/ extensions/tdiff_phases/
 
+DESTDIR = $${OUT_PWD}
+
 QMAKE_CFLAGS += -Wall -std=c99 -pedantic -Wno-unused-but-set-variable  -DTRACE -g
 DEFINES -= UNICODE
 
