@@ -26,6 +26,7 @@ qtHaveModule(webenginewidgets) {
     }
 }
 include(../../RTKLib.pri)
+include(../deploy.pri)
 
 TARGET = rtkplot_qt
 TEMPLATE = app

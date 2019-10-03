@@ -12,6 +12,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 include(../../RTKLib.pri)
+include(../deploy.pri)
 
 TARGET = rtkpost_qt
 TEMPLATE = app

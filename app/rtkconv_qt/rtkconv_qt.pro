@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 include(../../RTKLib.pri)
+include(../deploy.pri)
 
 TARGET = rtkconv_qt
 TEMPLATE = app
