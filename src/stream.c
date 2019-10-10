@@ -1095,6 +1095,54 @@ static int errsock(void) {return WSAGetLastError();}
 static int errsock(void) {return errno;}
 #endif
 
+/* set socket keepalive option -----------------------------------------------*/
+static int setkeepalive(socket_t sock, char *msg)
+{
+#ifdef WIN32
+    /*
+     * GUI apps for windows do not support this feature
+     */
+    tracet(3,"setkeepalive: WIN32 platform not supported\n");
+#else
+    int ka_en=1;
+    int ka_idle=20; /* sec */
+    int ka_intvl=1; /* sec */
+    int ka_cnt=3;
+    int tcp_timeout=15000; /* ms */
+
+    tracet(3,"setkeepalive: sock=%d\n",sock);
+
+    /*
+     * When the keepalive timer (TCP_KEEPIDLE) reaches zero, the connection will
+     * send a keepalive probe packet with no data in it and the ACK flag turned
+     * on to peer. TCP Keepalives are sent every TCP_KEEPINTVL seconds on an
+     * idle TCP connection and the connection is dropped after TCP_KEEPCNT
+     * sequental ACKs are missed.
+     */
+    if (setsockopt(sock,SOL_SOCKET,SO_KEEPALIVE,(const char *)&ka_en,sizeof(ka_en))==-1||
+        setsockopt(sock,IPPROTO_TCP,TCP_KEEPIDLE,(const char *)&ka_idle,sizeof(ka_idle))==-1||
+        setsockopt(sock,IPPROTO_TCP,TCP_KEEPINTVL,(const char *)&ka_intvl,sizeof(ka_intvl))==-1||
+        setsockopt(sock,IPPROTO_TCP,TCP_KEEPCNT,(const char *)&ka_cnt,sizeof(ka_cnt))==-1) {
+        tracet(1,"setkeepalive: setsockopt error 1 sock=%d err=%d\n",sock,errsock());
+        sprintf(msg,"sockopt error: keepalive");
+        return 0;
+    }
+    /*
+     * Keepalive only works if socket is idle. If there is outstanding data, the
+     * socket will be in the on state as it transmits/retransmits the data, so we
+     * need to additional configure TCP_USER_TIMEOUT option.
+     * This option specifies the maximum amount of time in milliseconds that
+     * transmitted data may remain unacknowledged before TCP will forcibly close
+     * the corresponding connection
+     */
+    if (setsockopt(sock,SOL_TCP,TCP_USER_TIMEOUT,(const char *)&tcp_timeout,sizeof(tcp_timeout))==-1) {
+        tracet(1,"setkeepalive: setsockopt error 2 sock=%d err=%d\n",sock,errsock());
+        sprintf(msg,"sockopt error: tcp timeout");
+        return 0;
+    }
+#endif
+    return 1;
+}
 /* set socket option ---------------------------------------------------------*/
 static int setsock(socket_t sock, char *msg)
 {
@@ -1121,6 +1169,10 @@ static int setsock(socket_t sock, char *msg)
     if (setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,(const char *)&mode,sizeof(mode))==-1) {
         tracet(1,"setsock: setsockopt error 3 sock=%d err=%d\n",sock,errsock());
         sprintf(msg,"sockopt error: nodelay");
+    }
+    if (!setkeepalive(sock, msg)) {
+        closesocket(sock);
+        return 0;
     }
     return 1;
 }
