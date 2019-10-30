@@ -346,7 +346,7 @@ static int decode_rxmrawx(raw_t *raw)
     char *q,tstr[64];
     double tow,P,L,D,tn,tadj=0.0,toff=0.0;
     int i,j,k,f,sys,prn,sat,code,slip,halfv,halfc,LLI,n=0,std_slip=0;
-    int week,nmeas,ver,gnss,svid,sigid,frqid,lockt,cn0,cpstd,tstat;
+    int week,nmeas,ver,gnss,svid,sigid,frqid,lockt,cn0,cpstd,prstd,tstat;
 
     trace(4,"decode_rxmrawx: len=%d\n",raw->len);
     
@@ -398,8 +398,13 @@ static int decode_rxmrawx(raw_t *raw)
         frqid=U1(p+23);    /* freqId (fcn + 7) */
         lockt=U2(p+24);    /* locktime (ms) */
         cn0  =U1(p+26);    /* cn0 (dBHz) */
+        prstd=U1(p+27)&15; /* pseudorange std-dev */
         cpstd=U1(p+28)&15; /* cpStdev (m) */
         tstat=U1(p+30);    /* trkStat */
+
+        prstd=1<<(prstd>=5?prstd-5:0); /* prstd=2^(x-5) */
+        prstd=prstd<=9?prstd:9;        /* limit to 9 to fit RINEX format */
+
         if (!(tstat&1)) P=0.0;
         if (!(tstat&2)||L==-0.5||cpstd>CPSTD_VALID) L=0.0;
         
@@ -433,7 +438,10 @@ static int decode_rxmrawx(raw_t *raw)
             P-=toff*CLIGHT;
             L-=toff*sig_freq(sys,f,frqid-7);
         }
-        halfv=tstat&4?1:0; /* half cycle valid */
+        if (sys==SYS_SBS)
+            halfv=lockt>8000?1:0; /* half-cycle valid */
+        else
+            halfv=tstat&4?1:0;    /* half cycle valid */
         halfc=tstat&8?1:0; /* half cycle subtracted from phase */
         slip=lockt==0||lockt*1E-3<raw->lockt[sat-1][f-1]||
              halfc!=raw->halfc[sat-1][f-1]||(std_slip&&cpstd>=std_slip);
@@ -458,6 +466,8 @@ static int decode_rxmrawx(raw_t *raw)
         }
         raw->obs.data[j].L[f-1]=L;
         raw->obs.data[j].P[f-1]=P;
+        raw->obs.data[j].qualL[f-1]=cpstd<=7?cpstd:0;
+        raw->obs.data[j].qualP[f-1]=prstd;
         raw->obs.data[j].D[f-1]=(float)D;
         raw->obs.data[j].SNR[f-1]=(unsigned char)(cn0*4);
         raw->obs.data[j].LLI[f-1]=(unsigned char)LLI;
