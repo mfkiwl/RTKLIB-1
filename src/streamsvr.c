@@ -275,7 +275,7 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
     else if (1101<=msg&&msg<=1107) sys=SYS_SBS;
     else if (1111<=msg&&msg<=1117) sys=SYS_QZS;
     else if (1121<=msg&&msg<=1127) sys=SYS_CMP;
-    else return;
+    else goto redirect;
     
     data=out->obs.data;
     nobs=out->obs.n;
@@ -290,11 +290,21 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
             nsig++;
         }
     }
-    if (nsig<=0||nsig>64) return;
+    if (nsig==0) {
+        goto redirect;
+    }
+    if (nsig>64) {
+        trace(4,"write_rtcm3_msm: error nsig=%d\n",nsig);
+        return;
+    }
     
     /* pack data to multiple messages if nsat x nsig > 64 */
     ns=64/nsig;         /* max number of sats in a message */
     nmsg=(nsat-1)/ns+1; /* number of messages */
+
+    if (nmsg<=0) {
+        goto redirect;
+    }
     
     out->obs.data=buff;
     
@@ -311,6 +321,13 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
     }
     out->obs.data=data;
     out->obs.n=nobs;
+    return;
+
+redirect:
+    /* have to send empty message to synchronize rtcm3 obs data */
+    if (gen_rtcm3(out,msg,sync)) {
+        strwrite(str,out->buff,out->nbyte);
+    }
 }
 /* write obs data messages ---------------------------------------------------*/
 static void write_obs(gtime_t time, stream_t *str, strconv_t *conv, double min_snr)
