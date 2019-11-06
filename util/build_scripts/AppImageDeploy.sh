@@ -9,7 +9,7 @@ single_image() {
     app_qt="${app}_qt"
     appimage_dir=$RELEASE_DIR/"${app^^}_Qt-x86_64"
     icon="${app}_Icon"
-    mkdir $appimage_dir
+    mkdir -p $appimage_dir
     cp -t $appimage_dir app/$app_qt/$app_qt app/$app_qt/"${icon}.ico"
     convert $appimage_dir/"${icon}.ico" $appimage_dir/"${icon}.png"
     if [ $app == 'rtknavi' ]
@@ -24,29 +24,19 @@ Comment=${app^^} Qt version by Emlid
 Exec=${app_qt}
 Icon=${icon}
 Type=Application
+Categories=Science;
 Terminal=false" > $appimage_dir/"${app_qt}.desktop"
     cd $appimage_dir/
     $linuxdeployqt "${app_qt}.desktop" -appimage
-    cd ../..
+    cd -
 }
 
-for app in rtkpost rtkconv rtkplot rtknavi; do single_image "$app" done &
-done
-
-
-while [ ! -f $RELEASE_DIR/*/RTKPOST*.AppImage -o  \
-        ! -f $RELEASE_DIR/*/RTKNAVI*.AppImage -o \
-        ! -f $RELEASE_DIR/*/RTKPLOT*.AppImage -o  \
-        ! -f $RELEASE_DIR/*/RTKCONV*.AppImage ]
-do
-    sleep 2
-done
+for app in rtkpost rtkconv rtkplot rtknavi; do single_image "$app"; done 
 
 zipfile="build/Qt/rtklib-qt-appimage_x86_64.zip"
 rm $zipfile
 zip -j $zipfile $RELEASE_DIR/*/RTKPOST*.AppImage \
-                                     $RELEASE_DIR/*/RTKNAVI*.AppImage \
-                                     $RELEASE_DIR/*/RTKPLOT*.AppImage \
-                                     $RELEASE_DIR/*/RTKCONV*.AppImage \
-                                     $RELEASE_DIR/*/RTKPOST*.AppImage
+                $RELEASE_DIR/*/RTKNAVI*.AppImage \
+                $RELEASE_DIR/*/RTKPLOT*.AppImage \
+                $RELEASE_DIR/*/RTKCONV*.AppImage
 md5sum $zipfile > $zipfile".md5"
