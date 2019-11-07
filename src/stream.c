@@ -270,6 +270,7 @@ static char localdir[1024]=""; /* local directory for ftp/http */
 static char proxyaddr[256]=""; /* http/ntrip/ftp proxy address */
 static unsigned int tick_master=0; /* time tick master for replay */
 static int fswapmargin=30;  /* file swap margin (s) */
+static int ntrippathfmt=STRPATHFMT_VER0; /* version of ntrip path format */
 
 /* read/write serial buffer --------------------------------------------------*/
 #ifdef WIN32
@@ -1088,6 +1089,47 @@ static void decodetcppath(const char *path, char *addr, char *port, char *user,
     }
     if (addr) strcpy(addr,p);
 }
+/* get length of number ------------------------------------------------------*/
+static int get_num_length(unsigned int num)
+{
+    int num_len;
+
+    for(num_len=1;num/=10;num_len++);
+
+    return num_len;
+}
+/* decode ntrip path -----------------------------------------------------------
+* path=nbyte:[user]nbyte:[passwd]nbyte:[addr]nbyte:[port]nbyte:[mountpoint]
+*      nbyte:[str]
+*-----------------------------------------------------------------------------*/
+static int decodentrippath(const char *path, char *addr, char *port, char *user,
+                           char *passwd, char *mntpnt, char *str)
+{
+    int i,value_size;
+    const char *begin=path,*end=path+strlen(path);
+    char *values[] = {user,passwd,addr,port,mntpnt,str};
+
+    tracet(4,"decodentrippath: path=%s\n",path);
+
+    for (i=0;i<sizeof(values)/sizeof(values[0]);i++) {
+        if (begin>=end||sscanf(begin,"%d:",&value_size)!=1||value_size>255||
+            value_size<0) {
+            tracet(2,"decodentrippath: failed to decode path\n");
+            return 0;
+        }
+
+        begin+=get_num_length(value_size)+1;
+
+        if (values[i]) {
+            strncpy(values[i],begin,value_size);
+            values[i][value_size]='\0';
+        }
+
+        begin+=value_size;
+    }
+
+    return 1;
+}
 /* get socket error ----------------------------------------------------------*/
 #ifdef WIN32
 static int errsock(void) {return WSAGetLastError();}
@@ -1890,7 +1932,7 @@ static int waitntrip(ntrip_t *ntrip, char *msg)
 static ntrip_t *openntrip(const char *path, int type, char *msg)
 {
     ntrip_t *ntrip;
-    int i;
+    int i,decode_ret;
     char addr[256]="",port[256]="",tpath[MAXSTRPATH];
     
     tracet(3,"openntrip: path=%s type=%d\n",path,type);
@@ -1905,8 +1947,21 @@ static ntrip_t *openntrip(const char *path, int type, char *msg)
     for (i=0;i<NTRIP_MAXRSP;i++) ntrip->buff[i]=0;
     
     /* decode tcp/ntrip path */
-    decodetcppath(path,addr,port,ntrip->user,ntrip->passwd,ntrip->mntpnt,
-                  ntrip->str);
+    if (ntrippathfmt==STRPATHFMT_VER1) {
+        decode_ret=decodentrippath(path,addr,port,ntrip->user,ntrip->passwd,
+                                   ntrip->mntpnt,ntrip->str);
+    }
+    else {
+        decodetcppath(path,addr,port,ntrip->user,ntrip->passwd,ntrip->mntpnt,
+                      ntrip->str);
+        decode_ret=1;
+    }
+
+    if(!decode_ret) {
+        tracet(2,"openntrip: decode path error\n");
+        free(ntrip);
+        return NULL;
+    }
     
     /* use default port if no port specified */
     if (!*port) {
@@ -2002,7 +2057,7 @@ static int add2fdsntrip(ntrip_t *ntrip, fd_set *fds)
 static ntripc_t *openntripc(const char *path, int type, char *msg)
 {
     ntripc_t *ntripc;
-    int i,j;
+    int i,j,decode_ret;
     char port[256]="",tpath[MAXSTRPATH];
     
     tracet(3,"openntripc: path=%s type=%d\n",path,type);
@@ -2022,8 +2077,21 @@ static ntripc_t *openntripc(const char *path, int type, char *msg)
     initlock(&ntripc->lock_srctbl);
     
     /* decode tcp/ntrip path */
-    decodetcppath(path,NULL,port,ntripc->user,ntripc->passwd,NULL,NULL);
-    
+    if (ntrippathfmt==STRPATHFMT_VER1) {
+        decode_ret=decodentrippath(path,NULL,port,ntripc->user,ntripc->passwd,
+                                   NULL,NULL);
+    }
+    else {
+        decodetcppath(path,NULL,port,ntripc->user,ntripc->passwd,NULL,NULL);
+        decode_ret=1;
+    }
+
+    if(!decode_ret) {
+        tracet(2,"openntripc: decode path error\n");
+        free(ntripc);
+        return NULL;
+    }
+
     /* use default port if no port specified */
     if (!*port) {
         sprintf(port,"%d",type?NTRIP_CLI_PORT:NTRIP_SVR_PORT);
@@ -2987,6 +3055,7 @@ extern void strinit(stream_t *stream)
 *                    port  = TCP server port to connect
 *
 *   STR_NTRIPSVR [:passwd@]addr[:port]/mponit[:string]
+*                or see STRPATHFMT_VER1 (rtklib.h)
 *                    addr  = NTRIP caster address to connect
 *                    port  = NTRIP caster server port to connect
 *                    passwd= NTRIP caster server password to connect
@@ -2994,6 +3063,7 @@ extern void strinit(stream_t *stream)
 *                    string= NTRIP server string
 *
 *   STR_NTRIPCLI [user[:passwd]@]addr[:port]/mpoint
+*                or see STRPATHFMT_VER1 (rtklib.h)
 *                    addr  = NTRIP caster address to connect
 *                    port  = NTRIP caster client port to connect
 *                    user  = NTRIP caster client user to connect
@@ -3001,11 +3071,13 @@ extern void strinit(stream_t *stream)
 *                    mpoint= NTRIP mountpoint
 *
 *   STR_NTRIPC_S [:passwd@][:port]/mpoint
+*                or see STRPATHFMT_VER1 (rtklib.h)
 *                    port  = NTRIP caster server port to accept
 *                    passwd= NTRIP caster server password to accept
 *                    mpoint= NTRIP mountpoint
 *
 *   STR_NTRIPC_C [user[:passwd]@][:port]/mpoint
+*                or see STRPATHFMT_VER1 (rtklib.h)
 *                    port  = NTRIP caster client port to accept
 *                    user  = NTRIP caster client user to accept
 *                    passwd= NTRIP caster client password to accept
@@ -3599,6 +3671,23 @@ extern void strsetproxy(const char *addr)
     tracet(3,"strsetproxy: addr=%s\n",addr);
     
     strcpy(proxyaddr,addr);
+}
+/* set ntrip path format -------------------------------------------------------
+* set ntrip path format
+* args   : int  pathfmt    I   version of path format
+* return : status (0:error,1:ok)
+*-----------------------------------------------------------------------------*/
+extern int strsetntrippathfmt(int pathfmt)
+{
+    tracet(3, "strsetntrippathfmt: pathfmt=%d\n", pathfmt);
+
+    if(pathfmt!=STRPATHFMT_VER0&&pathfmt!=STRPATHFMT_VER1) {
+        tracet(2, "strsetntrippathfmt: unsupported path format: %d\n", pathfmt);
+        return 0;
+    }
+
+    ntrippathfmt=pathfmt;
+    return 1;
 }
 /* get stream time -------------------------------------------------------------
 * get stream time

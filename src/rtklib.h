@@ -499,6 +499,12 @@ extern "C" {
 #define MAXRCVFMT    16
 #endif
 
+#define STRPATHFMT_VER0 0               /* stream path format: origin stream path format */
+#define STRPATHFMT_VER1 1               /* stream path format: serialized stream path format */
+                                        /* format: nbyte:[user]nbyte:[passwd]nbyte:[addr]nbyte:[port] */
+                                        /*         nbyte:[mountpoint]nbyte:[str] */
+                                        /* example: 4U/er8:p@ssWor!9:127.0.0.14:20003:MNT0: */
+
 #define STR_MODE_R  0x1                 /* stream mode: read */
 #define STR_MODE_W  0x2                 /* stream mode: write */
 #define STR_MODE_RW 0x3                 /* stream mode: read/write */
@@ -1966,6 +1972,7 @@ EXPORT void strsendcmd(stream_t *stream, const char *cmd);
 EXPORT void strsettimeout(stream_t *stream, int toinact, int tirecon);
 EXPORT void strsetdir(const char *dir);
 EXPORT void strsetproxy(const char *addr);
+EXPORT int  strsetntrippathfmt(int pathfmt);
 
 /* integer ambiguity resolution ----------------------------------------------*/
 EXPORT int lambda(int n, int m, const double *a, const double *Q, double *F,
