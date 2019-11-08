@@ -366,8 +366,10 @@ private:
     void  SaveOpt      (void);
     
     MapAreaDialog *mapAreaDialog;
+#ifdef GEARTH_GMAP_ENABLE
     GoogleEarthView *googleEarthView;
     GoogleMapView *googleMapView;
+#endif
     SpanDialog *spanDialog;
     ConnectDialog *connectDialog;
     SkyImgDialog *skyImgDialog;

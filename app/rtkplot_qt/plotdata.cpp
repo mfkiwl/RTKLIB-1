@@ -1357,7 +1357,9 @@ void Plot::Clear(void)
         initsolbuf(SolData  ,1,RtBuffSize+1);
         initsolbuf(SolData+1,1,RtBuffSize+1);
     }
+#ifdef GEARTH_GMAP_ENABLE
     googleEarthView->Clear();
+#endif
     
     for (i=0;i<=360;i++) ElMaskData[i]=0.0;
     

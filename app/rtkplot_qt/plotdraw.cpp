@@ -268,8 +268,10 @@ void Plot::DrawTrk(QPainter &c,int level)
         for (i=0;i<3;i++) rr[i]+=OPos[i];
         ecef2pos(rr,cent);
 
+#ifdef GEARTH_GMAP_ENABLE
         googleEarthView->SetCent(cent[0]*R2D,cent[1]*R2D);
         googleMapView->SetCent(cent[0]*R2D,cent[1]*R2D);
+#endif
     }
     Refresh_GEView();
 }
@@ -1993,6 +1995,7 @@ void Plot::DrawMark(Graph *g,QPainter &c, const QPoint &p, int mark, const QColo
 // refresh google earth/map view --------------------------------------------------
 void Plot::Refresh_GEView(void)
 {
+#ifdef GEARTH_GMAP_ENABLE
     TIMEPOS *vel;
     sol_t *sol;
     double pos[3]={0},heading,ddeg;
@@ -2083,6 +2086,7 @@ void Plot::Refresh_GEView(void)
     else {
         googleEarthView->HidePoint();
     }
+#endif
 }
 // refresh google map view -----------------------------------------------------
 void Plot::Refresh_GMView(void)
