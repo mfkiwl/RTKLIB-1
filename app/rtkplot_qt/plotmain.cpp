@@ -2711,7 +2711,7 @@ void Plot::LoadOpt(void)
     plotOptDialog->refDialog->StaPosFile=settings.value ("plot/staposfile","").toString();
     plotOptDialog->refDialog->Format    =settings.value("plot/staposformat",0).toInt();
     
-    ElMask    =settings.value  ("plot/elmask", 0.0).toDouble();
+    ElMask    =settings.value  ("plot/elmask",15.0).toDouble();
     MaxDop    =settings.value  ("plot/maxdop",30.0).toDouble();
     MaxMP     =settings.value  ("plot/maxmp" ,10.0).toDouble();
     YRange    =settings.value  ("plot/yrange", 5.0).toDouble();
