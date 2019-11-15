@@ -397,7 +397,7 @@ void Plot::showEvent (QShowEvent *event)
             QCoreApplication::translate("main", "path"));
     parser.addOption(path2Option);
 
-    QCommandLineOption traceOption(QStringList() << "t" << "tracelevel",
+    QCommandLineOption traceOption(QStringList() << "x" << "tracelevel",
             QCoreApplication::translate("main", "set trace lavel to <tracelavel>."),
             QCoreApplication::translate("main", "tracelevel"));
     parser.addOption(traceOption);
