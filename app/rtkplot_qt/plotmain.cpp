@@ -334,6 +334,7 @@ Plot::Plot(QWidget *parent) : QMainWindow(parent)
     widget->setAttribute(Qt::WA_TransparentForMouseEvents);
     centralwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
     setMouseTracking(true);
+    setAcceptDrops(true);
 
     LoadOpt();
 
@@ -501,27 +502,25 @@ void Plot::dragEnterEvent(QDragEnterEvent *event)
 void Plot::dropEvent(QDropEvent *event)
 {
     QStringList files;
-    int n;
     
     trace(3,"DropFiles\n");
     
     if (ConnectState||!event->mimeData()->hasUrls()){
         return;
-    };
-    foreach (QUrl url, event->mimeData()->urls()) {
-        files.append(url.toString());
     }
-    
-    if (files.size()==1&&(n=files.at(0).lastIndexOf('.'))!=-1) {
-        QString ext=files.at(0).mid(n).toLower();
-        if ((ext=="jpg")||(ext=="jpeg")){
-            if (PlotType==PLOT_TRK) {
-                ReadMapData(files.at(0));
-            }
-            else if (PlotType==PLOT_SKY||PlotType==PLOT_MPS) {
-                ReadSkyData(files.at(0));
-            }
-        };
+    foreach (QUrl url, event->mimeData()->urls()) {
+        files.append(url.toLocalFile());
+    }
+
+    QString ext=QFileInfo(files.at(0)).suffix();
+
+    if (files.size()==1&&(ext=="jpg"||ext=="jpeg")){
+        if (PlotType==PLOT_TRK) {
+            ReadMapData(files.at(0));
+        }
+        else if (PlotType==PLOT_SKY||PlotType==PLOT_MPS) {
+            ReadSkyData(files.at(0));
+        }
     }
     else if (CheckObs(files.at(0))) {
         ReadObs(files);
