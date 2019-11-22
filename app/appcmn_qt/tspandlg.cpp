@@ -22,6 +22,9 @@ SpanDialog::SpanDialog(QWidget* parent)
     connect(TimeStartF,SIGNAL(clicked(bool)),this,SLOT(TimeStartFClick()));
     connect(BtnOk,SIGNAL(clicked(bool)),this,SLOT(BtnOkClick()));
     connect(BtnCancel,SIGNAL(clicked(bool)),this,SLOT(reject()));
+
+    TimeY1->setTimeSpec(Qt::UTC);
+    TimeY2->setTimeSpec(Qt::UTC);
 }
 //---------------------------------------------------------------------------
 void SpanDialog::showEvent(QShowEvent* event)
@@ -32,13 +35,13 @@ void SpanDialog::showEvent(QShowEvent* event)
     TimeEndF  ->setChecked(TimeEna[1]);
     TimeIntF  ->setChecked(TimeEna[2]);
 
-    QDateTime start=QDateTime::fromTime_t(TimeStart.time); start=start.addSecs(TimeStart.sec);
-    QDateTime end=QDateTime::fromTime_t(TimeEnd.time); start=start.addSecs(TimeEnd.sec);
+    QDateTime start=QDateTime::fromTime_t(TimeStart.time,Qt::UTC);start=start.addSecs(TimeStart.sec);
+    QDateTime end=QDateTime::fromTime_t(TimeEnd.time,Qt::UTC);end=end.addSecs(TimeEnd.sec);
 
-    TimeY1->setTime(start.time());
-    TimeH1->setDate(start.date());
-    TimeY2->setTime(end.time());
-    TimeH2->setDate(end.date());
+    TimeY1->setDate(start.date());
+    TimeH1->setTime(start.time());
+    TimeY2->setDate(end.date());
+    TimeH2->setTime(end.time());
 
     EditTimeInt->setCurrentText(QString::number(TimeInt));
 
@@ -52,11 +55,11 @@ void SpanDialog::BtnOkClick()
     TimeEna[1]=TimeEndF  ->isChecked();
     TimeEna[2]=TimeIntF  ->isChecked();
 
-    QDateTime start(TimeY1->date(),TimeH1->time());
-    QDateTime end(TimeY2->date(),TimeH2->time());
+    QDateTime start(TimeY1->date(),TimeH1->time(),Qt::UTC);
+    QDateTime end(TimeY2->date(),TimeH2->time(),Qt::UTC);
 
-    TimeStart.time=start.toTime_t();TimeStart.sec=start.time().msec()/1000;
-    TimeEnd.time=end.toTime_t();TimeEnd.sec=end.time().msec()/1000;
+    TimeStart.time=start.toTime_t();TimeStart.sec=start.time().msec()/1000.0;
+    TimeEnd.time=end.toTime_t();TimeEnd.sec=end.time().msec()/1000.0;
     TimeInt=EditTimeInt->currentText().toDouble();
 
     accept();
