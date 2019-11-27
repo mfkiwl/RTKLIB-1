@@ -1096,6 +1096,8 @@ void MainForm::WriteList(QSettings *ini, const QString &key, const QComboBox *co
 // add history --------------------------------------------------------------
 void MainForm::AddHist(QComboBox *combo)
 {
+    const QSignalBlocker blocker(combo);
+
     QString hist=combo->currentText();
     if (hist=="") return;
     int i=combo->currentIndex();
