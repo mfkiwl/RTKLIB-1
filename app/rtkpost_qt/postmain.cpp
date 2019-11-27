@@ -378,9 +378,9 @@ void MainForm::showEvent(QShowEvent* event)
         TimeUnitF->setChecked(true);
         TimeUnit->setText(parser.value(timeUnitOption));
     }
-#endif /*TODO: alternative for QT4 */
-
+#else /*TODO: alternative for QT4 */
     LoadOpt();
+#endif
 
     if (inputflag) SetOutFile();
     
