@@ -285,6 +285,8 @@ void  MainWindow::dropEvent(QDropEvent *event)
 // add history --------------------------------------------------------------
 void MainWindow::AddHist(QComboBox *combo)
 {
+    const QSignalBlocker blocker(combo);
+
     QString hist=combo->currentText();
     if (hist=="") return;
     int i=combo->currentIndex();
