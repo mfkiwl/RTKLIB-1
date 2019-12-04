@@ -2074,6 +2074,7 @@ static ntripc_t *openntripc(const char *path, int type, char *msg)
         ntripc->con[i].nb=0;
         for (j=0;j<NTRIP_MAXRSP;j++) ntripc->con[i].buff[j]=0;
     }
+    ntripc->srctbl=NULL;
     initlock(&ntripc->lock_srctbl);
     
     /* decode tcp/ntrip path */
