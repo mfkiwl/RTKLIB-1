@@ -275,9 +275,13 @@ void  MainWindow::dragEnterEvent(QDragEnterEvent *event)
 }
 void  MainWindow::dropEvent(QDropEvent *event)
 {
-    if (!event->mimeData()->hasFormat("text/uri-list")) return;
+    QList<QUrl> urls=event->mimeData()->urls();
 
-    QString file=QUrl(event->mimeData()->text()).toLocalFile();
+    if (urls.size() < 1) {
+        return;
+    }
+
+    QString file=event->mimeData()->urls()[0].toLocalFile();
 
     InFile->setCurrentText(file);
     SetOutFiles(InFile->currentText());
@@ -436,7 +440,7 @@ void MainWindow::BtnKeyClick()
 // callback on button-output-file-1 -----------------------------------------
 void MainWindow::BtnOutFile1Click()
 {
-    QString selectedFilter="RINEX OBS (*.obs *.*O";
+    QString selectedFilter="RINEX OBS (*.obs *.*O)";
     OutFile1->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX OBS File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
                  "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
