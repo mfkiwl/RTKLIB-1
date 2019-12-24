@@ -699,35 +699,25 @@ void MainWindow::ConvertFile(void)
 
     // recognize input file format
     strcpy(conversionThread->ifile,qPrintable(InFile_Text));
-    QFileInfo fi(InFile_Text);
+    QString suffix = QFileInfo(InFile_Text).suffix().toLower();
     if (Format->currentIndex()==0) { // auto
-        if      (fi.completeSuffix()=="rtcm2") conversionThread->format=STRFMT_RTCM2;
-        else if (fi.completeSuffix()=="rtcm3") conversionThread->format=STRFMT_RTCM3;
-        else if (fi.completeSuffix()=="gps"  ) conversionThread->format=STRFMT_OEM4;
-        else if (fi.completeSuffix()=="ubx"  ) conversionThread->format=STRFMT_UBX;
-        else if (fi.completeSuffix()=="log"  ) conversionThread->format=STRFMT_SS2;
-        else if (fi.completeSuffix()=="bin"  ) conversionThread->format=STRFMT_CRES;
-        else if (fi.completeSuffix()=="jps"  ) conversionThread->format=STRFMT_JAVAD;
-        else if (fi.completeSuffix()=="bnx"  ) conversionThread->format=STRFMT_BINEX;
-        else if (fi.completeSuffix()=="binex") conversionThread->format=STRFMT_BINEX;
-        else if (fi.completeSuffix()=="rt17" ) conversionThread->format=STRFMT_RT17;
-        else if (fi.completeSuffix()=="cmr"  ) conversionThread->format=STRFMT_CMR;
-        else if (fi.completeSuffix().toLower()=="obs"  ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().toLower().contains( "nav" )) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='o'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='O'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='n'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='N'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='p'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='P'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='g'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='G'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='h'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='H'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='q'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='Q'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='l'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='L'   ) conversionThread->format=STRFMT_RINEX;
+        if      (suffix=="rtcm2") conversionThread->format=STRFMT_RTCM2;
+        else if (suffix=="rtcm3") conversionThread->format=STRFMT_RTCM3;
+        else if (suffix=="gps"  ) conversionThread->format=STRFMT_OEM4;
+        else if (suffix=="ubx"  ) conversionThread->format=STRFMT_UBX;
+        else if (suffix=="log"  ) conversionThread->format=STRFMT_SS2;
+        else if (suffix=="bin"  ) conversionThread->format=STRFMT_CRES;
+        else if (suffix=="jps"  ) conversionThread->format=STRFMT_JAVAD;
+        else if (suffix=="bnx"  ) conversionThread->format=STRFMT_BINEX;
+        else if (suffix=="binex") conversionThread->format=STRFMT_BINEX;
+        else if (suffix=="rt17" ) conversionThread->format=STRFMT_RT17;
+        else if (suffix=="cmr"  ) conversionThread->format=STRFMT_CMR;
+        else if (suffix=="obs"  ) conversionThread->format=STRFMT_RINEX;
+        else if (suffix.contains("nav")) conversionThread->format=STRFMT_RINEX;
+        else if (suffix.size()==3&&(suffix[2]=='o'||suffix[2]=='n'||suffix[2]=='p'||
+                 suffix[2]=='g'||suffix[2]=='h'||suffix[2]=='q'||suffix[2]=='l')) {
+            conversionThread->format=STRFMT_RINEX;
+        }
         else {
             showmsg("file format can not be recognized");
             return;
