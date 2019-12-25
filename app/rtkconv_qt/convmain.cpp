@@ -374,7 +374,7 @@ void MainWindow::BtnOptionsClick()
     int rnxfile=RnxFile;
     convOptDialog->exec();
     if (convOptDialog->result()!=QDialog::Accepted) return;
-    if (RnxFile!=rnxfile) {
+    if (RnxFile!=rnxfile||RnxFile) {
         SetOutFiles(InFile->currentText());
     }
     UpdateEnable();
