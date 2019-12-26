@@ -227,7 +227,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     if (OutDirEna->isChecked()) {
         QFileInfo info(infile);
 
-        ofile[0]=OutDir_Text+"/"+info.fileName();
+        ofile[0]=OutDir_Text+QDir::separator()+info.fileName();
     }
     else {
         ofile[0]=infile;
@@ -237,7 +237,7 @@ void MainWindow::SetOutFiles(const QString &infile)
 
     if (!RnxFile) {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.absolutePath()+"/"+info.baseName();
+        ofile[0]=info.absolutePath()+QDir::separator()+info.completeBaseName();
         ofile[1]=ofile[0]+".obs";
         ofile[2]=ofile[0]+".nav";
         ofile[3]=ofile[0]+".gnav";
@@ -248,7 +248,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     }
     else {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.filePath()+"/";
+        ofile[0]=info.filePath()+QDir::separator();
         ofile[1]+=ofile[0]+QString("%%r%%n0.%%yO");
         if (RnxVer>=3&&NavSys&&(NavSys!=SYS_GPS)) { /* ver.3 and mixed system */
             ofile[2]+=ofile[0]+"%%r%%n0.%%yP";
@@ -264,7 +264,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     }
     for (i=0;i<7;i++) {
         if (ofile[i+1]==infile) ofile[i+1]+="_";
-        edit[i]->setText(ofile[i+1]);
+        edit[i]->setText(QDir::toNativeSeparators(ofile[i+1]));
     }
 }
 // callback on file drag and drop -------------------------------------------
