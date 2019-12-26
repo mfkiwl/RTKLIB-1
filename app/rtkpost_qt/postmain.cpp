@@ -807,11 +807,11 @@ void MainForm::SetOutFile(void)
     
     if (OutDirEna->isChecked()) {
         QFileInfo f(ifile);
-        ofile=OutDir_Text+"/"+f.baseName();
+        ofile=OutDir_Text+QDir::separator()+f.completeBaseName();
     }
     else {
         QFileInfo f(ifile);
-        ofile=f.absolutePath()+"/"+f.baseName();
+        ofile=f.absolutePath()+QDir::separator()+f.completeBaseName();
     }
     ofile+=SolFormat==SOLF_NMEA?".nmea":".pos";
     ofile.replace('*','0');
