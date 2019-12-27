@@ -929,8 +929,13 @@ static void set_index(double ver, int sys, const char *opt,
         
         /* frequency index for beidou */
         if (sys==SYS_CMP) {
-            if      (ind->frq[i]==5) ind->frq[i]=2; /* B2 */
+            if      (ind->frq[i]==2) ind->frq[i]=1; /* B1 */
+            else if (ind->frq[i]==5) ind->frq[i]=2; /* B2 */
             else if (ind->frq[i]==4) ind->frq[i]=3; /* B3 */
+        }
+        /* frequency index for galileo */
+        else if (sys==SYS_GAL) {
+            if      (ind->frq[i]==5) ind->frq[i]=2; /* E5b */
         }
     }
     /* parse phase shift options */
