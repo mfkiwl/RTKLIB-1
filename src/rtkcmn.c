@@ -3103,6 +3103,32 @@ extern void traceb(int level, const unsigned char *p, int n)
     for (i=0;i<n;i++) fprintf(fp_trace,"%02X%s",*p++,i%8==7?" ":"");
     fprintf(fp_trace,"\n");
 }
+extern void tracertksat(int level, const rtk_t* rtk)
+{
+    int i,j,fix,freqs[]={1,2,5,7,8,6};
+    const int freqs_size=sizeof(freqs)/sizeof(freqs[0]);
+    const int nf=NFREQ>freqs_size?freqs_size:NFREQ;
+    char id[32];
+
+    if (!fp_trace||level>level_trace) return;
+
+    fprintf(fp_trace,"%3s %2s","SAT","C1");
+    for (i=0;i<nf;i++) fprintf(fp_trace," L%d"    ,freqs[i]);
+    for (i=0;i<nf;i++) fprintf(fp_trace,"  Fix%d" ,freqs[i]);
+    fprintf(fp_trace,"\n");
+
+    for (i=0;i<MAXSAT;i++) {
+        if (rtk->ssat[i].azel[1]<=0.0) continue;
+        satno2id(i+1,id);
+        fprintf(fp_trace,"%3s %2s",id,rtk->ssat[i].vs?"OK":"-");
+        for (j=0;j<nf;j++) fprintf(fp_trace," %2s",rtk->ssat[i].vsat[j]?"OK":"-");
+        for (j=0;j<nf;j++) {
+            fix=rtk->ssat[i].fix[j];
+            fprintf(fp_trace," %5s",fix==1?"FLOAT":(fix==2?"FIX":(fix==3?"HOLD":"-")));
+        }
+        fprintf(fp_trace,"\n");
+    }
+}
 #else
 extern void traceopen(const char *file) {}
 extern void traceclose(void) {}
@@ -3117,6 +3143,7 @@ extern void tracehnav(int level, const nav_t *nav) {}
 extern void tracepeph(int level, const nav_t *nav) {}
 extern void tracepclk(int level, const nav_t *nav) {}
 extern void traceb  (int level, const unsigned char *p, int n) {}
+extern void tracertksat(int level, const rtk_t* rtk) {}
 
 #endif /* TRACE */
 

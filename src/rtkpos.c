@@ -2818,5 +2818,9 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
       glo_IFB_process(rtk->glo_IFB, rtk);
     }
 
+#if 1 /* debug */
+    trace(4,"rtksat=\n");tracertksat(4, rtk);
+#endif
+
     return 1;
 }
