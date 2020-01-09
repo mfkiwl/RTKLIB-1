@@ -58,6 +58,7 @@
 #include "keydlg.h"
 #include "aboutdlg.h"
 #include "viewer.h"
+#include "utils.h"
 
 #define PRGNAME     "RTKPOST-QT"
 #define MAXHIST     20
@@ -1201,8 +1202,7 @@ void MainForm::LoadOpt(void)
     prcopt_t prcopt;
     solopt_t solopt;
     filopt_t filopt;
-    resetsysopts();
-    getsysopts(&prcopt, &solopt, 1, &filopt);
+    InitializeSysOpts(&prcopt,&solopt,&filopt);
 
     QSettings ini(IniFile,QSettings::IniFormat);
 
@@ -1309,8 +1309,8 @@ void MainForm::LoadOpt(void)
     PrNoise4           =ini.value("opt/prnoise4",       prcopt.prn[3]).toDouble();
     PrNoise5           =ini.value("opt/prnoise5",       prcopt.prn[4]).toDouble();
 
-    RovPosType         =ini.value("opt/rovpostype",     prcopt.rovpos).toInt();
-    RefPosType         =ini.value("opt/refpostype",     POSOPT_SINGLE+2).toInt();
+    RovPosType         =ini.value("opt/rovpostype",     prcopt.rovpos==0?0:prcopt.rovpos+2).toInt();
+    RefPosType         =ini.value("opt/refpostype",     prcopt.refpos==0?0:prcopt.refpos+2).toInt();
     RovPos[0]          =ini.value("opt/rovpos1",        prcopt.ru[0]).toDouble();
     RovPos[1]          =ini.value("opt/rovpos2",        prcopt.ru[1]).toDouble();
     RovPos[2]          =ini.value("opt/rovpos3",        prcopt.ru[2]).toDouble();
