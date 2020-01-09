@@ -907,11 +907,16 @@ int MainForm::GetOption(prcopt_t &prcopt, solopt_t &solopt,
     prcopt.modear   =AmbRes;
     prcopt.glomodear=GloAmbRes;
     prcopt.bdsmodear=BdsAmbRes;
+    prcopt.arfilter =ARFilter;
     prcopt.maxout   =OutCntResetAmb;
     prcopt.minfix   =FixCntHoldAmb;
     prcopt.minlock  =LockCntFixAmb;
+    prcopt.minfixsats=MinFixSats;
+    prcopt.minholdsats=MinHoldSats;
     prcopt.ionoopt  =IonoOpt;
     prcopt.tropopt  =TropOpt;
+    prcopt.base_multi_epoch=BaseMultiEpoch;
+    prcopt.residual_mode=ResidMode;
     prcopt.posopt[0]=PosOpt[0];
     prcopt.posopt[1]=PosOpt[1];
     prcopt.posopt[2]=PosOpt[2];
@@ -1263,10 +1268,13 @@ void MainForm::LoadOpt(void)
     AmbRes             =ini.value("opt/ambres",         prcopt.modear).toInt();
     GloAmbRes          =ini.value("opt/gloambres",      prcopt.glomodear).toInt();
     BdsAmbRes          =ini.value("opt/bdsambres",      prcopt.bdsmodear).toInt();
+    ARFilter           =ini.value("opt/arfilter",       prcopt.arfilter).toInt();
     ValidThresAR       =ini.value("opt/validthresar",   prcopt.thresar[0]).toDouble();
     ThresAR2           =ini.value("opt/thresar2",       prcopt.thresar[1]).toDouble();
     ThresAR3           =ini.value("opt/thresar3",       prcopt.thresar[2]).toDouble();
     LockCntFixAmb      =ini.value("opt/lockcntfixamb",  prcopt.minlock).toInt();
+    MinFixSats         =ini.value("opt/minfixsats",     prcopt.minfixsats).toInt();
+    MinHoldSats        =ini.value("opt/minholdsats",    prcopt.minholdsats).toInt();
     FixCntHoldAmb      =ini.value("opt/fixcntholdamb",  prcopt.minfix).toInt();
     ElMaskAR           =ini.value("opt/elmaskar",       prcopt.elmaskar).toDouble();
     ElMaskHold         =ini.value("opt/elmaskhold",     prcopt.elmaskhold).toDouble();
@@ -1281,6 +1289,10 @@ void MainForm::LoadOpt(void)
     BaseLine[0]        =ini.value("opt/baselinelen",    prcopt.baseline[0]).toDouble();
     BaseLine[1]        =ini.value("opt/baselinesig",    prcopt.baseline[1]).toDouble();
     BaseLineConst      =ini.value("opt/baselineconst",  0).toInt();
+
+    BaseMultiEpoch     =ini.value("opt/basemultiepoch", prcopt.base_multi_epoch).toInt();
+
+    ResidMode          =ini.value("opt/residmode",      prcopt.residual_mode).toInt();
 
     SolFormat          =ini.value("opt/solformat",      solopt.posf).toInt();
     TimeFormat         =ini.value("opt/timeformat",     solopt.timef).toInt();
@@ -1464,10 +1476,13 @@ void MainForm::SaveOpt(void)
     ini.setValue("opt/ambres",      AmbRes      );
     ini.setValue("opt/gloambres",   GloAmbRes   );
     ini.setValue("opt/bdsambres",   BdsAmbRes   );
+    ini.setValue("opt/arfilter",    ARFilter    );
     ini.setValue  ("opt/validthresar",ValidThresAR);
     ini.setValue  ("opt/thresar2",    ThresAR2    );
     ini.setValue  ("opt/thresar3",    ThresAR3    );
     ini.setValue("opt/lockcntfixamb",LockCntFixAmb);
+    ini.setValue("opt/minfixsats",   MinFixSats);
+    ini.setValue("opt/minholdsats",  MinHoldSats);
     ini.setValue("opt/fixcntholdamb",FixCntHoldAmb);
     ini.setValue  ("opt/elmaskar",    ElMaskAR    );
     ini.setValue  ("opt/elmaskhold",  ElMaskHold  );
@@ -1483,6 +1498,10 @@ void MainForm::SaveOpt(void)
     ini.setValue  ("opt/baselinesig", BaseLine[1] );
     ini.setValue("opt/baselineconst",BaseLineConst);
     
+    ini.setValue("opt/basemultiepoch", BaseMultiEpoch);
+
+    ini.setValue("opt/residmode",      ResidMode);
+
     ini.setValue("opt/solformat",   SolFormat   );
     ini.setValue("opt/timeformat",  TimeFormat  );
     ini.setValue("opt/timedecimal", TimeDecimal );

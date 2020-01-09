@@ -135,6 +135,7 @@ public:
 	int OutCntResetAmb,FixCntHoldAmb,LockCntFixAmb,RovPosType,RefPosType;
 	int SatEphem,NavSys;
 	int RovAntPcv,RefAntPcv,AmbRes,GloAmbRes,BdsAmbRes;
+	int ARFilter,MinFixSats,MinHoldSats,BaseMultiEpoch,ResidMode;
 	int OutputHead,OutputOpt,OutputDatum;
 	int OutputHeight,OutputGeoid,DebugTrace,DebugStatus,BaseLineConst;
 	int SolFormat,TimeFormat,LatLonFormat,IntpRefObs,NetRSCorr,SatClkCorr;
