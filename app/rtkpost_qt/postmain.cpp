@@ -1145,7 +1145,7 @@ gtime_t MainForm::GetTime1(void)
     QDateTime time(TimeY1->date(),TimeH1->time(),Qt::UTC);
 
     gtime_t t;
-    t.time=time.toTime_t();t.sec=time.time().msec()/1000;
+    t.time=time.toTime_t();t.sec=time.time().msec()/1000.0;
 
     return t;
 }
@@ -1155,7 +1155,7 @@ gtime_t MainForm::GetTime2(void)
     QDateTime time(TimeY2->date(),TimeH2->time(),Qt::UTC);
 
     gtime_t t;
-    t.time=time.toTime_t();t.sec=time.time().msec()/1000;
+    t.time=time.toTime_t();t.sec=time.time().msec()/1000.0;
 
     return t;
 }
@@ -1218,7 +1218,7 @@ void MainForm::LoadOpt(void)
     TimeY2->setDate(ini.value ("set/timey2",      "2000/01/01").toDate());
     TimeH2->setTime(ini.value ("set/timeh2",      "00:00:00").toTime());
     TimeIntF ->setChecked(ini.value("set/timeintf",    0).toBool());
-    TimeInt->setCurrentText(ini.value ("set/timeint",     "0").toString());
+    TimeInt->setCurrentText(ini.value ("set/timeint",     "1").toString());
     TimeUnitF->setChecked(ini.value("set/timeunitf",   0).toBool());
     TimeUnit->setText(ini.value ("set/timeunit",    "24").toString());
     InputFile1->setCurrentText(ini.value ("set/inputfile1",  "").toString());
@@ -1397,7 +1397,7 @@ void MainForm::LoadOpt(void)
     convDialog->TimeH1    ->setTime(ini.value ("conv/timeh1","00:00:00"  ).toTime());
     convDialog->TimeY2    ->setDate(ini.value ("conv/timey2","2000/01/01").toDate());
     convDialog->TimeH2    ->setTime(ini.value ("conv/timeh2","00:00:00"  ).toTime());
-    convDialog->TimeInt   ->setText(ini.value ("conv/timeint", "0").toString());
+    convDialog->TimeInt   ->setText(ini.value ("conv/timeint", "1").toString());
     convDialog->TrackColor->setCurrentIndex(ini.value("conv/trackcolor",5).toInt());
     convDialog->PointColor->setCurrentIndex(ini.value("conv/pointcolor",5).toInt());
     convDialog->OutputAlt ->setCurrentIndex(ini.value("conv/outputalt", 0).toInt());
