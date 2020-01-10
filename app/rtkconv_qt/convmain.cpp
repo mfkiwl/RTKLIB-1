@@ -611,11 +611,11 @@ void MainWindow::GetTime(gtime_t *ts, gtime_t *te, double *tint,
 {
     if (TimeStartF->isChecked()) {
         QDateTime start(TimeY1->date(),TimeH1->time(),Qt::UTC);
-        ts->time=start.toTime_t();ts->sec=start.time().msec()/1000;
+        ts->time=start.toTime_t();ts->sec=start.time().msec()/1000.0;
     } else ts->time=ts->sec=0;
     if (TimeEndF->isChecked()) {
         QDateTime end(TimeY2->date(),TimeH2->time(),Qt::UTC);
-        te->time=end.toTime_t();te->sec=end.time().msec()/1000;
+        te->time=end.toTime_t();te->sec=end.time().msec()/1000.0;
     } else te->time=te->sec=0;
     if (TimeIntF->isChecked()) {
         *tint=TimeInt->currentText().toDouble();
