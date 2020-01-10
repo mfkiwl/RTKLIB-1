@@ -388,10 +388,8 @@ void MainForm::showEvent(QShowEvent* event)
     UpdateEnable();
 }
 // callback on form close ---------------------------------------------------
-void MainForm::closeEvent(QCloseEvent *event)
+void MainForm::closeEvent(QCloseEvent*)
 {
-    if (event->spontaneous()) return;
-
     SaveOpt();
 }
 // callback on drop files ---------------------------------------------------
