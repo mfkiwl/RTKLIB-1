@@ -126,7 +126,9 @@
 *           2017/04/11 1.43 delete EXPORT for global variables
 *           2018/10/10 1.44 modify api satexclude()
 *-----------------------------------------------------------------------------*/
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199506
+#endif
 #include <stdarg.h>
 #include <ctype.h>
 #ifndef WIN32
@@ -4098,6 +4100,14 @@ extern int rtk_uncompress(const char *file, char *uncfile)
 extern int atomic_load(int* ptr)
 {
     return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+}
+extern void atomic_store(int* ptr, int val)
+{
+    __atomic_store_n(ptr, val, __ATOMIC_SEQ_CST);
+}
+extern int atomic_add_fetch(int* ptr, int val)
+{
+    return __atomic_add_fetch(ptr, val, __ATOMIC_SEQ_CST);
 }
 extern int atomic_sub_fetch(int* ptr, int val)
 {

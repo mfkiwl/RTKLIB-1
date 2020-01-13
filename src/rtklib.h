@@ -505,6 +505,10 @@ extern "C" {
                                         /*         nbyte:[mountpoint]nbyte:[str] */
                                         /* example: 4U/er8:p@ssWor!9:127.0.0.14:20003:MNT0: */
 
+#define STRRESOLVE_BLOCK    0           /* blocking mode(without the need to call 'strfreeres') */
+#define STRRESOLVE_NONBLOCK 1           /* non-blocking mode (need to call 'strfreeres' at
+                                           the end of system exit) */
+
 #define STR_MODE_R  0x1                 /* stream mode: read */
 #define STR_MODE_W  0x2                 /* stream mode: write */
 #define STR_MODE_RW 0x3                 /* stream mode: read/write */
@@ -1975,6 +1979,8 @@ EXPORT void strsettimeout(stream_t *stream, int toinact, int tirecon);
 EXPORT void strsetdir(const char *dir);
 EXPORT void strsetproxy(const char *addr);
 EXPORT int  strsetntrippathfmt(int pathfmt);
+EXPORT int strsetresolvemode(int resolvemode);
+EXPORT void strfreeres(void);
 
 /* integer ambiguity resolution ----------------------------------------------*/
 EXPORT int lambda(int n, int m, const double *a, const double *Q, double *F,
@@ -2102,6 +2108,8 @@ extern void settime(gtime_t time);
 /* atomic operations */
 /* https://gcc.gnu.org/onlinedocs/gcc-4.9.4/gcc/_005f_005fatomic-Builtins.html */
 extern int atomic_load(int* ptr);
+extern void atomic_store(int* ptr, int val);
+extern int atomic_add_fetch(int* ptr, int val);
 extern int atomic_sub_fetch(int* ptr, int val);
 
 #ifdef __cplusplus

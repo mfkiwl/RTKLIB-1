@@ -65,6 +65,9 @@
 *           2019/05/10 1.27 fix bug on dropping message on tcp stream (#144)
 *           2019/08/19 1.28 support 460800 and 921600 bps for serial
 *-----------------------------------------------------------------------------*/
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+#endif
 #include <ctype.h>
 #include "rtklib.h"
 #include <stdio.h>
@@ -72,12 +75,14 @@
 #ifndef WIN32
 #include <fcntl.h>
 #include <sys/time.h>
+#include <pthread.h>
 #define __USE_MISC
 #ifndef CRTSCTS
 #define CRTSCTS  020000000000
 #endif
 #include <errno.h>
 #include <termios.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -163,6 +168,7 @@ typedef struct {            /* tcp control type */
     int tcon;               /* reconnect time (ms) (-1:never,0:now) */
     unsigned int tact;      /* data active tick */
     unsigned int tdis;      /* disconnect tick */
+    int resolved;           /* 0:not resolved,1:resolved */
 } tcp_t;
 
 typedef struct tcpsvr_tag { /* tcp server type */
@@ -254,6 +260,31 @@ typedef struct {            /* memory buffer type */
     unsigned char *buf;     /* write buffer */
 } membuf_t;
 
+#ifndef WIN32
+#define SADDR_LEN 256
+
+struct hostent_elem {
+    char saddr[SADDR_LEN];      /* address name (client:server) */
+    struct sockaddr_in addr;    /* resolved address */
+    pthread_t resolve_id;       /* thread resolve id */
+    int state;                  /* (atomic) 0:started,1:resolved,2:failed */
+    struct hostent_elem *next;
+    struct hostent_elem *prev;
+};
+
+typedef struct hostent_elem hostent_elem_t;
+
+typedef struct {
+    hostent_elem_t *head;
+    int thread_cnt;         /* (atomic) */
+    const int thread_cnt_max;
+    int elem_cnt;
+    const int elem_cnt_max;
+    int released;           /* 0:not released,1:released */
+    lock_t mem_alloc_lock;
+} hostent_nb_t;
+#endif
+
 /* proto types for static functions ------------------------------------------*/
 
 static tcpsvr_t *opentcpsvr(const char *path, char *msg);
@@ -271,7 +302,187 @@ static char proxyaddr[256]=""; /* http/ntrip/ftp proxy address */
 static unsigned int tick_master=0; /* time tick master for replay */
 static int fswapmargin=30;  /* file swap margin (s) */
 static int ntrippathfmt=STRPATHFMT_VER0; /* version of ntrip path format */
+static int hostresolvemode=STRRESOLVE_BLOCK;
 
+#ifndef WIN32
+static hostent_nb_t hostent_nb={
+    .head=NULL, .thread_cnt=0, .thread_cnt_max=10,
+    .elem_cnt=0, .elem_cnt_max=20, .released=0};
+#endif
+
+#ifndef WIN32
+void addtolist(hostent_elem_t *elem)
+{
+    hostent_elem_t *next_head;
+
+    elem->next = hostent_nb.head;
+    elem->prev = NULL;
+    hostent_nb.head = elem;
+
+    next_head = hostent_nb.head->next;
+
+    if (next_head) {
+        next_head->prev = hostent_nb.head;
+    }
+}
+
+void removefromlist(hostent_elem_t *elem)
+{
+    hostent_elem_t *prev_elem, *next_elem;
+
+    prev_elem = elem->prev;
+    next_elem = elem->next;
+
+    if (prev_elem) {
+        prev_elem->next = elem->next;
+    } else {
+        hostent_nb.head = elem->next;
+    }
+    if (next_elem) {
+        next_elem->prev = elem->prev;
+    }
+}
+
+/* block resolve tcp ---------------------------------------------------------*/
+/* should be thread-safe */
+static void* _gethostipbyname(void *arg)
+{
+    hostent_elem_t *elem;
+    struct addrinfo *result;
+    struct addrinfo hints;
+    char saddr[SADDR_LEN];
+    int error;
+
+    lock(&hostent_nb.mem_alloc_lock);
+
+    if (hostent_nb.released) {
+        atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
+        unlock(&hostent_nb.mem_alloc_lock);
+        return NULL;
+    }
+
+    elem = (hostent_elem_t*)arg;
+    strcpy(saddr, elem->saddr);
+    unlock(&hostent_nb.mem_alloc_lock);
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET; /* only IPv4 addresses */
+
+    /* resolve the domain name into a list of addresses */
+    error = getaddrinfo(saddr, NULL, &hints, &result);
+
+    lock(&hostent_nb.mem_alloc_lock);
+
+    if (hostent_nb.released) {
+        atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
+        unlock(&hostent_nb.mem_alloc_lock);
+        return NULL;
+    }
+
+    if (!error) {
+        elem->addr = *(struct sockaddr_in *)result->ai_addr;
+        freeaddrinfo(result);
+    }
+
+    /* set state as resolved/failed */
+    atomic_store(&elem->state, (error == 0) ? 1 : 2);
+    unlock(&hostent_nb.mem_alloc_lock);
+
+    atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
+    return NULL;
+}
+/* get host ip non-block -----------------------------------------------------*/
+/* return 0:in progress, -1:failed, 1:resolved */
+static int gethostipbyname_nb(const char *saddr, struct sockaddr_in *addr)
+{
+    hostent_elem_t *curr_elem, *new_elem;
+    int state, ret=0;
+
+    trace(4, "gethostipbyname_nb:\n");
+
+    curr_elem = hostent_nb.head;
+
+    /* iterate over list and look for the element with saddr */
+    while (curr_elem && strcmp(curr_elem->saddr, saddr) != 0) {
+        curr_elem = curr_elem->next;
+    }
+
+    /* there is no element then try to start a new thread to resolve addr
+     * and add the new element to lost */
+    if (!curr_elem) {
+        if (hostent_nb.elem_cnt >= hostent_nb.elem_cnt_max) {
+            trace(4, "gethostipbyname_nb: elem_cnt=%d, "
+                     "let's remove the one that finished\n");
+            curr_elem = hostent_nb.head;
+
+            /* iterate over list and remove the element with the finished thread */
+            while (curr_elem) {
+                if (atomic_load(&curr_elem->state) != 0) {
+                    removefromlist(curr_elem);
+                    free(curr_elem);
+                    hostent_nb.elem_cnt--;
+                    break;
+                }
+                curr_elem = curr_elem->next;
+            }
+
+            /* failed to remove an element, just return 'in progress' status */
+            if (hostent_nb.elem_cnt >= hostent_nb.elem_cnt_max) {
+                goto exit;
+            }
+        }
+
+        if (atomic_load(&hostent_nb.thread_cnt) >= hostent_nb.thread_cnt_max) {
+            trace(4, "gethostipbyname_nb: skip '%s' due to max limit=%d\n",
+                  saddr, hostent_nb.thread_cnt_max);
+            goto exit;
+        }
+
+        if (!(new_elem=(hostent_elem_t*)malloc(sizeof(hostent_elem_t)))) {
+            trace(4, "gethostipbyname_nb: malloc error\n");
+            goto exit;
+        }
+
+        strcpy(new_elem->saddr, saddr);
+        new_elem->state = 0;
+
+        if (pthread_create(&new_elem->resolve_id, NULL, _gethostipbyname,
+                           (void*)new_elem) != 0) {
+            free(new_elem);
+            goto exit;
+        }
+
+        /* let's detach to be free from joining the thread */
+        pthread_detach(new_elem->resolve_id);
+
+        addtolist(new_elem);
+        hostent_nb.elem_cnt++;
+
+        atomic_add_fetch(&hostent_nb.thread_cnt, 1);
+        goto exit;
+    }
+
+    state = atomic_load(&curr_elem->state);
+
+    if (state != 0) {
+        if (state == 1) {   /* resolved */
+            *addr = curr_elem->addr;
+            ret = 1;
+        } else {            /* failed */
+            ret = -1;
+        }
+
+        removefromlist(curr_elem);
+        free(curr_elem);
+        hostent_nb.elem_cnt--;
+        goto exit;
+    }
+
+exit:
+    trace(4, "gethostipbyname_nb: saddr=%s: ret=%d\n", saddr, ret);
+    return ret;
+}
+#endif
 /* read/write serial buffer --------------------------------------------------*/
 #ifdef WIN32
 static int readseribuff(serial_t *serial, unsigned char *buff, int nmax)
@@ -1289,7 +1500,6 @@ static int send_nb(socket_t sock, unsigned char *buff, int n)
 /* generate tcp socket -------------------------------------------------------*/
 static int gentcp(tcp_t *tcp, int type, char *msg)
 {
-    struct hostent *hp;
 #ifdef SVR_REUSEADDR
     int opt=1;
 #endif
@@ -1310,6 +1520,7 @@ static int gentcp(tcp_t *tcp, int type, char *msg)
     memset(&tcp->addr,0,sizeof(tcp->addr));
     tcp->addr.sin_family=AF_INET;
     tcp->addr.sin_port=htons(tcp->port);
+    tcp->resolved=0;
     
     if (type==0) { /* server socket */
     
@@ -1327,21 +1538,51 @@ static int gentcp(tcp_t *tcp, int type, char *msg)
         }
         listen(tcp->sock,5);
     }
-    else { /* client socket */
-        if (!(hp=gethostbyname(tcp->saddr))) {
-            sprintf(msg,"address error (%s)",tcp->saddr);
-            tracet(1,"gentcp: gethostbyname error addr=%s err=%d\n",tcp->saddr,errsock());
-            closesocket(tcp->sock);
-            tcp->state=0;
-            tcp->tcon=ticonnect;
-            tcp->tdis=tickget();
-            return 0;
-        }
-        memcpy(&tcp->addr.sin_addr,hp->h_addr,hp->h_length);
-    }
     tcp->state=1;
     tcp->tact=tickget();
     tracet(5,"gentcp: exit sock=%d\n",tcp->sock);
+    return 1;
+}
+/* blocking(non-blocking) resolve tcp ----------------------------------------*/
+static int resolvetcp(tcp_t *tcp, char *msg)
+{
+    int ret;
+
+    tracet(4,"resolvetcp: sock=%d, saddr='%s', resolvemode=%d\n",
+           tcp->sock,tcp->saddr,hostresolvemode);
+
+    if (hostresolvemode == STRRESOLVE_BLOCK) {
+        struct hostent *hp;
+
+        if ((hp = gethostbyname(tcp->saddr))) {
+            memcpy(&tcp->addr.sin_addr, hp->h_addr, hp->h_length);
+        }
+        ret = (hp != NULL);
+    } else {
+#ifndef WIN32
+        struct sockaddr_in addr;
+        int res_addr;
+
+        memset(&addr, 0, sizeof(addr));
+
+        if (!(res_addr=gethostipbyname_nb(tcp->saddr, &addr))) {
+            return 0;
+        }
+        tcp->addr.sin_addr = addr.sin_addr;
+        ret = (res_addr == 1);
+#endif
+    }
+    if (!ret) {
+        sprintf(msg, "address error (%s)", tcp->saddr);
+        tracet(1, "resolvetcp: gethostbyname error addr=%s\n",
+               tcp->saddr);
+        closesocket(tcp->sock);
+        tcp->state=0;
+        tcp->tcon=ticonnect;
+        tcp->tdis=tickget();
+        return 0;
+    }
+    tcp->resolved=1;
     return 1;
 }
 /* disconnect tcp ------------------------------------------------------------*/
@@ -1582,6 +1823,10 @@ static int consock(tcpcli_t *tcpcli, char *msg)
     /* wait re-connect */
     if (tcpcli->svr.tcon<0||(tcpcli->svr.tcon>0&&
         (int)(tickget()-tcpcli->svr.tdis)<tcpcli->svr.tcon)) {
+        return 0;
+    }
+    /* block/non-block resolve host name */
+    if (!tcpcli->svr.resolved&&!resolvetcp(&tcpcli->svr, msg)) {
         return 0;
     }
     /* non-block connect */
@@ -3186,7 +3431,7 @@ extern void strclose(stream_t *stream)
     stream->path[0]='\0';
     stream->msg[0]='\0';
     stream->port=NULL;
-    
+
     strunlock(stream);
 }
 /* sync streams ----------------------------------------------------------------
@@ -3719,6 +3964,47 @@ extern void strsendnmea(stream_t *stream, const sol_t *sol)
     
     n=outnmea_gga(buff,sol);
     strwrite(stream,buff,n);
+}
+/* set resolve mode ------------------------------------------------------------
+* set resolver mode (blocking/non-blocking), only for not WIN32
+* args   : int  resolvemode I   mode
+* return : status (0:error,1:ok)
+*-----------------------------------------------------------------------------*/
+extern int strsetresolvemode(int resolvemode)
+{
+    tracet(3, "strsetresolvemode: resolvemode=%d\n", resolvemode);
+
+    if(resolvemode!=STRRESOLVE_BLOCK&&resolvemode!=STRRESOLVE_NONBLOCK) {
+        tracet(2, "strsetresolvemode: unsupported resolve mode: %d\n", resolvemode);
+        return 0;
+    }
+
+    hostresolvemode=resolvemode;
+    return 1;
+}
+/* free allocated resources --------------------------------------------------*/
+extern void strfreeres(void)
+{
+#ifndef WIN32
+    hostent_elem_t *curr_elem, *next_elem;
+
+    trace(4, "strfreeres:\n");
+
+    curr_elem = hostent_nb.head;
+
+    /* iterate over list and remove all elements */
+    lock(&hostent_nb.mem_alloc_lock);
+
+    while (curr_elem) {
+        next_elem = curr_elem->next;
+        free(curr_elem);
+        curr_elem = next_elem;
+    }
+    hostent_nb.head = NULL;
+    hostent_nb.released = 1;
+
+    unlock(&hostent_nb.mem_alloc_lock);
+#endif
 }
 /* generate general hex message ----------------------------------------------*/
 static int gen_hex(const char *msg, unsigned char *buff)
