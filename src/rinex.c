@@ -2810,3 +2810,128 @@ extern int outrnxinavh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
     }
     return fprintf(fp,"%60s%-20s\n","","END OF HEADER")!=EOF;
 }
+/* generate rinex filenames ----------------------------------------------------
+* generate rinex filenames
+* args   : char   **ofile   O   output files
+*                               ofile[0] rinex obs filename
+*                               ofile[1] rinex nav filename
+*                               ofile[2] rinex gnav filename
+*                               ofile[3] rinex hnav filename
+*                               ofile[4] rinex qnav filename
+*                               ofile[5] rinex lnav filename
+*                               ofile[6] rinex cnav filename
+*                               ofile[7] rinex inav filename
+*                               ofile[8] sbas/lex log filename
+*          double rnxver    I   rinex version
+*          int    navsys    I   navigation system
+* return : none
+* notes  : ofile[i] should be >= 256 bytes
+*
+*                | ver. < 3.02  | ver. >= 3.02
+*   rinex obs    | %r%n0.%yO    | %r000000_U_%Y%n%h%M_00U_00U_<B>O.rnx
+*   rinex nav    | %r%n0.%y<A>  | %r000000_U_%Y%n%h%M_00U_<B>N.rnx
+*   rinex gnav   | %r%n0.%yG    | %r000000_U_%Y%n%h%M_00U_RN.rnx
+*   rinex hnav   | %r%n0.%yH    | %r000000_U_%Y%n%h%M_00U_SN.rnx
+*   rinex qnav   | %r%n0.%yQ    | %r000000_U_%Y%n%h%M_00U_JN.rnx
+*   rinex lnav   | %r%n0.%yL    | %r000000_U_%Y%n%h%M_00U_EN.rnx
+*   rinex cnav   | %r%n0.%yC    | %r000000_U_%Y%n%h%M_00U_CN.rnx
+*   rinex inav   | %r%n0.%yI    | %r000000_U_%Y%n%h%M_00U_IN.rnx
+*   sbas/lex log | %r%n0.%y.sbs | %r000000_U_%Y%n%h%M_00U.sbs
+*
+*   <A> = N for ver. < 3.00 or
+*         P if ver. >= 3.00 and navsys contains not only GPS nav data
+*
+*   navsys | MIXED | GPS | GLO | SBS | QZS | GAL | CMP | IRN (ver. >= 3.03)
+*    <B>   |   M   |  G  |  R  |  S  |  J  |  E  |  C  |  I
+*
+*-----------------------------------------------------------------------------*/
+extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
+{
+    const char *rnx_long_name_types[NOUTFILE]={"","","_RN","_SN","_JN","_EN","_CN","_IN", ""};
+    const char *rnx_short_name_types[NOUTFILE]={"O","N","G","H","Q","L","C","I", ""};
+    const char *rnx_name_types[NOUTFILE];
+    const char *rnx_ext=".rnx";
+    const char *rnx_name_fmt;
+    char *dest;
+    int i;
+
+    if (rnxver<3.02) {
+        rnx_name_fmt="%r%n0.%y";
+
+        for (i=0;i<NOUTFILE;i++) {
+            rnx_name_types[i]=rnx_short_name_types[i];
+        }
+
+        if (rnxver>=2.99&&navsys!=SYS_GPS) {
+            rnx_name_types[1]="P";
+        }
+    }
+    else {
+        rnx_name_fmt="%r000000_U_%Y%n%h%M_00U";
+
+        switch (navsys) {
+            case SYS_GPS:
+                rnx_long_name_types[0]="_GO";
+                rnx_long_name_types[1]="_GN";
+                break;
+            case SYS_GLO:
+                rnx_long_name_types[0]="_RO";
+                rnx_long_name_types[1]="_RN";
+                break;
+            case SYS_GAL:
+                rnx_long_name_types[0]="_EO";
+                rnx_long_name_types[1]="_EN";
+                break;
+            case SYS_QZS:
+                rnx_long_name_types[0]="_JO";
+                rnx_long_name_types[1]="_JN";
+                break;
+            case SYS_CMP:
+                rnx_long_name_types[0]="_CO";
+                rnx_long_name_types[1]="_CN";
+                break;
+            case SYS_SBS:
+                rnx_long_name_types[0]="_SO";
+                rnx_long_name_types[1]="_SN";
+                break;
+            case SYS_IRN:
+                if (rnxver>=3.03) {
+                    rnx_long_name_types[0]="_IO";
+                    rnx_long_name_types[1]="_IN";
+                }
+                else {
+                    rnx_long_name_types[0]="_MO";
+                    rnx_long_name_types[1]="_MN";
+                }
+                break;
+            default:
+                rnx_long_name_types[0]="_MO";
+                rnx_long_name_types[1]="_MN";
+                break;
+        }
+
+        for (i=0;i<NOUTFILE;i++) {
+            rnx_name_types[i]=rnx_long_name_types[i];
+        }
+    }
+
+    for (i=0;i<NOUTFILE;i++) {
+        dest=ofile[i];
+
+        strcpy(dest,rnx_name_fmt);
+        dest+=strlen(rnx_name_fmt);
+
+        /* obs file has additional field (ver >=3.02) */
+        if (i==0&&rnxver>=3.02) {
+            strcpy(dest,"_00U");
+            dest+=4;
+        }
+
+        strcpy(dest,rnx_name_types[i]);
+
+        if (rnxver>=3.02&&i!=NOUTFILE-1) {
+            dest+=strlen(rnx_name_types[i]);
+            strcpy(dest,rnx_ext);
+        }
+    }
+}

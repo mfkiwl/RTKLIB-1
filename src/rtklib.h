@@ -1763,6 +1763,7 @@ EXPORT int  init_rnxctr (rnxctr_t *rnx);
 EXPORT void free_rnxctr (rnxctr_t *rnx);
 EXPORT int  open_rnxctr (rnxctr_t *rnx, FILE *fp);
 EXPORT int  input_rnxctr(rnxctr_t *rnx, FILE *fp);
+EXPORT void genrnxfilenames(char **ofile, double rnxver, int navsys);
 
 /* ephemeris and clock functions ---------------------------------------------*/
 EXPORT double eph2clk (gtime_t time, const eph_t  *eph);
