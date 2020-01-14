@@ -49,6 +49,7 @@ MainWindow *mainWindow;
 #define TRACEFILE   "rtkconv.trace" // trace file
 
 static int abortf=0;
+static double RNXVER[]={2.10,2.11,2.12,3.00,3.01,3.02,3.03};
 
 // show message in message area ---------------------------------------------
 extern "C" {
@@ -257,21 +258,23 @@ void MainWindow::SetOutFiles(const QString &infile)
     }
     else {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.filePath()+QDir::separator();
-        ofile[1]+=ofile[0]+QString("%%r%%n0.%%yO");
-        if (RnxVer>=3&&NavSys&&(NavSys!=SYS_GPS)) { /* ver.3 and mixed system */
-            ofile[2]+=ofile[0]+"%%r%%n0.%%yP";
+        QVector<char> ofile_buff[NOUTFILE];
+        char *ofile_ptr[NOUTFILE];
+
+        ofile[0]=info.absoluteDir().path()+QDir::separator();
+
+        for(int i=0;i<NOUTFILE;i++) {
+            ofile_buff[i]=QVector<char>(256);
+            ofile_ptr[i]=ofile_buff[i].data();
         }
-        else {
-            ofile[2]+=ofile[0]+"%%r%%n0.%%yN";
+
+        genrnxfilenames(ofile_ptr,RNXVER[RnxVer],NavSys);
+
+        for (int i=0;i<NOUTFILE;i++) {
+            ofile[i+1]=ofile[0]+ofile_ptr[i];
         }
-        ofile[3]+=ofile[0]+"%%r%%n0.%%yG";
-        ofile[4]+=ofile[0]+"%%r%%n0.%%yH";
-        ofile[5]+=ofile[0]+"%%r%%n0.%%yQ";
-        ofile[6]+=ofile[0]+"%%r%%n0.%%yL";
-        ofile[7]+=ofile[0]+"%%r%%n0.%%yC";
-        ofile[8]+=ofile[0]+"%%r%%n0.%%yI";
-        ofile[9]+=ofile[0]+(lex?"%%r%%n0_%%y.lex":"%%r%%n0_%%y.sbs");
+
+        ofile[9]+=lex?".lex":".sbs";
     }
     for (i=0;i<NOUTFILE;i++) {
         if (ofile[i+1]==infile) ofile[i+1]+="_";
@@ -756,7 +759,6 @@ void MainWindow::ConvertFile(void)
     QString OutFile9_Text=OutFile9->text();
     int i;
     char *p;
-    double RNXVER[]={2.10,2.11,2.12,3.00,3.01,3.02,3.03};
 
     conversionThread= new ConversionThread(this);
 
