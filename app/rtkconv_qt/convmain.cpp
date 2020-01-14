@@ -655,6 +655,10 @@ void MainWindow::InFileChange()
 // callback on format change ------------------------------------------------
 void MainWindow::FormatChange()
 {
+    if (RnxFile) {
+        SetOutFiles(InFile->currentText());
+    }
+
     UpdateEnable();
 }
 // get time -----------------------------------------------------------------
