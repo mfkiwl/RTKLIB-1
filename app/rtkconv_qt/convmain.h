@@ -104,6 +104,10 @@ public slots:
     void BtnPostClick();
     void BtnOutFile7Click();
     void BtnOutFileView7Click();
+    void BtnOutFile8Click();
+    void BtnOutFileView8Click();
+    void BtnOutFile9Click();
+    void BtnOutFileView9Click();
     void BtnInFileViewClick();
     void ConversionFinished();
     void UpdateEnable();
