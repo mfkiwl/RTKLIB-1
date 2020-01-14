@@ -642,6 +642,8 @@ void MainWindow::UpdateEnable(void)
 {
     QString FormatText=Format->currentText();
     int rnx=FormatText=="RINEX";
+    int sep_nav=RnxVer<3||SepNav;
+
     TimeY1         ->setEnabled(TimeStartF ->isChecked());
     TimeH1         ->setEnabled(TimeStartF ->isChecked());
     BtnTime1       ->setEnabled(TimeStartF ->isChecked());
@@ -653,19 +655,19 @@ void MainWindow::UpdateEnable(void)
     TimeUnitF      ->setEnabled(TimeStartF->isChecked()&&TimeEndF->isChecked());
     TimeUnit       ->setEnabled(TimeStartF->isChecked()&&TimeEndF->isChecked()&&TimeUnitF->isChecked());
     LabelTimeUnit  ->setEnabled(TimeUnit  ->isEnabled());
-    OutFileEna3    ->setEnabled(RnxVer<3&&(NavSys&SYS_GLO));
-    OutFileEna4    ->setEnabled(RnxVer<3&&(NavSys&SYS_SBS));
-    OutFileEna5    ->setEnabled(RnxVer<3&&(NavSys&SYS_QZS));
-    OutFileEna6    ->setEnabled(RnxVer<3&&(NavSys&SYS_GAL));
+    OutFileEna3    ->setEnabled(sep_nav&&(NavSys&SYS_GLO));
+    OutFileEna4    ->setEnabled(sep_nav&&(NavSys&SYS_SBS));
+    OutFileEna5    ->setEnabled(sep_nav&&(NavSys&SYS_QZS));
+    OutFileEna6    ->setEnabled(sep_nav&&(NavSys&SYS_GAL));
     OutFileEna7    ->setEnabled(!rnx);
     OutDir         ->setEnabled(OutDirEna  ->isChecked());
     LabelOutDir    ->setEnabled(OutDirEna  ->isChecked());
     OutFile1       ->setEnabled(OutFileEna1->isChecked());
     OutFile2       ->setEnabled(OutFileEna2->isChecked());
-    OutFile3       ->setEnabled(OutFileEna3->isChecked()&&RnxVer<3&&(NavSys&SYS_GLO));
-    OutFile4       ->setEnabled(OutFileEna4->isChecked()&&RnxVer<3&&(NavSys&SYS_SBS));
-    OutFile5       ->setEnabled(OutFileEna5->isChecked()&&RnxVer<3&&(NavSys&SYS_QZS));
-    OutFile6       ->setEnabled(OutFileEna6->isChecked()&&RnxVer<3&&(NavSys&SYS_GAL));
+    OutFile3       ->setEnabled(OutFileEna3->isChecked()&&sep_nav&&(NavSys&SYS_GLO));
+    OutFile4       ->setEnabled(OutFileEna4->isChecked()&&sep_nav&&(NavSys&SYS_SBS));
+    OutFile5       ->setEnabled(OutFileEna5->isChecked()&&sep_nav&&(NavSys&SYS_QZS));
+    OutFile6       ->setEnabled(OutFileEna6->isChecked()&&sep_nav&&(NavSys&SYS_GAL));
     OutFile7       ->setEnabled(OutFileEna7->isChecked()&&!rnx);
     BtnOutDir      ->setEnabled(OutDirEna  ->isChecked());
     BtnOutFile1    ->setEnabled(OutFile1->isEnabled());
@@ -783,6 +785,7 @@ void MainWindow::ConvertFile(void)
     conversionThread->rnxopt.outiono=OutIono;
     conversionThread->rnxopt.outtime=OutTime;
     conversionThread->rnxopt.outleaps=OutLeaps;
+    conversionThread->rnxopt.sep_nav=SepNav;
 
     QStringList exsatsLst=ExSats.split(" ");
     foreach (const QString & sat,exsatsLst)
@@ -911,6 +914,7 @@ void MainWindow::LoadOpt(void)
     OutIono             =ini.value ("opt/outiono",     0).toInt();
     OutTime             =ini.value ("opt/outtime",     0).toInt();
     OutLeaps            =ini.value ("opt/outleaps",    0).toInt();
+    SepNav              =ini.value ("opt/sepnav",      0).toInt();
 
     TimeStartF ->setChecked(ini.value("set/timestartf",  0).toBool());
     TimeEndF   ->setChecked(ini.value("set/timeendf",    0).toBool());
@@ -998,6 +1002,7 @@ void MainWindow::SaveOpt(void)
     ini.setValue ("opt/outiono",    OutIono);
     ini.setValue ("opt/outtime",    OutTime);
     ini.setValue ("opt/outleaps",   OutLeaps);
+    ini.setValue ("opt/sepnav",     SepNav);
 
     ini.setValue ("set/timestartf", TimeStartF ->isChecked());
     ini.setValue ("set/timeendf",   TimeEndF   ->isChecked());
