@@ -207,18 +207,23 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
 {
     int i,def;
     static char work[1024],ofile_[NOUTFILE][1024]={"","","","","","","","",""};
-    char *ofile[NOUTFILE],*p;
-    char *extnav=opt->rnxver<=2.99||opt->navsys==SYS_GPS?"N":"P";
-    char *extlog=format==STRFMT_LEXR?"lex":"sbs";
+    static char rnxname_buff[NOUTFILE][256];
+    char *ofile[NOUTFILE],*rnxname[NOUTFILE],*p;
+    char *extlog=format==STRFMT_LEXR?".lex":".sbs";
     
     def=!file[0]&&!file[1]&&!file[2]&&!file[3]&&!file[4]&&!file[5]&&!file[6]&&
         !file[7]&&!file[8];
     
-    for (i=0;i<NOUTFILE;i++) ofile[i]=ofile_[i];
+    for (i=0;i<NOUTFILE;i++) {
+        ofile[i]=ofile_[i];
+        rnxname[i]=rnxname_buff[i];
+    }
+
+    genrnxfilenames(rnxname,opt->rnxver,opt->navsys);
     
     if (file[0]) strcpy(ofile[0],file[0]);
     else if (*opt->staid) {
-        strcpy(ofile[0],"%r%n0.%yO");
+        strcpy(ofile[0],rnxname[0]);
     }
     else if (def) {
         strcpy(ofile[0],ifile);
@@ -227,8 +232,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[1]) strcpy(ofile[1],file[1]);
     else if (*opt->staid) {
-        strcpy(ofile[1],"%r%n0.%y");
-        strcat(ofile[1],extnav);
+        strcpy(ofile[1],rnxname[1]);
     }
     else if (def) {
         strcpy(ofile[1],ifile);
@@ -237,7 +241,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[2]) strcpy(ofile[2],file[2]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[2],"%r%n0.%yG");
+        strcpy(ofile[2],rnxname[2]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[2],ifile);
@@ -246,7 +250,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[3]) strcpy(ofile[3],file[3]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[3],"%r%n0.%yH");
+        strcpy(ofile[3],rnxname[3]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[3],ifile);
@@ -255,7 +259,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[4]) strcpy(ofile[4],file[4]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[4],"%r%n0.%yQ");
+        strcpy(ofile[4],rnxname[4]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[4],ifile);
@@ -264,7 +268,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[5]) strcpy(ofile[5],file[5]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[5],"%r%n0.%yL");
+        strcpy(ofile[5],rnxname[5]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[5],ifile);
@@ -273,7 +277,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[6]) strcpy(ofile[6],file[6]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[6],"%r%n0.%yC");
+        strcpy(ofile[6],rnxname[6]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[6],ifile);
@@ -282,7 +286,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[7]) strcpy(ofile[7],file[7]);
     else if (opt->rnxver<=2.99&&*opt->staid) {
-        strcpy(ofile[7],"%r%n0.%yI");
+        strcpy(ofile[7],rnxname[7]);
     }
     else if (opt->rnxver<=2.99&&def) {
         strcpy(ofile[7],ifile);
@@ -291,7 +295,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     }
     if (file[8]) strcpy(ofile[8],file[8]);
     else if (*opt->staid) {
-        strcpy(ofile[8],"%r%n0_%y.");
+        strcpy(ofile[8],rnxname[8]);
         strcat(ofile[8],extlog);
     }
     else if (def) {
