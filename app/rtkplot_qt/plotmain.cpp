@@ -334,6 +334,7 @@ Plot::Plot(QWidget *parent) : QMainWindow(parent)
     widget->setAttribute(Qt::WA_TransparentForMouseEvents);
     centralwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
     setMouseTracking(true);
+    setAcceptDrops(true);
 
     LoadOpt();
 
@@ -397,7 +398,7 @@ void Plot::showEvent (QShowEvent *event)
             QCoreApplication::translate("main", "path"));
     parser.addOption(path2Option);
 
-    QCommandLineOption traceOption(QStringList() << "t" << "tracelevel",
+    QCommandLineOption traceOption(QStringList() << "x" << "tracelevel",
             QCoreApplication::translate("main", "set trace lavel to <tracelavel>."),
             QCoreApplication::translate("main", "tracelevel"));
     parser.addOption(traceOption);
@@ -501,27 +502,25 @@ void Plot::dragEnterEvent(QDragEnterEvent *event)
 void Plot::dropEvent(QDropEvent *event)
 {
     QStringList files;
-    int n;
     
     trace(3,"DropFiles\n");
     
     if (ConnectState||!event->mimeData()->hasUrls()){
         return;
-    };
-    foreach (QUrl url, event->mimeData()->urls()) {
-        files.append(url.toString());
     }
-    
-    if (files.size()==1&&(n=files.at(0).lastIndexOf('.'))!=-1) {
-        QString ext=files.at(0).mid(n).toLower();
-        if ((ext=="jpg")||(ext=="jpeg")){
-            if (PlotType==PLOT_TRK) {
-                ReadMapData(files.at(0));
-            }
-            else if (PlotType==PLOT_SKY||PlotType==PLOT_MPS) {
-                ReadSkyData(files.at(0));
-            }
-        };
+    foreach (QUrl url, event->mimeData()->urls()) {
+        files.append(url.toLocalFile());
+    }
+
+    QString ext=QFileInfo(files.at(0)).suffix();
+
+    if (files.size()==1&&(ext=="jpg"||ext=="jpeg")){
+        if (PlotType==PLOT_TRK) {
+            ReadMapData(files.at(0));
+        }
+        else if (PlotType==PLOT_SKY||PlotType==PLOT_MPS) {
+            ReadSkyData(files.at(0));
+        }
     }
     else if (CheckObs(files.at(0))) {
         ReadObs(files);
@@ -2711,7 +2710,7 @@ void Plot::LoadOpt(void)
     plotOptDialog->refDialog->StaPosFile=settings.value ("plot/staposfile","").toString();
     plotOptDialog->refDialog->Format    =settings.value("plot/staposformat",0).toInt();
     
-    ElMask    =settings.value  ("plot/elmask", 0.0).toDouble();
+    ElMask    =settings.value  ("plot/elmask",15.0).toDouble();
     MaxDop    =settings.value  ("plot/maxdop",30.0).toDouble();
     MaxMP     =settings.value  ("plot/maxmp" ,10.0).toDouble();
     YRange    =settings.value  ("plot/yrange", 5.0).toDouble();

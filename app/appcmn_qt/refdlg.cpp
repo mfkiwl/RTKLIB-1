@@ -68,11 +68,16 @@ void RefDialog::StaListDblClick(int , int row)
 void  RefDialog::BtnOKClick()
 {
     int row=StaList->currentRow();
-    Pos[0]=StaList->item(row,1)->text().toDouble();
-    Pos[1]=StaList->item(row,2)->text().toDouble();
-    Pos[2]=StaList->item(row,3)->text().toDouble();
 
-    accept();
+    if (row!=-1) {
+        Pos[0]=StaList->item(row,1)->text().toDouble();
+        Pos[1]=StaList->item(row,2)->text().toDouble();
+        Pos[2]=StaList->item(row,3)->text().toDouble();
+
+        accept();
+    }
+
+    reject();
 }
 //---------------------------------------------------------------------------
 void  RefDialog::BtnLoadClick()

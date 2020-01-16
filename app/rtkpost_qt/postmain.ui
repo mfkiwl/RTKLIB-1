@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>633</width>
+    <width>640</width>
     <height>551</height>
    </rect>
   </property>
@@ -173,6 +173,9 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="displayFormat">
+            <string>HH:mm:ss</string>
+           </property>
           </widget>
          </item>
          <item row="1" column="3">
@@ -192,6 +195,9 @@
            </property>
            <property name="toolTip">
             <string/>
+           </property>
+           <property name="displayFormat">
+            <string>HH:mm:ss</string>
            </property>
           </widget>
          </item>
@@ -1494,7 +1500,7 @@
          <string>E&amp;xecute</string>
         </property>
         <property name="icon">
-         <iconset resource="../rtknavi_qt/rtknavi_qt.qrc">
+         <iconset>
           <normaloff>:/buttons/start.bmp</normaloff>:/buttons/start.bmp</iconset>
         </property>
         <property name="flat">
@@ -1508,7 +1514,7 @@
          <string>Abort</string>
         </property>
         <property name="icon">
-         <iconset resource="../rtknavi_qt/rtknavi_qt.qrc">
+         <iconset>
           <normaloff>:/buttons/stop2.bmp</normaloff>:/buttons/stop2.bmp</iconset>
         </property>
        </widget>
@@ -1536,7 +1542,6 @@
  </widget>
  <resources>
   <include location="rtkpost_qt.qrc"/>
-  <include location="../rtknavi_qt/rtknavi_qt.qrc"/>
  </resources>
  <connections/>
 </ui>

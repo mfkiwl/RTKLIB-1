@@ -1073,16 +1073,18 @@ void Plot::Disconnect(void)
 // check observation data types ---------------------------------------------
 int Plot::CheckObs(const QString &file)
 {
-    
-    if (!file.indexOf('.')) return 0;
+    QString ext=QFileInfo(file).completeSuffix().toLower();
+
+    if (ext.isEmpty()) return 0;
+
     int p=file.lastIndexOf('.');
-    if (file.indexOf(".z")||file.indexOf(".gz")||file.indexOf(".zip")||
-        file.indexOf(".Z")||file.indexOf(".GZ")||file.indexOf(".ZIP")) {
-        return file.at(p-1)=='o'||file.at(p-1)=='O'||file.at(p-1)=='d'||file.at(p-1)=='D';
+    if (ext=="z"||ext=="gz"||ext=="zip") {
+        if (p<1) return 0;
+        return file.at(p-1).toLower()=='o'||file.at(p-1).toLower()=='d';
     }
-    return file.indexOf(".obs")||file.indexOf(".OBS")||
-           file.mid(p+3)=="o" ||file.mid(p+3)=="O"||
-           file.mid(p+3)=="d" ||file.mid(p+3)=="D" ;
+    return ext=="obs"||
+           (ext.length()==3&&ext[2]=='o')||
+           (ext.length()==3&&ext[2]=='d');
 }
 // update observation data index, azimuth/elevation, satellite list ---------
 void Plot::UpdateObs(int nobs)

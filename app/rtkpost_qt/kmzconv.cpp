@@ -102,8 +102,8 @@ void ConvDialog::BtnConvertClick()
     if (TimeSpan->isChecked()) {
         QDateTime start(TimeY1->date(),TimeH1->time());
         QDateTime end(TimeY2->date(),TimeH2->time());
-        ts.time=start.toTime_t();ts.sec=start.time().msec()/1000;
-        te.time=end.toTime_t();te.sec=end.time().msec()/1000;
+        ts.time=start.toTime_t();ts.sec=start.time().msec()/1000.0;
+        te.time=end.toTime_t();te.sec=end.time().msec()/1000.0;
 	}
 
     if (AddOffset->isChecked()) {

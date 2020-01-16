@@ -461,7 +461,13 @@ void OptDialog::GetOpt(void)
     BaselineLen	 ->setText(QString::number(mainForm->BaseLine[0],'f',3));
     BaselineSig	 ->setText(QString::number(mainForm->BaseLine[1],'f',3));
     BaselineConst->setChecked(mainForm->BaseLineConst);
-	
+
+    ARFilter     ->setCurrentIndex(mainForm->ARFilter);
+    MinFixSats   ->setText(QString::number(mainForm->MinFixSats));
+    MinHoldSats  ->setText(QString::number(mainForm->MinHoldSats));
+    BaseMultiEpoch->setCurrentIndex(mainForm->BaseMultiEpoch);
+    ResidMode    ->setCurrentIndex(mainForm->ResidMode);
+
     SolFormat	 ->setCurrentIndex(mainForm->SolFormat);
     TimeFormat	 ->setCurrentIndex(mainForm->TimeFormat);
     TimeDecimal	 ->setText(QString::number(mainForm->TimeDecimal));
@@ -584,6 +590,12 @@ void OptDialog::SetOpt(void)
     mainForm->BaseLine[0]  	=BaselineLen->text().toDouble();
     mainForm->BaseLine[1]  	=BaselineSig->text().toDouble();
     mainForm->BaseLineConst	=BaselineConst->isChecked();
+
+    mainForm->ARFilter      =ARFilter   ->currentIndex();
+    mainForm->MinFixSats    =MinFixSats->text().toInt();
+    mainForm->MinHoldSats   =MinHoldSats->text().toInt();
+    mainForm->BaseMultiEpoch=BaseMultiEpoch->currentIndex();
+    mainForm->ResidMode     =ResidMode->currentIndex();
 	
     mainForm->SolFormat   	=SolFormat  ->currentIndex();
     mainForm->TimeFormat  	=TimeFormat ->currentIndex();
@@ -718,6 +730,12 @@ void OptDialog::LoadOpt(const QString &file)
     BaselineLen	 ->setText(QString::number(prcopt.baseline[0],'f',3));
     BaselineSig	 ->setText(QString::number(prcopt.baseline[1],'f',3));
     BaselineConst->setChecked(prcopt.baseline[0]>0.0);
+
+    ARFilter	 ->setCurrentIndex(prcopt.arfilter);
+    MinFixSats	 ->setText(QString::number(prcopt.minfixsats));
+    MinHoldSats  ->setText(QString::number(prcopt.minholdsats));
+    BaseMultiEpoch->setCurrentIndex(prcopt.base_multi_epoch);
+    ResidMode	 ->setCurrentIndex(prcopt.residual_mode);
 	
     SolFormat	 ->setCurrentIndex(solopt.posf);
     TimeFormat	 ->setCurrentIndex(solopt.timef==0?0:solopt.times+1);
@@ -862,7 +880,7 @@ void OptDialog::SaveOpt(const QString &file)
     if (prcopt.mode==PMODE_MOVEB&&BaselineConst->isChecked()) {
         prcopt.baseline[0]=BaselineLen->text().toDouble();
         prcopt.baseline[1]=BaselineSig->text().toDouble();
-	}
+    }
     solopt.posf		=SolFormat	->currentIndex();
     solopt.timef	=TimeFormat	->currentIndex()==0?0:1;
     solopt.times	=TimeFormat	->currentIndex()==0?0:TimeFormat->currentIndex()-1;
@@ -879,7 +897,13 @@ void OptDialog::SaveOpt(const QString &file)
     solopt.nmeaintv[1]=NmeaIntv2->text().toDouble();
     solopt.trace	=DebugTrace	 ->currentIndex();
     solopt.sstat	=DebugStatus ->currentIndex();
-	
+
+    prcopt.arfilter     =ARFilter->currentIndex();
+    prcopt.minfixsats   =MinFixSats->text().toInt();
+    prcopt.minholdsats  =MinHoldSats->text().toInt();
+    prcopt.base_multi_epoch=BaseMultiEpoch->currentIndex();
+    prcopt.residual_mode=ResidMode->currentIndex();
+
     prcopt.eratio[0]=MeasErrR1->text().toDouble();
     prcopt.eratio[1]=MeasErrR2->text().toDouble();
     prcopt.err[1]	=MeasErr2->text().toDouble();

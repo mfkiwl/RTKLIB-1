@@ -227,7 +227,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     if (OutDirEna->isChecked()) {
         QFileInfo info(infile);
 
-        ofile[0]=OutDir_Text+"/"+info.fileName();
+        ofile[0]=OutDir_Text+QDir::separator()+info.fileName();
     }
     else {
         ofile[0]=infile;
@@ -237,7 +237,7 @@ void MainWindow::SetOutFiles(const QString &infile)
 
     if (!RnxFile) {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.absolutePath()+"/"+info.baseName();
+        ofile[0]=info.absolutePath()+QDir::separator()+info.completeBaseName();
         ofile[1]=ofile[0]+".obs";
         ofile[2]=ofile[0]+".nav";
         ofile[3]=ofile[0]+".gnav";
@@ -248,7 +248,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     }
     else {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.filePath()+"/";
+        ofile[0]=info.filePath()+QDir::separator();
         ofile[1]+=ofile[0]+QString("%%r%%n0.%%yO");
         if (RnxVer>=3&&NavSys&&(NavSys!=SYS_GPS)) { /* ver.3 and mixed system */
             ofile[2]+=ofile[0]+"%%r%%n0.%%yP";
@@ -264,7 +264,7 @@ void MainWindow::SetOutFiles(const QString &infile)
     }
     for (i=0;i<7;i++) {
         if (ofile[i+1]==infile) ofile[i+1]+="_";
-        edit[i]->setText(ofile[i+1]);
+        edit[i]->setText(QDir::toNativeSeparators(ofile[i+1]));
     }
 }
 // callback on file drag and drop -------------------------------------------
@@ -275,9 +275,13 @@ void  MainWindow::dragEnterEvent(QDragEnterEvent *event)
 }
 void  MainWindow::dropEvent(QDropEvent *event)
 {
-    if (!event->mimeData()->hasFormat("text/uri-list")) return;
+    QList<QUrl> urls=event->mimeData()->urls();
 
-    QString file=QUrl(event->mimeData()->text()).toLocalFile();
+    if (urls.size() < 1) {
+        return;
+    }
+
+    QString file=event->mimeData()->urls()[0].toLocalFile();
 
     InFile->setCurrentText(file);
     SetOutFiles(InFile->currentText());
@@ -285,6 +289,8 @@ void  MainWindow::dropEvent(QDropEvent *event)
 // add history --------------------------------------------------------------
 void MainWindow::AddHist(QComboBox *combo)
 {
+    const QSignalBlocker blocker(combo);
+
     QString hist=combo->currentText();
     if (hist=="") return;
     int i=combo->currentIndex();
@@ -434,7 +440,7 @@ void MainWindow::BtnKeyClick()
 // callback on button-output-file-1 -----------------------------------------
 void MainWindow::BtnOutFile1Click()
 {
-    QString selectedFilter="RINEX OBS (*.obs *.*O";
+    QString selectedFilter="RINEX OBS (*.obs *.*O)";
     OutFile1->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX OBS File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
                  "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
@@ -605,11 +611,11 @@ void MainWindow::GetTime(gtime_t *ts, gtime_t *te, double *tint,
 {
     if (TimeStartF->isChecked()) {
         QDateTime start(TimeY1->date(),TimeH1->time(),Qt::UTC);
-        ts->time=start.toTime_t();ts->sec=start.time().msec()/1000;
+        ts->time=start.toTime_t();ts->sec=start.time().msec()/1000.0;
     } else ts->time=ts->sec=0;
     if (TimeEndF->isChecked()) {
         QDateTime end(TimeY2->date(),TimeH2->time(),Qt::UTC);
-        te->time=end.toTime_t();te->sec=end.time().msec()/1000;
+        te->time=end.toTime_t();te->sec=end.time().msec()/1000.0;
     } else te->time=te->sec=0;
     if (TimeIntF->isChecked()) {
         *tint=TimeInt->currentText().toDouble();
@@ -693,35 +699,25 @@ void MainWindow::ConvertFile(void)
 
     // recognize input file format
     strcpy(conversionThread->ifile,qPrintable(InFile_Text));
-    QFileInfo fi(InFile_Text);
+    QString suffix = QFileInfo(InFile_Text).suffix().toLower();
     if (Format->currentIndex()==0) { // auto
-        if      (fi.completeSuffix()=="rtcm2") conversionThread->format=STRFMT_RTCM2;
-        else if (fi.completeSuffix()=="rtcm3") conversionThread->format=STRFMT_RTCM3;
-        else if (fi.completeSuffix()=="gps"  ) conversionThread->format=STRFMT_OEM4;
-        else if (fi.completeSuffix()=="ubx"  ) conversionThread->format=STRFMT_UBX;
-        else if (fi.completeSuffix()=="log"  ) conversionThread->format=STRFMT_SS2;
-        else if (fi.completeSuffix()=="bin"  ) conversionThread->format=STRFMT_CRES;
-        else if (fi.completeSuffix()=="jps"  ) conversionThread->format=STRFMT_JAVAD;
-        else if (fi.completeSuffix()=="bnx"  ) conversionThread->format=STRFMT_BINEX;
-        else if (fi.completeSuffix()=="binex") conversionThread->format=STRFMT_BINEX;
-        else if (fi.completeSuffix()=="rt17" ) conversionThread->format=STRFMT_RT17;
-        else if (fi.completeSuffix()=="cmr"  ) conversionThread->format=STRFMT_CMR;
-        else if (fi.completeSuffix().toLower()=="obs"  ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().toLower().contains( "nav" )) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='o'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='O'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='n'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='N'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='p'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='P'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='g'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='G'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='h'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='H'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='q'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='Q'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='l'   ) conversionThread->format=STRFMT_RINEX;
-        else if (fi.completeSuffix().at(2)=='L'   ) conversionThread->format=STRFMT_RINEX;
+        if      (suffix=="rtcm2") conversionThread->format=STRFMT_RTCM2;
+        else if (suffix=="rtcm3") conversionThread->format=STRFMT_RTCM3;
+        else if (suffix=="gps"  ) conversionThread->format=STRFMT_OEM4;
+        else if (suffix=="ubx"  ) conversionThread->format=STRFMT_UBX;
+        else if (suffix=="log"  ) conversionThread->format=STRFMT_SS2;
+        else if (suffix=="bin"  ) conversionThread->format=STRFMT_CRES;
+        else if (suffix=="jps"  ) conversionThread->format=STRFMT_JAVAD;
+        else if (suffix=="bnx"  ) conversionThread->format=STRFMT_BINEX;
+        else if (suffix=="binex") conversionThread->format=STRFMT_BINEX;
+        else if (suffix=="rt17" ) conversionThread->format=STRFMT_RT17;
+        else if (suffix=="cmr"  ) conversionThread->format=STRFMT_CMR;
+        else if (suffix=="obs"  ) conversionThread->format=STRFMT_RINEX;
+        else if (suffix.contains("nav")) conversionThread->format=STRFMT_RINEX;
+        else if (suffix.size()==3&&(suffix[2]=='o'||suffix[2]=='n'||suffix[2]=='p'||
+                 suffix[2]=='g'||suffix[2]=='h'||suffix[2]=='q'||suffix[2]=='l')) {
+            conversionThread->format=STRFMT_RINEX;
+        }
         else {
             showmsg("file format can not be recognized");
             return;

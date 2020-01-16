@@ -28,6 +28,7 @@ Categories=Science;
 Terminal=false" > $appimage_dir/"${app_qt}.desktop"
     cd $appimage_dir/
     $linuxdeployqt "${app_qt}.desktop" -appimage
+    mv ${app^^}*.AppImage ${app^^}_Qt-x86_64.AppImage
     cd -
 }
 

@@ -46,7 +46,8 @@ SOURCES += \
     ../appcmn_qt/refdlg.cpp \
     ../appcmn_qt/viewer.cpp \
     ../appcmn_qt/vieweropt.cpp \
-    ../appcmn_qt/timedlg.cpp
+    ../appcmn_qt/timedlg.cpp \
+    ../appcmn_qt/utils.cpp
 
 HEADERS  += \ 
     extopt.h \
@@ -59,7 +60,8 @@ HEADERS  += \
     ../appcmn_qt/viewer.h \
     ../appcmn_qt/vieweropt.h \
     ../appcmn_qt/aboutdlg.h \
-    ../appcmn_qt/timedlg.h
+    ../appcmn_qt/timedlg.h \
+    ../appcmn_qt/utils.h
 
 FORMS    += \ 
     extopt.ui \

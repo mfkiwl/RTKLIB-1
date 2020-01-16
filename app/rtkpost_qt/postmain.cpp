@@ -58,6 +58,7 @@
 #include "keydlg.h"
 #include "aboutdlg.h"
 #include "viewer.h"
+#include "utils.h"
 
 #define PRGNAME     "RTKPOST-QT"
 #define MAXHIST     20
@@ -378,19 +379,17 @@ void MainForm::showEvent(QShowEvent* event)
         TimeUnitF->setChecked(true);
         TimeUnit->setText(parser.value(timeUnitOption));
     }
-#endif /*TODO: alternative for QT4 */
-
+#else /*TODO: alternative for QT4 */
     LoadOpt();
+#endif
 
     if (inputflag) SetOutFile();
     
     UpdateEnable();
 }
 // callback on form close ---------------------------------------------------
-void MainForm::closeEvent(QCloseEvent *event)
+void MainForm::closeEvent(QCloseEvent*)
 {
-    if (event->spontaneous()) return;
-
     SaveOpt();
 }
 // callback on drop files ---------------------------------------------------
@@ -807,11 +806,11 @@ void MainForm::SetOutFile(void)
     
     if (OutDirEna->isChecked()) {
         QFileInfo f(ifile);
-        ofile=OutDir_Text+"/"+f.baseName();
+        ofile=OutDir_Text+QDir::separator()+f.completeBaseName();
     }
     else {
         QFileInfo f(ifile);
-        ofile=f.absolutePath()+"/"+f.baseName();
+        ofile=f.absolutePath()+QDir::separator()+f.completeBaseName();
     }
     ofile+=SolFormat==SOLF_NMEA?".nmea":".pos";
     ofile.replace('*','0');
@@ -906,11 +905,16 @@ int MainForm::GetOption(prcopt_t &prcopt, solopt_t &solopt,
     prcopt.modear   =AmbRes;
     prcopt.glomodear=GloAmbRes;
     prcopt.bdsmodear=BdsAmbRes;
+    prcopt.arfilter =ARFilter;
     prcopt.maxout   =OutCntResetAmb;
     prcopt.minfix   =FixCntHoldAmb;
     prcopt.minlock  =LockCntFixAmb;
+    prcopt.minfixsats=MinFixSats;
+    prcopt.minholdsats=MinHoldSats;
     prcopt.ionoopt  =IonoOpt;
     prcopt.tropopt  =TropOpt;
+    prcopt.base_multi_epoch=BaseMultiEpoch;
+    prcopt.residual_mode=ResidMode;
     prcopt.posopt[0]=PosOpt[0];
     prcopt.posopt[1]=PosOpt[1];
     prcopt.posopt[2]=PosOpt[2];
@@ -1031,20 +1035,21 @@ int MainForm::ObsToNav(const QString &obsfile, QString &navfile)
 {
     int p;
     QFileInfo f(obsfile);
-    navfile=f.canonicalPath()+f.completeBaseName();
-    QString suffix=f.suffix();
+    QString suffix=f.completeSuffix();
 
     if (suffix=="") return 0;
     if ((suffix.length()==3)&&(suffix.at(2).toLower()=='o')) suffix[2]='*';
     else if ((suffix.length()==3)&&(suffix.at(2).toLower()=='d')) suffix[2]='*';
     else if (suffix.toLower()=="obs") suffix="*nav";
-    else if (((p=suffix.indexOf("gz"))!=-1)||((p=suffix.indexOf('Z'))!=-1)) {
+    else if (((p=suffix.indexOf(".gz"))!=-1)||((p=suffix.indexOf(".Z"))!=-1)) {
         if (p<1) return 0;
         if (suffix.at(p-1).toLower()=='o') suffix[p-1]='*';
         else if (suffix.at(p-1).toLower()=='d') suffix[p-1]='*';
         else return 0;
     }
     else return 0;
+    QFileInfo nav(f.canonicalPath()+"/"+f.baseName()+"."+suffix);
+    navfile=QDir::toNativeSeparators(nav.filePath());
     return 1;
 }
 // replace file path with keywords ------------------------------------------
@@ -1095,6 +1100,8 @@ void MainForm::WriteList(QSettings *ini, const QString &key, const QComboBox *co
 // add history --------------------------------------------------------------
 void MainForm::AddHist(QComboBox *combo)
 {
+    const QSignalBlocker blocker(combo);
+
     QString hist=combo->currentText();
     if (hist=="") return;
     int i=combo->currentIndex();
@@ -1136,7 +1143,7 @@ gtime_t MainForm::GetTime1(void)
     QDateTime time(TimeY1->date(),TimeH1->time(),Qt::UTC);
 
     gtime_t t;
-    t.time=time.toTime_t();t.sec=time.time().msec()/1000;
+    t.time=time.toTime_t();t.sec=time.time().msec()/1000.0;
 
     return t;
 }
@@ -1146,7 +1153,7 @@ gtime_t MainForm::GetTime2(void)
     QDateTime time(TimeY2->date(),TimeH2->time(),Qt::UTC);
 
     gtime_t t;
-    t.time=time.toTime_t();t.sec=time.time().msec()/1000;
+    t.time=time.toTime_t();t.sec=time.time().msec()/1000.0;
 
     return t;
 }
@@ -1198,8 +1205,7 @@ void MainForm::LoadOpt(void)
     prcopt_t prcopt;
     solopt_t solopt;
     filopt_t filopt;
-    resetsysopts();
-    getsysopts(&prcopt, &solopt, 1, &filopt);
+    InitializeSysOpts(&prcopt,&solopt,&filopt);
 
     QSettings ini(IniFile,QSettings::IniFormat);
 
@@ -1210,7 +1216,7 @@ void MainForm::LoadOpt(void)
     TimeY2->setDate(ini.value ("set/timey2",      "2000/01/01").toDate());
     TimeH2->setTime(ini.value ("set/timeh2",      "00:00:00").toTime());
     TimeIntF ->setChecked(ini.value("set/timeintf",    0).toBool());
-    TimeInt->setCurrentText(ini.value ("set/timeint",     "0").toString());
+    TimeInt->setCurrentText(ini.value ("set/timeint",     "1").toString());
     TimeUnitF->setChecked(ini.value("set/timeunitf",   0).toBool());
     TimeUnit->setText(ini.value ("set/timeunit",    "24").toString());
     InputFile1->setCurrentText(ini.value ("set/inputfile1",  "").toString());
@@ -1260,10 +1266,13 @@ void MainForm::LoadOpt(void)
     AmbRes             =ini.value("opt/ambres",         prcopt.modear).toInt();
     GloAmbRes          =ini.value("opt/gloambres",      prcopt.glomodear).toInt();
     BdsAmbRes          =ini.value("opt/bdsambres",      prcopt.bdsmodear).toInt();
+    ARFilter           =ini.value("opt/arfilter",       prcopt.arfilter).toInt();
     ValidThresAR       =ini.value("opt/validthresar",   prcopt.thresar[0]).toDouble();
     ThresAR2           =ini.value("opt/thresar2",       prcopt.thresar[1]).toDouble();
     ThresAR3           =ini.value("opt/thresar3",       prcopt.thresar[2]).toDouble();
     LockCntFixAmb      =ini.value("opt/lockcntfixamb",  prcopt.minlock).toInt();
+    MinFixSats         =ini.value("opt/minfixsats",     prcopt.minfixsats).toInt();
+    MinHoldSats        =ini.value("opt/minholdsats",    prcopt.minholdsats).toInt();
     FixCntHoldAmb      =ini.value("opt/fixcntholdamb",  prcopt.minfix).toInt();
     ElMaskAR           =ini.value("opt/elmaskar",       prcopt.elmaskar).toDouble();
     ElMaskHold         =ini.value("opt/elmaskhold",     prcopt.elmaskhold).toDouble();
@@ -1278,6 +1287,10 @@ void MainForm::LoadOpt(void)
     BaseLine[0]        =ini.value("opt/baselinelen",    prcopt.baseline[0]).toDouble();
     BaseLine[1]        =ini.value("opt/baselinesig",    prcopt.baseline[1]).toDouble();
     BaseLineConst      =ini.value("opt/baselineconst",  0).toInt();
+
+    BaseMultiEpoch     =ini.value("opt/basemultiepoch", prcopt.base_multi_epoch).toInt();
+
+    ResidMode          =ini.value("opt/residmode",      prcopt.residual_mode).toInt();
 
     SolFormat          =ini.value("opt/solformat",      solopt.posf).toInt();
     TimeFormat         =ini.value("opt/timeformat",     solopt.timef).toInt();
@@ -1306,8 +1319,8 @@ void MainForm::LoadOpt(void)
     PrNoise4           =ini.value("opt/prnoise4",       prcopt.prn[3]).toDouble();
     PrNoise5           =ini.value("opt/prnoise5",       prcopt.prn[4]).toDouble();
 
-    RovPosType         =ini.value("opt/rovpostype",     prcopt.rovpos).toInt();
-    RefPosType         =ini.value("opt/refpostype",     POSOPT_SINGLE+2).toInt();
+    RovPosType         =ini.value("opt/rovpostype",     prcopt.rovpos==0?0:prcopt.rovpos+2).toInt();
+    RefPosType         =ini.value("opt/refpostype",     prcopt.refpos==0?0:prcopt.refpos+2).toInt();
     RovPos[0]          =ini.value("opt/rovpos1",        prcopt.ru[0]).toDouble();
     RovPos[1]          =ini.value("opt/rovpos2",        prcopt.ru[1]).toDouble();
     RovPos[2]          =ini.value("opt/rovpos3",        prcopt.ru[2]).toDouble();
@@ -1382,7 +1395,7 @@ void MainForm::LoadOpt(void)
     convDialog->TimeH1    ->setTime(ini.value ("conv/timeh1","00:00:00"  ).toTime());
     convDialog->TimeY2    ->setDate(ini.value ("conv/timey2","2000/01/01").toDate());
     convDialog->TimeH2    ->setTime(ini.value ("conv/timeh2","00:00:00"  ).toTime());
-    convDialog->TimeInt   ->setText(ini.value ("conv/timeint", "0").toString());
+    convDialog->TimeInt   ->setText(ini.value ("conv/timeint", "1").toString());
     convDialog->TrackColor->setCurrentIndex(ini.value("conv/trackcolor",5).toInt());
     convDialog->PointColor->setCurrentIndex(ini.value("conv/pointcolor",5).toInt());
     convDialog->OutputAlt ->setCurrentIndex(ini.value("conv/outputalt", 0).toInt());
@@ -1461,10 +1474,13 @@ void MainForm::SaveOpt(void)
     ini.setValue("opt/ambres",      AmbRes      );
     ini.setValue("opt/gloambres",   GloAmbRes   );
     ini.setValue("opt/bdsambres",   BdsAmbRes   );
+    ini.setValue("opt/arfilter",    ARFilter    );
     ini.setValue  ("opt/validthresar",ValidThresAR);
     ini.setValue  ("opt/thresar2",    ThresAR2    );
     ini.setValue  ("opt/thresar3",    ThresAR3    );
     ini.setValue("opt/lockcntfixamb",LockCntFixAmb);
+    ini.setValue("opt/minfixsats",   MinFixSats);
+    ini.setValue("opt/minholdsats",  MinHoldSats);
     ini.setValue("opt/fixcntholdamb",FixCntHoldAmb);
     ini.setValue  ("opt/elmaskar",    ElMaskAR    );
     ini.setValue  ("opt/elmaskhold",  ElMaskHold  );
@@ -1480,6 +1496,10 @@ void MainForm::SaveOpt(void)
     ini.setValue  ("opt/baselinesig", BaseLine[1] );
     ini.setValue("opt/baselineconst",BaseLineConst);
     
+    ini.setValue("opt/basemultiepoch", BaseMultiEpoch);
+
+    ini.setValue("opt/residmode",      ResidMode);
+
     ini.setValue("opt/solformat",   SolFormat   );
     ini.setValue("opt/timeformat",  TimeFormat  );
     ini.setValue("opt/timedecimal", TimeDecimal );
