@@ -1077,11 +1077,15 @@ int Plot::CheckObs(const QString &file)
 
     if (ext.isEmpty()) return 0;
 
-    int p=file.lastIndexOf('.');
-    if (ext=="z"||ext=="gz"||ext=="zip") {
+    int p;
+
+    // filename example: EMLD2120.19O.zip, suffix: 19O.zip
+    if ((p=ext.indexOf(".z"))!=-1||(p=ext.indexOf(".gz"))!=-1||
+        (p=ext.indexOf(".zip"))!=-1) {
         if (p<1) return 0;
-        return file.at(p-1).toLower()=='o'||file.at(p-1).toLower()=='d';
+        return ext.at(p-1)=='o'||ext.at(p-1)=='d';
     }
+
     return ext=="obs"||
            (ext.length()==3&&ext[2]=='o')||
            (ext.length()==3&&ext[2]=='d');
