@@ -896,7 +896,7 @@ void MainWindow::LoadOpt(void)
     RcvOption           =ini.value ("opt/rcvoption",  "").toString();
     NavSys              =ini.value ("opt/navsys",    SYS_ALL).toInt();
     ObsType             =ini.value ("opt/obstype",   0xF).toInt();
-    FreqType            =ini.value ("opt/freqtype",  0x1).toInt();
+    FreqType            =ini.value ("opt/freqtype",FREQTYPE_L1|FREQTYPE_L2|FREQTYPE_L7).toInt();
     ExSats              =ini.value ("opt/exsats",     "").toString();
     TraceLevel          =ini.value ("opt/tracelevel",  0).toInt();
     RnxTime.time        =ini.value ("opt/rnxtime",     0).toInt();
@@ -907,7 +907,7 @@ void MainWindow::LoadOpt(void)
     CodeMask[4]         =ini.value ("opt/codemask_5",mask).toString();
     CodeMask[5]         =ini.value ("opt/codemask_6",mask).toString();
     AutoPos             =ini.value ("opt/autopos",     0).toInt();
-    ScanObs             =ini.value ("opt/scanobs",     0).toInt();
+    ScanObs             =ini.value ("opt/scanobs",     1).toInt();
     OutIono             =ini.value ("opt/outiono",     0).toInt();
     OutTime             =ini.value ("opt/outtime",     0).toInt();
     OutLeaps            =ini.value ("opt/outleaps",    0).toInt();
