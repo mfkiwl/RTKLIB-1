@@ -1980,6 +1980,7 @@ EXPORT void strsetdir(const char *dir);
 EXPORT void strsetproxy(const char *addr);
 EXPORT int  strsetntrippathfmt(int pathfmt);
 EXPORT int strsetresolvemode(int resolvemode);
+EXPORT int strresolveselftest(void);
 EXPORT void strfreeres(void);
 
 /* integer ambiguity resolution ----------------------------------------------*/

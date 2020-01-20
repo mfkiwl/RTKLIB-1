@@ -1546,7 +1546,7 @@ static int gentcp(tcp_t *tcp, int type, char *msg)
 /* blocking(non-blocking) resolve tcp ----------------------------------------*/
 static int resolvetcp(tcp_t *tcp, char *msg)
 {
-    int ret;
+    int ret=0;
 
     tracet(4,"resolvetcp: sock=%d, saddr='%s', resolvemode=%d\n",
            tcp->sock,tcp->saddr,hostresolvemode);
@@ -3981,6 +3981,61 @@ extern int strsetresolvemode(int resolvemode)
 
     hostresolvemode=resolvemode;
     return 1;
+}
+/* do resolver self-test -------------------------------------------------------
+* args   : void
+* return : status (0:error,1:ok)
+*-----------------------------------------------------------------------------*/
+extern int strresolveselftest(void)
+{
+#ifndef WIN32
+    const char *hostnames[]={"hello.ca", "hello.ru", "roghreoh.regoerg",
+                             "127.0.0.1", "ewgpj.ewgoewj.egwg", "ew.ewfewf.ewf",
+                             "192.168.1.1", "hello.local", "232.164.1.92"};
+    const int n=9;
+    const unsigned int timeout=15000; /* 15s */
+    unsigned int begin_time;
+    struct sockaddr_in addr;
+    int i,failed,ret[n];
+
+    trace(3,"strresolveselftest:\n");
+
+    memset(&addr, 0, sizeof(addr));
+
+    /* launch all host resolvers */
+    for (i=0; i<n; i++) {
+        ret[i] = gethostipbyname_nb(hostnames[i], &addr);
+    }
+
+    fprintf(stderr,"strresolveselftest: waiting for result...\n");
+
+    /* wait for the results */
+    begin_time = tickget();
+    failed = 1;
+
+    while (failed && tickget() - begin_time <= timeout) {
+        sleep(1);
+
+        for (i = 0; i < n; i++) {
+            if (!ret[i]) {
+                ret[i] = gethostipbyname_nb(hostnames[i], &addr);
+            }
+        }
+
+        failed = 0;
+
+        for (i = 0; i < n; i++) {
+            failed |= ret[i] == 0;
+        }
+    }
+
+    fprintf(stderr,"strresolveselftest: success=%d, time past %d ms\n", !failed,
+            tickget() - begin_time);
+
+    return !failed;
+#else
+    return 0;
+#endif
 }
 /* free allocated resources --------------------------------------------------*/
 extern void strfreeres(void)
