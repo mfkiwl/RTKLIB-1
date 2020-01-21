@@ -17,7 +17,6 @@ lessThan(QT_MAJOR_VERSION, 5) {
 }
 
 include(../../RTKLib.pri)
-include(../deploy.pri)
 
 TARGET = rtknavi_qt
 TEMPLATE = app

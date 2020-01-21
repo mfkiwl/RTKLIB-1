@@ -32,12 +32,11 @@ Terminal=false" > $appimage_dir/"${app_qt}.desktop"
     cd -
 }
 
-for app in rtkpost rtkconv rtkplot rtknavi; do single_image "$app"; done 
+for app in rtkpost rtkconv rtkplot; do single_image "$app"; done
 
 zipfile="build/Qt/rtklib-qt-appimage_x86_64.zip"
 rm $zipfile
 zip -j $zipfile $RELEASE_DIR/*/RTKPOST*.AppImage \
-                $RELEASE_DIR/*/RTKNAVI*.AppImage \
                 $RELEASE_DIR/*/RTKPLOT*.AppImage \
                 $RELEASE_DIR/*/RTKCONV*.AppImage
 md5sum $zipfile > $zipfile".md5"
