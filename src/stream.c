@@ -326,7 +326,7 @@ void addtolist(hostent_elem_t *elem)
     }
 }
 
-void removefromlist(hostent_elem_t *elem)
+hostent_elem_t *removefromlist(hostent_elem_t *elem)
 {
     hostent_elem_t *prev_elem, *next_elem;
 
@@ -341,6 +341,8 @@ void removefromlist(hostent_elem_t *elem)
     if (next_elem) {
         next_elem->prev = elem->prev;
     }
+
+    return next_elem;
 }
 
 /* block resolve tcp ---------------------------------------------------------*/
@@ -395,7 +397,7 @@ static void* _gethostipbyname(void *arg)
 /* return 0:in progress, -1:failed, 1:resolved */
 static int gethostipbyname_nb(const char *saddr, struct sockaddr_in *addr)
 {
-    hostent_elem_t *curr_elem, *new_elem;
+    hostent_elem_t *curr_elem, *new_elem, *next_elem;
     int state, ret=0;
 
     trace(4, "gethostipbyname_nb:\n");
@@ -415,15 +417,16 @@ static int gethostipbyname_nb(const char *saddr, struct sockaddr_in *addr)
                      "let's remove the one that finished\n");
             curr_elem = hostent_nb.head;
 
-            /* iterate over list and remove the element with the finished thread */
+            /* iterate over list and remove all elements with the finished thread */
             while (curr_elem) {
                 if (atomic_load(&curr_elem->state) != 0) {
-                    removefromlist(curr_elem);
+                    next_elem = removefromlist(curr_elem);
                     free(curr_elem);
                     hostent_nb.elem_cnt--;
-                    break;
+                    curr_elem = next_elem;
+                } else {
+                    curr_elem = curr_elem->next;
                 }
-                curr_elem = curr_elem->next;
             }
 
             /* failed to remove an element, just return 'in progress' status */
@@ -3991,20 +3994,26 @@ extern int strresolveselftest(void)
 #ifndef WIN32
     const char *hostnames[]={"hello.ca", "hello.ru", "roghreoh.regoerg",
                              "127.0.0.1", "ewgpj.ewgoewj.egwg", "ew.ewfewf.ewf",
-                             "192.168.1.1", "hello.local", "232.164.1.92"};
-    const int n=9;
-    const unsigned int timeout=15000; /* 15s */
+                             "192.168.1.1", "hello.local", "232.164.1.92",
+                             "121.21.2.1", "privetmir.ru", "wgwhgweeieieie",
+                             "ewfmew.fefoe", "1212j12jj2.,d", "hello*3=f",
+                             "eohne3i3n3", "hello.re", "ewgewgwegwe",
+                             "emlid.com", "google.com", "yandex.ru"};
+    const int n=sizeof(hostnames)/sizeof(char*);
+    const unsigned int timeout=30000; /* 30s */
     unsigned int begin_time;
-    struct sockaddr_in addr;
+    struct sockaddr_in addr[n];
     int i,failed,ret[n];
 
     trace(3,"strresolveselftest:\n");
 
-    memset(&addr, 0, sizeof(addr));
+    for (i = 0; i < n; i++) {
+        memset(&addr[i], 0, sizeof(struct sockaddr_in));
+    }
 
     /* launch all host resolvers */
-    for (i=0; i<n; i++) {
-        ret[i] = gethostipbyname_nb(hostnames[i], &addr);
+    for (i = 0; i < n; i++) {
+        ret[i] = gethostipbyname_nb(hostnames[i], &addr[i]);
     }
 
     fprintf(stderr,"strresolveselftest: waiting for result...\n");
@@ -4018,7 +4027,7 @@ extern int strresolveselftest(void)
 
         for (i = 0; i < n; i++) {
             if (!ret[i]) {
-                ret[i] = gethostipbyname_nb(hostnames[i], &addr);
+                ret[i] = gethostipbyname_nb(hostnames[i], &addr[i]);
             }
         }
 
@@ -4032,12 +4041,24 @@ extern int strresolveselftest(void)
     fprintf(stderr,"strresolveselftest: success=%d, time past %d ms\n", !failed,
             tickget() - begin_time);
 
+    for (i = 0; i < n; i++) {
+        char ip[SADDR_LEN];
+
+        if (ret[i] == 1 && inet_ntop(AF_INET, &addr[i].sin_addr, ip, sizeof(ip))) {
+            fprintf(stderr, "%d) '%s' -> '%s'\n", i, hostnames[i], ip);
+        } else if (ret[i] == -1) {
+            fprintf(stderr, "%d) '%s': failed to resolve\n", i, hostnames[i]);
+        }
+    }
+
     return !failed;
 #else
     return 0;
 #endif
 }
 /* free allocated resources --------------------------------------------------*/
+/* Should be called at the end of the OS process, we won't resolve host names
+ * in non-blocking mode once 'strfreeres' is performed */
 extern void strfreeres(void)
 {
 #ifndef WIN32
