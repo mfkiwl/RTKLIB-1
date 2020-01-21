@@ -209,7 +209,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     static char work[1024],ofile_[NOUTFILE][1024]={"","","","","","","","",""};
     static char rnxname_buff[NOUTFILE][256];
     char *ofile[NOUTFILE],*rnxname[NOUTFILE],*p;
-    char *extlog=format==STRFMT_LEXR?".lex":".sbs";
+    char *extlog=format==STRFMT_LEXR?"lex":"sbs";
     
     def=!file[0]&&!file[1]&&!file[2]&&!file[3]&&!file[4]&&!file[5]&&!file[6]&&
         !file[7]&&!file[8];
@@ -296,6 +296,7 @@ static int convbin(int format, rnxopt_t *opt, const char *ifile, char **file,
     if (file[8]) strcpy(ofile[8],file[8]);
     else if (*opt->staid) {
         strcpy(ofile[8],rnxname[8]);
+        strcat(ofile[8],".");
         strcat(ofile[8],extlog);
     }
     else if (def) {

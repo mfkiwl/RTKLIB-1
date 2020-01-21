@@ -2850,13 +2850,14 @@ extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
     const char *rnx_long_name_types[NOUTFILE]={"","","_RN","_SN","_JN","_EN","_CN","_IN", ""};
     const char *rnx_short_name_types[NOUTFILE]={"O","N","G","H","Q","L","C","I", ""};
     const char *rnx_name_types[NOUTFILE];
+    const char *rnx_log_name_fmt;
     const char *rnx_ext=".rnx";
     const char *rnx_name_fmt;
-    char *dest;
     int i;
 
     if (rnxver<3.02) {
         rnx_name_fmt="%r%n0.%y";
+        rnx_log_name_fmt="%r%n0_%y";
 
         for (i=0;i<NOUTFILE;i++) {
             rnx_name_types[i]=rnx_short_name_types[i];
@@ -2868,6 +2869,7 @@ extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
     }
     else {
         rnx_name_fmt="%r000000_U_%Y%n%h%M_00U";
+        rnx_log_name_fmt=rnx_name_fmt;
 
         switch (navsys) {
             case SYS_GPS:
@@ -2915,23 +2917,20 @@ extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
         }
     }
 
-    for (i=0;i<NOUTFILE;i++) {
-        dest=ofile[i];
-
-        strcpy(dest,rnx_name_fmt);
-        dest+=strlen(rnx_name_fmt);
+    for (i=0;i<NOUTFILE-1;i++) {
+        strcpy(ofile[i],rnx_name_fmt);
 
         /* obs file has additional field (ver >=3.02) */
         if (i==0&&rnxver>=3.02) {
-            strcpy(dest,"_00U");
-            dest+=4;
+            strcat(ofile[i],"_00U");
         }
 
-        strcpy(dest,rnx_name_types[i]);
+        strcat(ofile[i],rnx_name_types[i]);
 
-        if (rnxver>=3.02&&i!=NOUTFILE-1) {
-            dest+=strlen(rnx_name_types[i]);
-            strcpy(dest,rnx_ext);
+        if (rnxver>=3.02) {
+            strcat(ofile[i],rnx_ext);
         }
     }
+
+    strcpy(ofile[NOUTFILE-1],rnx_log_name_fmt);
 }
