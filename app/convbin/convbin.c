@@ -50,6 +50,7 @@
 #define PRGNAME   "CONVBIN"
 #define TRACEFILE "convbin.trace"
 #define NOUTFILE        9       /* number of output files */
+#define MAXSTAIDLEN     4       /* maximum length of staid */
 
 static int timeout      =0;         /* no timeout */
 static int reconnect    =0;         /* not reconnect interval */
@@ -358,7 +359,7 @@ static int cmdopts(int argc, char **argv, rnxopt_t *opt, char **ifile,
 {
     double eps[]={1980,1,1,0,0,0},epe[]={2037,12,31,0,0,0};
     double epr[]={2010,1,1,0,0,0},span=0.0;
-    int i,j,k,sat,nf=3,nc=2,format=-1;
+    int i,j,k,sat,nf=3,nc=2,format=-1,staid_len;
     char *p,*sys,*fmt="",*paths[1],path[1024],buff[256];
     
     opt->rnxver=2.11;
@@ -495,7 +496,10 @@ static int cmdopts(int argc, char **argv, rnxopt_t *opt, char **ifile,
             *dir=argv[++i];
         }
         else if (!strcmp(argv[i],"-c" )&&i+1<argc) {
-            strcpy(opt->staid,argv[++i]);
+            /* Station ID length should be 4 characters */
+            strcpy(opt->staid,"0000");
+            staid_len=strlen(argv[++i]);
+            memcpy(opt->staid,argv[i],staid_len>MAXSTAIDLEN?MAXSTAIDLEN:staid_len);
         }
         else if (!strcmp(argv[i],"-o" )&&i+1<argc) ofile[0]=argv[++i];
         else if (!strcmp(argv[i],"-n" )&&i+1<argc) ofile[1]=argv[++i];
