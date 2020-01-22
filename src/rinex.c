@@ -2810,6 +2810,88 @@ extern int outrnxinavh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
     }
     return fprintf(fp,"%60s%-20s\n","","END OF HEADER")!=EOF;
 }
+/* generate rinex filenames for ver. < 3.02 ----------------------------------*/
+static void genrnxshortnames(char** ofile, double rnxver, int navsys)
+{
+    const char *name_types[NOUTFILE-1]={"O","N","G","H","Q","L","C","I"};
+    const char *ext_log_name_fmt="%r%n0_%y";
+    const char *name_fmt="%r%n0.%y";
+    int i;
+
+    if (rnxver>=2.99&&navsys!=SYS_GPS) {
+        name_types[1]="P";
+    }
+
+    for (i=0;i<NOUTFILE-1;i++) {
+        strcpy(ofile[i],name_fmt);
+        strcat(ofile[i],name_types[i]);
+    }
+
+    strcpy(ofile[NOUTFILE-1],ext_log_name_fmt);
+}
+/* generate rinex filenames for ver. >= 3.02 ---------------------------------*/
+static void genrnxlongnames(char** ofile, double rnxver, int navsys)
+{
+    const char *name_types[NOUTFILE-1]={"","","_RN","_SN","_JN","_EN","_CN","_IN"};
+    const char *name_fmt="%r000000_U_%Y%n%h%M_00U";
+    const char *rnx_ext=".rnx";
+    int i;
+
+    switch (navsys) {
+        case SYS_GPS:
+            name_types[0]="_GO";
+            name_types[1]="_GN";
+            break;
+        case SYS_GLO:
+            name_types[0]="_RO";
+            name_types[1]="_RN";
+            break;
+        case SYS_GAL:
+            name_types[0]="_EO";
+            name_types[1]="_EN";
+            break;
+        case SYS_QZS:
+            name_types[0]="_JO";
+            name_types[1]="_JN";
+            break;
+        case SYS_CMP:
+            name_types[0]="_CO";
+            name_types[1]="_CN";
+            break;
+        case SYS_SBS:
+            name_types[0]="_SO";
+            name_types[1]="_SN";
+            break;
+        case SYS_IRN:
+            if (rnxver>=3.03) {
+                name_types[0]="_IO";
+                name_types[1]="_IN";
+            }
+            else {
+                name_types[0]="_MO";
+                name_types[1]="_MN";
+            }
+            break;
+        default:
+            name_types[0]="_MO";
+            name_types[1]="_MN";
+            break;
+    }
+
+    for (i=0;i<NOUTFILE-1;i++) {
+        strcpy(ofile[i],name_fmt);
+
+        /* obs file has additional field (ver >=3.02) */
+        if (i==0) {
+            strcat(ofile[i],"_00U");
+        }
+
+        strcat(ofile[i],name_types[i]);
+        strcat(ofile[i],rnx_ext);
+    }
+
+    strcpy(ofile[NOUTFILE-1],name_fmt);
+}
 /* generate rinex filenames ----------------------------------------------------
 * generate rinex filenames
 * args   : char   **ofile   O   output files
@@ -2847,90 +2929,10 @@ extern int outrnxinavh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
 *-----------------------------------------------------------------------------*/
 extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
 {
-    const char *rnx_long_name_types[NOUTFILE]={"","","_RN","_SN","_JN","_EN","_CN","_IN", ""};
-    const char *rnx_short_name_types[NOUTFILE]={"O","N","G","H","Q","L","C","I", ""};
-    const char *rnx_name_types[NOUTFILE];
-    const char *rnx_log_name_fmt;
-    const char *rnx_ext=".rnx";
-    const char *rnx_name_fmt;
-    int i;
-
     if (rnxver<3.02) {
-        rnx_name_fmt="%r%n0.%y";
-        rnx_log_name_fmt="%r%n0_%y";
-
-        for (i=0;i<NOUTFILE;i++) {
-            rnx_name_types[i]=rnx_short_name_types[i];
-        }
-
-        if (rnxver>=2.99&&navsys!=SYS_GPS) {
-            rnx_name_types[1]="P";
-        }
+        genrnxshortnames(ofile,rnxver,navsys);
     }
     else {
-        rnx_name_fmt="%r000000_U_%Y%n%h%M_00U";
-        rnx_log_name_fmt=rnx_name_fmt;
-
-        switch (navsys) {
-            case SYS_GPS:
-                rnx_long_name_types[0]="_GO";
-                rnx_long_name_types[1]="_GN";
-                break;
-            case SYS_GLO:
-                rnx_long_name_types[0]="_RO";
-                rnx_long_name_types[1]="_RN";
-                break;
-            case SYS_GAL:
-                rnx_long_name_types[0]="_EO";
-                rnx_long_name_types[1]="_EN";
-                break;
-            case SYS_QZS:
-                rnx_long_name_types[0]="_JO";
-                rnx_long_name_types[1]="_JN";
-                break;
-            case SYS_CMP:
-                rnx_long_name_types[0]="_CO";
-                rnx_long_name_types[1]="_CN";
-                break;
-            case SYS_SBS:
-                rnx_long_name_types[0]="_SO";
-                rnx_long_name_types[1]="_SN";
-                break;
-            case SYS_IRN:
-                if (rnxver>=3.03) {
-                    rnx_long_name_types[0]="_IO";
-                    rnx_long_name_types[1]="_IN";
-                }
-                else {
-                    rnx_long_name_types[0]="_MO";
-                    rnx_long_name_types[1]="_MN";
-                }
-                break;
-            default:
-                rnx_long_name_types[0]="_MO";
-                rnx_long_name_types[1]="_MN";
-                break;
-        }
-
-        for (i=0;i<NOUTFILE;i++) {
-            rnx_name_types[i]=rnx_long_name_types[i];
-        }
+        genrnxlongnames(ofile,rnxver,navsys);
     }
-
-    for (i=0;i<NOUTFILE-1;i++) {
-        strcpy(ofile[i],rnx_name_fmt);
-
-        /* obs file has additional field (ver >=3.02) */
-        if (i==0&&rnxver>=3.02) {
-            strcat(ofile[i],"_00U");
-        }
-
-        strcat(ofile[i],rnx_name_types[i]);
-
-        if (rnxver>=3.02) {
-            strcat(ofile[i],rnx_ext);
-        }
-    }
-
-    strcpy(ofile[NOUTFILE-1],rnx_log_name_fmt);
 }
