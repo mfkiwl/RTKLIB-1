@@ -821,7 +821,8 @@ void MainWindow::ConvertFile(void)
         if (QMessageBox::question(this,tr("Overwrite"),QString(tr("%1 exists. Do you want to overwrite?")).arg(conversionThread->ofile[i]))!=QMessageBox::Yes) return;
     }
     GetTime(&conversionThread->rnxopt.ts,&conversionThread->rnxopt.te,&conversionThread->rnxopt.tint,&conversionThread->rnxopt.tunit);
-    strncpy(conversionThread->rnxopt.staid,qPrintable(RnxCode),31);
+    strcpy(conversionThread->rnxopt.staid,"0000");
+    memcpy(conversionThread->rnxopt.staid,qPrintable(RnxCode),RnxCode.size()>4?4:RnxCode.size());
     sprintf(conversionThread->rnxopt.prog,"%s %s %s",PRGNAME,VER_RTKLIB,PATCH_LEVEL);
     strncpy(conversionThread->rnxopt.runby,qPrintable(RunBy),31);
     strncpy(conversionThread->rnxopt.marker,qPrintable(Marker),63);
