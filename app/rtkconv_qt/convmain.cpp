@@ -49,6 +49,7 @@ MainWindow *mainWindow;
 #define TRACEFILE   "rtkconv.trace" // trace file
 
 static int abortf=0;
+static double RNXVER[]={2.10,2.11,2.12,3.00,3.01,3.02,3.03};
 
 // show message in message area ---------------------------------------------
 extern "C" {
@@ -138,6 +139,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(BtnOutFile5,SIGNAL(clicked(bool)),this,SLOT(BtnOutFile5Click()));
     connect(BtnOutFile6,SIGNAL(clicked(bool)),this,SLOT(BtnOutFile6Click()));
     connect(BtnOutFile7,SIGNAL(clicked(bool)),this,SLOT(BtnOutFile7Click()));
+    connect(BtnOutFile8,SIGNAL(clicked(bool)),this,SLOT(BtnOutFile8Click()));
+    connect(BtnOutFile9,SIGNAL(clicked(bool)),this,SLOT(BtnOutFile9Click()));
     connect(BtnOutFileView1,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView1Click()));
     connect(BtnOutFileView2,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView2Click()));
     connect(BtnOutFileView3,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView3Click()));
@@ -145,6 +148,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(BtnOutFileView5,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView5Click()));
     connect(BtnOutFileView6,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView6Click()));
     connect(BtnOutFileView7,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView7Click()));
+    connect(BtnOutFileView8,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView8Click()));
+    connect(BtnOutFileView9,SIGNAL(clicked(bool)),this,SLOT(BtnOutFileView9Click()));
     connect(BtnAbort,SIGNAL(clicked(bool)),this,SLOT(BtnAbortClick()));
     connect(TimeStartF,SIGNAL(clicked(bool)),this,SLOT(TimeStartFClick()));
     connect(TimeEndF,SIGNAL(clicked(bool)),this,SLOT(TimeEndFClick()));
@@ -166,6 +171,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(OutFileEna5,SIGNAL(clicked(bool)),this,SLOT(UpdateEnable()));
     connect(OutFileEna6,SIGNAL(clicked(bool)),this,SLOT(UpdateEnable()));
     connect(OutFileEna7,SIGNAL(clicked(bool)),this,SLOT(UpdateEnable()));
+    connect(OutFileEna8,SIGNAL(clicked(bool)),this,SLOT(UpdateEnable()));
+    connect(OutFileEna9,SIGNAL(clicked(bool)),this,SLOT(UpdateEnable()));
 
     QTimer::singleShot(100,this,SLOT(FormCreate()));
 }
@@ -215,11 +222,12 @@ void MainWindow::closeEvent(QCloseEvent*)
 void MainWindow::SetOutFiles(const QString &infile)
 {
     QLineEdit *edit[]={
-        OutFile1,OutFile2,OutFile3,OutFile4,OutFile5,OutFile6,OutFile7
+        OutFile1,OutFile2,OutFile3,OutFile4,OutFile5,OutFile6,OutFile7,
+        OutFile8,OutFile9
     };
     QString Format_Text=Format->currentText();
     QString OutDir_Text=OutDir->text();
-    QString ofile[8];
+    QString ofile[NOUTFILE+1];
     int i,lex=Format_Text.contains("LEX");
 
     if (!EventEna) return;
@@ -244,25 +252,31 @@ void MainWindow::SetOutFiles(const QString &infile)
         ofile[4]=ofile[0]+".hnav";
         ofile[5]=ofile[0]+".qnav";
         ofile[6]=ofile[0]+".lnav";
-        ofile[7]=ofile[0]+(lex?".lex":".sbs");
+        ofile[7]=ofile[0]+".cnav";
+        ofile[8]=ofile[0]+".inav";
+        ofile[9]=ofile[0]+(lex?".lex":".sbs");
     }
     else {
         QFileInfo info(ofile[0]);
-        ofile[0]=info.filePath()+QDir::separator();
-        ofile[1]+=ofile[0]+QString("%%r%%n0.%%yO");
-        if (RnxVer>=3&&NavSys&&(NavSys!=SYS_GPS)) { /* ver.3 and mixed system */
-            ofile[2]+=ofile[0]+"%%r%%n0.%%yP";
+        QVector<char> ofile_buff[NOUTFILE];
+        char *ofile_ptr[NOUTFILE];
+
+        ofile[0]=info.absoluteDir().path()+QDir::separator();
+
+        for(int i=0;i<NOUTFILE;i++) {
+            ofile_buff[i]=QVector<char>(256);
+            ofile_ptr[i]=ofile_buff[i].data();
         }
-        else {
-            ofile[2]+=ofile[0]+"%%r%%n0.%%yN";
+
+        genrnxfilenames(ofile_ptr,RNXVER[RnxVer],NavSys);
+
+        for (int i=0;i<NOUTFILE;i++) {
+            ofile[i+1]=ofile[0]+ofile_ptr[i];
         }
-        ofile[3]+=ofile[0]+"%%r%%n0.%%yG";
-        ofile[4]+=ofile[0]+"%%r%%n0.%%yH";
-        ofile[5]+=ofile[0]+"%%r%%n0.%%yQ";
-        ofile[6]+=ofile[0]+"%%r%%n0.%%yL";
-        ofile[7]+=ofile[0]+(lex?"%%r%%n0_%%y.lex":"%%r%%n0_%%y.sbs");
+
+        ofile[9]+=lex?".lex":".sbs";
     }
-    for (i=0;i<7;i++) {
+    for (i=0;i<NOUTFILE;i++) {
         if (ofile[i+1]==infile) ofile[i+1]+="_";
         edit[i]->setText(QDir::toNativeSeparators(ofile[i+1]));
     }
@@ -374,7 +388,7 @@ void MainWindow::BtnOptionsClick()
     int rnxfile=RnxFile;
     convOptDialog->exec();
     if (convOptDialog->result()!=QDialog::Accepted) return;
-    if (RnxFile!=rnxfile) {
+    if (RnxFile!=rnxfile||RnxFile) {
         SetOutFiles(InFile->currentText());
     }
     UpdateEnable();
@@ -443,7 +457,8 @@ void MainWindow::BtnOutFile1Click()
     QString selectedFilter="RINEX OBS (*.obs *.*O)";
     OutFile1->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX OBS File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-2 -----------------------------------------
 void MainWindow::BtnOutFile2Click()
@@ -451,7 +466,8 @@ void MainWindow::BtnOutFile2Click()
     QString selectedFilter="RINEX NAV (*.nav *.*N *.*P)";
     OutFile2->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX NAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-3 -----------------------------------------
 void MainWindow::BtnOutFile3Click()
@@ -459,7 +475,8 @@ void MainWindow::BtnOutFile3Click()
     QString selectedFilter="RINEX GNAV (*.gnav *.*G)";
     OutFile3->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX GNAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-4 -----------------------------------------
 void MainWindow::BtnOutFile4Click()
@@ -467,7 +484,8 @@ void MainWindow::BtnOutFile4Click()
     QString selectedFilter="RINEX HNAV (*.hnav *.*H)";
     OutFile4->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX HNAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-5 -----------------------------------------
 void MainWindow::BtnOutFile5Click()
@@ -475,7 +493,8 @@ void MainWindow::BtnOutFile5Click()
     QString selectedFilter="RINEX QNAV (*.qnav *.*Q)";
     OutFile5->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX QNAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-6 -----------------------------------------
 void MainWindow::BtnOutFile6Click()
@@ -483,15 +502,35 @@ void MainWindow::BtnOutFile6Click()
     QString selectedFilter="RINEX LNAV (*.lnav *.*L)";
     OutFile6->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX LNAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-output-file-7 -----------------------------------------
 void MainWindow::BtnOutFile7Click()
 {
-    QString selectedFilter="SBAS Log (*.sbs)";
-    OutFile7->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output SBAS/LEX Log File"),QString(),
+    QString selectedFilter="RINEX CNAV (*.cnav *.*C)";
+    OutFile7->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX LNAV File"),QString(),
               tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
-                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;SBAS Log (*.sbs);;LEX Log (*.lex)"),&selectedFilter)));
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
+}
+// callback on button-output-file-8 -----------------------------------------
+void MainWindow::BtnOutFile8Click()
+{
+    QString selectedFilter="RINEX INAV (*.inav *.*I)";
+    OutFile8->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output RINEX LNAV File"),QString(),
+              tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
+}
+// callback on button-output-file-9 -----------------------------------------
+void MainWindow::BtnOutFile9Click()
+{
+    QString selectedFilter="SBAS Log (*.sbs)";
+    OutFile9->setText(QDir::toNativeSeparators(QFileDialog::getOpenFileName(this,tr("Output SBAS/LEX Log File"),QString(),
+              tr("All (*.*);;RINEX OBS (*.obs *.*O);;RINEX NAV (*.nav *.*N *.*P);;RINEX GNAV (*.gnav *.*G);;RINEX HNAV (*.hnav *.*H);;"
+                 "RINEX QNAV (*.qnav *.*Q);;RINEX LNAV (*.lnav *.*L);;RINEX CNAV (*.cnav *.*C);;RINEX INAV (*.inav *.*I);;"
+                 "SBAS Log (*.sbs);;LEX Log (*.lex)"), &selectedFilter)));
 }
 // callback on button-view-input-file ----------------------------------------
 void MainWindow::BtnInFileViewClick()
@@ -567,6 +606,22 @@ void MainWindow::BtnOutFileView7Click()
     viewer->show();
     viewer->Read(RepPath(OutFile7_Text));
 }
+// callback on button-view-file-8 -------------------------------------------
+void MainWindow::BtnOutFileView8Click()
+{
+    TextViewer *viewer=new TextViewer(this);
+    QString OutFile8_Text=OutFile8->text();
+    viewer->show();
+    viewer->Read(RepPath(OutFile8_Text));
+}
+// callback on button-view-file-9 -------------------------------------------
+void MainWindow::BtnOutFileView9Click()
+{
+    TextViewer *viewer=new TextViewer(this);
+    QString OutFile9_Text=OutFile9->text();
+    viewer->show();
+    viewer->Read(RepPath(OutFile9_Text));
+}
 // callback on button-about -------------------------------------------------
 void MainWindow::BtnAboutClick()
 {
@@ -603,6 +658,10 @@ void MainWindow::InFileChange()
 // callback on format change ------------------------------------------------
 void MainWindow::FormatChange()
 {
+    if (RnxFile) {
+        SetOutFiles(InFile->currentText());
+    }
+
     UpdateEnable();
 }
 // get time -----------------------------------------------------------------
@@ -642,6 +701,8 @@ void MainWindow::UpdateEnable(void)
 {
     QString FormatText=Format->currentText();
     int rnx=FormatText=="RINEX";
+    int sep_nav=RnxVer<3||SepNav;
+
     TimeY1         ->setEnabled(TimeStartF ->isChecked());
     TimeH1         ->setEnabled(TimeStartF ->isChecked());
     BtnTime1       ->setEnabled(TimeStartF ->isChecked());
@@ -653,20 +714,24 @@ void MainWindow::UpdateEnable(void)
     TimeUnitF      ->setEnabled(TimeStartF->isChecked()&&TimeEndF->isChecked());
     TimeUnit       ->setEnabled(TimeStartF->isChecked()&&TimeEndF->isChecked()&&TimeUnitF->isChecked());
     LabelTimeUnit  ->setEnabled(TimeUnit  ->isEnabled());
-    OutFileEna3    ->setEnabled(RnxVer<3&&(NavSys&SYS_GLO));
-    OutFileEna4    ->setEnabled(RnxVer<3&&(NavSys&SYS_SBS));
-    OutFileEna5    ->setEnabled(RnxVer<3&&(NavSys&SYS_QZS));
-    OutFileEna6    ->setEnabled(RnxVer<3&&(NavSys&SYS_GAL));
-    OutFileEna7    ->setEnabled(!rnx);
+    OutFileEna3    ->setEnabled(sep_nav&&(NavSys&SYS_GLO));
+    OutFileEna4    ->setEnabled(sep_nav&&(NavSys&SYS_SBS));
+    OutFileEna5    ->setEnabled(sep_nav&&(NavSys&SYS_QZS));
+    OutFileEna6    ->setEnabled(sep_nav&&(NavSys&SYS_GAL));
+    OutFileEna7    ->setEnabled(sep_nav&&(NavSys&SYS_CMP));
+    OutFileEna8    ->setEnabled(sep_nav&&(NavSys&SYS_IRN));
+    OutFileEna9    ->setEnabled(!rnx);
     OutDir         ->setEnabled(OutDirEna  ->isChecked());
     LabelOutDir    ->setEnabled(OutDirEna  ->isChecked());
     OutFile1       ->setEnabled(OutFileEna1->isChecked());
     OutFile2       ->setEnabled(OutFileEna2->isChecked());
-    OutFile3       ->setEnabled(OutFileEna3->isChecked()&&RnxVer<3&&(NavSys&SYS_GLO));
-    OutFile4       ->setEnabled(OutFileEna4->isChecked()&&RnxVer<3&&(NavSys&SYS_SBS));
-    OutFile5       ->setEnabled(OutFileEna5->isChecked()&&RnxVer<3&&(NavSys&SYS_QZS));
-    OutFile6       ->setEnabled(OutFileEna6->isChecked()&&RnxVer<3&&(NavSys&SYS_GAL));
-    OutFile7       ->setEnabled(OutFileEna7->isChecked()&&!rnx);
+    OutFile3       ->setEnabled(OutFileEna3->isChecked()&&sep_nav&&(NavSys&SYS_GLO));
+    OutFile4       ->setEnabled(OutFileEna4->isChecked()&&sep_nav&&(NavSys&SYS_SBS));
+    OutFile5       ->setEnabled(OutFileEna5->isChecked()&&sep_nav&&(NavSys&SYS_QZS));
+    OutFile6       ->setEnabled(OutFileEna6->isChecked()&&sep_nav&&(NavSys&SYS_GAL));
+    OutFile7       ->setEnabled(OutFileEna7->isChecked()&&sep_nav&&(NavSys&SYS_CMP));
+    OutFile8       ->setEnabled(OutFileEna8->isChecked()&&sep_nav&&(NavSys&SYS_IRN));
+    OutFile9       ->setEnabled(OutFileEna9->isChecked()&&!rnx);
     BtnOutDir      ->setEnabled(OutDirEna  ->isChecked());
     BtnOutFile1    ->setEnabled(OutFile1->isEnabled());
     BtnOutFile2    ->setEnabled(OutFile2->isEnabled());
@@ -690,10 +755,10 @@ void MainWindow::ConvertFile(void)
     QString OutFile1_Text=OutFile1->text(),OutFile2_Text=OutFile2->text();
     QString OutFile3_Text=OutFile3->text(),OutFile4_Text=OutFile4->text();
     QString OutFile5_Text=OutFile5->text(),OutFile6_Text=OutFile6->text();
-    QString OutFile7_Text=OutFile7->text();
+    QString OutFile7_Text=OutFile7->text(),OutFile8_Text=OutFile8->text();
+    QString OutFile9_Text=OutFile9->text();
     int i;
     char *p;
-    double RNXVER[]={2.10,2.11,2.12,3.00,3.01,3.02,3.03};
 
     conversionThread= new ConversionThread(this);
 
@@ -747,6 +812,8 @@ void MainWindow::ConvertFile(void)
     if (OutFile5->isEnabled()&&OutFileEna5->isChecked()) strcpy(conversionThread->ofile[4],qPrintable(OutFile5_Text));
     if (OutFile6->isEnabled()&&OutFileEna6->isChecked()) strcpy(conversionThread->ofile[5],qPrintable(OutFile6_Text));
     if (OutFile7->isEnabled()&&OutFileEna7->isChecked()) strcpy(conversionThread->ofile[6],qPrintable(OutFile7_Text));
+    if (OutFile8->isEnabled()&&OutFileEna8->isChecked()) strcpy(conversionThread->ofile[7],qPrintable(OutFile8_Text));
+    if (OutFile9->isEnabled()&&OutFileEna9->isChecked()) strcpy(conversionThread->ofile[8],qPrintable(OutFile9_Text));
 
     // check overwrite output file
     for (i=0;i<6;i++) {
@@ -754,7 +821,8 @@ void MainWindow::ConvertFile(void)
         if (QMessageBox::question(this,tr("Overwrite"),QString(tr("%1 exists. Do you want to overwrite?")).arg(conversionThread->ofile[i]))!=QMessageBox::Yes) return;
     }
     GetTime(&conversionThread->rnxopt.ts,&conversionThread->rnxopt.te,&conversionThread->rnxopt.tint,&conversionThread->rnxopt.tunit);
-    strncpy(conversionThread->rnxopt.staid,qPrintable(RnxCode),31);
+    strcpy(conversionThread->rnxopt.staid,"0000");
+    memcpy(conversionThread->rnxopt.staid,qPrintable(RnxCode),RnxCode.size()>4?4:RnxCode.size());
     sprintf(conversionThread->rnxopt.prog,"%s %s %s",PRGNAME,VER_RTKLIB,PATCH_LEVEL);
     strncpy(conversionThread->rnxopt.runby,qPrintable(RunBy),31);
     strncpy(conversionThread->rnxopt.marker,qPrintable(Marker),63);
@@ -783,6 +851,7 @@ void MainWindow::ConvertFile(void)
     conversionThread->rnxopt.outiono=OutIono;
     conversionThread->rnxopt.outtime=OutTime;
     conversionThread->rnxopt.outleaps=OutLeaps;
+    conversionThread->rnxopt.sep_nav=SepNav;
 
     QStringList exsatsLst=ExSats.split(" ");
     foreach (const QString & sat,exsatsLst)
@@ -911,6 +980,7 @@ void MainWindow::LoadOpt(void)
     OutIono             =ini.value ("opt/outiono",     0).toInt();
     OutTime             =ini.value ("opt/outtime",     0).toInt();
     OutLeaps            =ini.value ("opt/outleaps",    0).toInt();
+    SepNav              =ini.value ("opt/sepnav",      0).toInt();
 
     TimeStartF ->setChecked(ini.value("set/timestartf",  0).toBool());
     TimeEndF   ->setChecked(ini.value("set/timeendf",    0).toBool());
@@ -931,6 +1001,8 @@ void MainWindow::LoadOpt(void)
     OutFile5   ->setText(ini.value ("set/outfile5",   "").toString());
     OutFile6   ->setText(ini.value ("set/outfile6",   "").toString());
     OutFile7   ->setText(ini.value ("set/outfile7",   "").toString());
+    OutFile8   ->setText(ini.value ("set/outfile8",   "").toString());
+    OutFile9   ->setText(ini.value ("set/outfile9",   "").toString());
     OutDirEna  ->setChecked(ini.value("set/outdirena",   false).toBool());
     OutFileEna1->setChecked(ini.value("set/outfileena1", true).toBool());
     OutFileEna2->setChecked(ini.value("set/outfileena2", true).toBool());
@@ -939,6 +1011,8 @@ void MainWindow::LoadOpt(void)
     OutFileEna5->setChecked(ini.value("set/outfileena5", true).toBool());
     OutFileEna6->setChecked(ini.value("set/outfileena6", true).toBool());
     OutFileEna7->setChecked(ini.value("set/outfileena7", true).toBool());
+    OutFileEna8->setChecked(ini.value("set/outfileena8", true).toBool());
+    OutFileEna9->setChecked(ini.value("set/outfileena9", true).toBool());
     Format   ->setCurrentIndex(ini.value("set/format",      0).toInt());
 
     ReadList(InFile,&ini,"hist/inputfile");
@@ -998,6 +1072,7 @@ void MainWindow::SaveOpt(void)
     ini.setValue ("opt/outiono",    OutIono);
     ini.setValue ("opt/outtime",    OutTime);
     ini.setValue ("opt/outleaps",   OutLeaps);
+    ini.setValue ("opt/sepnav",     SepNav);
 
     ini.setValue ("set/timestartf", TimeStartF ->isChecked());
     ini.setValue ("set/timeendf",   TimeEndF   ->isChecked());
@@ -1018,6 +1093,8 @@ void MainWindow::SaveOpt(void)
     ini.setValue ("set/outfile5",   OutFile5   ->text());
     ini.setValue ("set/outfile6",   OutFile6   ->text());
     ini.setValue ("set/outfile7",   OutFile7   ->text());
+    ini.setValue ("set/outfile8",   OutFile8   ->text());
+    ini.setValue ("set/outfile9",   OutFile9   ->text());
     ini.setValue("set/outdirena",  OutDirEna  ->isChecked());
     ini.setValue("set/outfileena1",OutFileEna1->isChecked());
     ini.setValue("set/outfileena2",OutFileEna2->isChecked());
@@ -1026,6 +1103,8 @@ void MainWindow::SaveOpt(void)
     ini.setValue("set/outfileena5",OutFileEna5->isChecked());
     ini.setValue("set/outfileena6",OutFileEna6->isChecked());
     ini.setValue("set/outfileena7",OutFileEna7->isChecked());
+    ini.setValue("set/outfileena8",OutFileEna8->isChecked());
+    ini.setValue("set/outfileena9",OutFileEna9->isChecked());
     ini.setValue("set/format",     Format     ->currentIndex());
 
     WriteList(&ini,"hist/inputfile",InFile);

@@ -64,6 +64,7 @@ void ConvOptDialog::showEvent(QShowEvent *event)
     OutIono->setChecked(mainWindow->OutIono);
     OutTime->setChecked(mainWindow->OutTime);
     OutLeaps->setChecked(mainWindow->OutLeaps);
+    ChkSepNav->setChecked(mainWindow->SepNav);
 
     Nav1->setChecked(mainWindow->NavSys&SYS_GPS);
     Nav2->setChecked(mainWindow->NavSys&SYS_GLO);
@@ -121,6 +122,7 @@ void ConvOptDialog::BtnOkClick()
     mainWindow->OutIono=OutIono->isChecked();
     mainWindow->OutTime=OutTime->isChecked();
     mainWindow->OutLeaps=OutLeaps->isChecked();
+    mainWindow->SepNav=ChkSepNav->isChecked();
 	
 	int navsys=0,obstype=0,freqtype=0;
     if (Nav1->isChecked()) navsys|=SYS_GPS;
@@ -195,6 +197,7 @@ void ConvOptDialog::UpdateEnable(void)
     AppPos0->setEnabled(AutoPos->isChecked());
     AppPos1->setEnabled(AutoPos->isChecked());
     AppPos2->setEnabled(AutoPos->isChecked());
+    ChkSepNav->setEnabled(RnxVer->currentIndex()>=3);
 }
 //---------------------------------------------------------------------------
 

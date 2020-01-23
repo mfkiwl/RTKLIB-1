@@ -104,6 +104,10 @@ public slots:
     void BtnPostClick();
     void BtnOutFile7Click();
     void BtnOutFileView7Click();
+    void BtnOutFile8Click();
+    void BtnOutFileView8Click();
+    void BtnOutFile9Click();
+    void BtnOutFileView9Click();
     void BtnInFileViewClick();
     void ConversionFinished();
     void UpdateEnable();
@@ -139,7 +143,7 @@ public:
     QString CodeMask[6];
 	double AppPos[3],AntDel[3];
 	int RnxVer,RnxFile,NavSys,ObsType,FreqType,TraceLevel,EventEna;
-	int AutoPos,ScanObs,OutIono,OutTime,OutLeaps;
+    int AutoPos,ScanObs,OutIono,OutTime,OutLeaps,SepNav;
 	
     explicit MainWindow(QWidget *parent=0);
 };

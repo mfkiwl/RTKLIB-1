@@ -2810,3 +2810,129 @@ extern int outrnxinavh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
     }
     return fprintf(fp,"%60s%-20s\n","","END OF HEADER")!=EOF;
 }
+/* generate rinex filenames for ver. < 3.02 ----------------------------------*/
+static void genrnxshortnames(char** ofile, double rnxver, int navsys)
+{
+    const char *name_types[NOUTFILE-1]={"O","N","G","H","Q","L","C","I"};
+    const char *ext_log_name_fmt="%r%n0_%y";
+    const char *name_fmt="%r%n0.%y";
+    int i;
+
+    if (rnxver>=2.99&&navsys!=SYS_GPS) {
+        name_types[1]="P";
+    }
+
+    for (i=0;i<NOUTFILE-1;i++) {
+        strcpy(ofile[i],name_fmt);
+        strcat(ofile[i],name_types[i]);
+    }
+
+    strcpy(ofile[NOUTFILE-1],ext_log_name_fmt);
+}
+/* generate rinex filenames for ver. >= 3.02 ---------------------------------*/
+static void genrnxlongnames(char** ofile, double rnxver, int navsys)
+{
+    const char *name_types[NOUTFILE-1]={"","","_RN","_SN","_JN","_EN","_CN","_IN"};
+    const char *name_fmt="%r000000_U_%Y%n%h%M_00U";
+    const char *rnx_ext=".rnx";
+    int i;
+
+    switch (navsys) {
+        case SYS_GPS:
+            name_types[0]="_GO";
+            name_types[1]="_GN";
+            break;
+        case SYS_GLO:
+            name_types[0]="_RO";
+            name_types[1]="_RN";
+            break;
+        case SYS_GAL:
+            name_types[0]="_EO";
+            name_types[1]="_EN";
+            break;
+        case SYS_QZS:
+            name_types[0]="_JO";
+            name_types[1]="_JN";
+            break;
+        case SYS_CMP:
+            name_types[0]="_CO";
+            name_types[1]="_CN";
+            break;
+        case SYS_SBS:
+            name_types[0]="_SO";
+            name_types[1]="_SN";
+            break;
+        case SYS_IRN:
+            if (rnxver>=3.03) {
+                name_types[0]="_IO";
+                name_types[1]="_IN";
+            }
+            else {
+                name_types[0]="_MO";
+                name_types[1]="_MN";
+            }
+            break;
+        default:
+            name_types[0]="_MO";
+            name_types[1]="_MN";
+            break;
+    }
+
+    for (i=0;i<NOUTFILE-1;i++) {
+        strcpy(ofile[i],name_fmt);
+
+        /* obs file has additional field (ver >=3.02) */
+        if (i==0) {
+            strcat(ofile[i],"_00U");
+        }
+
+        strcat(ofile[i],name_types[i]);
+        strcat(ofile[i],rnx_ext);
+    }
+
+    strcpy(ofile[NOUTFILE-1],name_fmt);
+}
+/* generate rinex filenames ----------------------------------------------------
+* generate rinex filenames
+* args   : char   **ofile   O   output files
+*                               ofile[0] rinex obs filename
+*                               ofile[1] rinex nav filename
+*                               ofile[2] rinex gnav filename
+*                               ofile[3] rinex hnav filename
+*                               ofile[4] rinex qnav filename
+*                               ofile[5] rinex lnav filename
+*                               ofile[6] rinex cnav filename
+*                               ofile[7] rinex inav filename
+*                               ofile[8] sbas/lex log filename
+*          double rnxver    I   rinex version
+*          int    navsys    I   navigation system
+* return : none
+* notes  : ofile[i] should be >= 256 bytes
+*
+*                | ver. < 3.02  | ver. >= 3.02
+*   rinex obs    | %r%n0.%yO    | %r000000_U_%Y%n%h%M_00U_00U_<B>O.rnx
+*   rinex nav    | %r%n0.%y<A>  | %r000000_U_%Y%n%h%M_00U_<B>N.rnx
+*   rinex gnav   | %r%n0.%yG    | %r000000_U_%Y%n%h%M_00U_RN.rnx
+*   rinex hnav   | %r%n0.%yH    | %r000000_U_%Y%n%h%M_00U_SN.rnx
+*   rinex qnav   | %r%n0.%yQ    | %r000000_U_%Y%n%h%M_00U_JN.rnx
+*   rinex lnav   | %r%n0.%yL    | %r000000_U_%Y%n%h%M_00U_EN.rnx
+*   rinex cnav   | %r%n0.%yC    | %r000000_U_%Y%n%h%M_00U_CN.rnx
+*   rinex inav   | %r%n0.%yI    | %r000000_U_%Y%n%h%M_00U_IN.rnx
+*   sbas/lex log | %r%n0.%y.sbs | %r000000_U_%Y%n%h%M_00U.sbs
+*
+*   <A> = N for ver. < 3.00 or
+*         P if ver. >= 3.00 and navsys contains not only GPS nav data
+*
+*   navsys | MIXED | GPS | GLO | SBS | QZS | GAL | CMP | IRN (ver. >= 3.03)
+*    <B>   |   M   |  G  |  R  |  S  |  J  |  E  |  C  |  I
+*
+*-----------------------------------------------------------------------------*/
+extern void genrnxfilenames(char** ofile, double rnxver, int navsys)
+{
+    if (rnxver<3.02) {
+        genrnxshortnames(ofile,rnxver,navsys);
+    }
+    else {
+        genrnxlongnames(ofile,rnxver,navsys);
+    }
+}

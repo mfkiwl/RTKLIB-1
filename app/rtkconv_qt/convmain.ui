@@ -198,95 +198,8 @@
     <item>
      <widget class="QWidget" name="Panel2" native="true">
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="11" column="0">
-        <widget class="QCheckBox" name="OutFileEna6">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QCheckBox" name="OutFileEna2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QLabel" name="LabelOutDir">
-         <property name="text">
-          <string>Output Directory:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QCheckBox" name="OutFileEna4">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="LabelFormat">
-         <property name="text">
-          <string>Format</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QCheckBox" name="OutFileEna3">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QPushButton" name="BtnOutDir">
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="OutDir"/>
-       </item>
-       <item row="6" column="0">
-        <widget class="QCheckBox" name="OutFileEna1">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QCheckBox" name="OutFileEna5">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QLabel" name="LabelOutFile">
-         <property name="text">
-          <string>RINEX OBS/NAV/GNAV/HNAV/QNAV/LNAV and SBS</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QCheckBox" name="OutDirEna">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QCheckBox" name="OutFileEna7">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QPushButton" name="BtnOutFileView1">
+       <item row="9" column="3">
+        <widget class="QPushButton" name="BtnOutFileView4">
          <property name="text">
           <string/>
          </property>
@@ -296,19 +209,6 @@
          </property>
          <property name="flat">
           <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QPushButton" name="BtnOutFile1">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>...</string>
          </property>
         </widget>
        </item>
@@ -325,6 +225,177 @@
          </property>
         </widget>
        </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QLabel" name="LabelOutFile">
+         <property name="text">
+          <string>RINEX OBS/NAV/GNAV/HNAV/QNAV/LNAV/CNAV/INAV and SBS</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QCheckBox" name="OutFileEna4">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0">
+        <widget class="QCheckBox" name="OutFileEna9">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile3"/>
+       </item>
+       <item row="6" column="4">
+        <widget class="QPushButton" name="BtnOutFile1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="3">
+        <widget class="QPushButton" name="BtnOutFileView9">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="rtkconv_qt.qrc">
+           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QCheckBox" name="OutFileEna8">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile6"/>
+       </item>
+       <item row="4" column="3" colspan="2">
+        <widget class="QComboBox" name="Format"/>
+       </item>
+       <item row="10" column="4">
+        <widget class="QPushButton" name="BtnOutFile5">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QCheckBox" name="OutFileEna7">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="BtnKey">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>?</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QPushButton" name="BtnOutFileView2">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="rtkconv_qt.qrc">
+           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="OutFileEna2">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="4">
+        <widget class="QPushButton" name="BtnOutFile8">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="3">
+        <widget class="QPushButton" name="BtnOutFileView6">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="rtkconv_qt.qrc">
+           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile4"/>
+       </item>
+       <item row="8" column="0">
+        <widget class="QCheckBox" name="OutFileEna3">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile7"/>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile2"/>
+       </item>
+       <item row="11" column="0">
+        <widget class="QCheckBox" name="OutFileEna6">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
        <item row="8" column="4">
         <widget class="QPushButton" name="BtnOutFile3">
          <property name="sizePolicy">
@@ -338,8 +409,109 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="3">
-        <widget class="QPushButton" name="BtnOutFileView2">
+       <item row="13" column="3">
+        <widget class="QPushButton" name="BtnOutFileView8">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="rtkconv_qt.qrc">
+           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QCheckBox" name="OutDirEna">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QCheckBox" name="OutFileEna1">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile1"/>
+       </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QComboBox" name="InFile">
+         <property name="editable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QPushButton" name="BtnInFile">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="4">
+        <widget class="QPushButton" name="BtnOutFile7">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="2">
+        <widget class="QLabel" name="LabelOutDir">
+         <property name="text">
+          <string>Output Directory:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="4">
+        <widget class="QPushButton" name="BtnOutFile6">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QCheckBox" name="OutFileEna5">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="OutDir"/>
+       </item>
+       <item row="4" column="2">
+        <widget class="QPushButton" name="BtnOutDir">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3">
+        <widget class="QPushButton" name="BtnOutFileView1">
          <property name="text">
           <string/>
          </property>
@@ -366,14 +538,29 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile3"/>
+       <item row="10" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile5"/>
        </item>
-       <item row="7" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile2"/>
+       <item row="3" column="2">
+        <widget class="QLabel" name="LabelFormat">
+         <property name="text">
+          <string>Format</string>
+         </property>
+        </widget>
        </item>
-       <item row="6" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile1"/>
+       <item row="12" column="3">
+        <widget class="QPushButton" name="BtnOutFileView7">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="rtkconv_qt.qrc">
+           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item row="9" column="4">
         <widget class="QPushButton" name="BtnOutFile4">
@@ -388,47 +575,15 @@
          </property>
         </widget>
        </item>
-       <item row="10" column="4">
-        <widget class="QPushButton" name="BtnOutFile5">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
+       <item row="1" column="0" colspan="2">
+        <widget class="QLabel" name="LabelInFile">
          <property name="text">
-          <string>...</string>
+          <string>RTCM, RCV RAW or RINEX OBS</string>
          </property>
         </widget>
        </item>
-       <item row="11" column="4">
-        <widget class="QPushButton" name="BtnOutFile6">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="4">
-        <widget class="QPushButton" name="BtnOutFile7">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="3">
-        <widget class="QPushButton" name="BtnOutFileView4">
+       <item row="2" column="3">
+        <widget class="QPushButton" name="BtnInFileView">
          <property name="text">
           <string/>
          </property>
@@ -455,51 +610,8 @@
          </property>
         </widget>
        </item>
-       <item row="11" column="3">
-        <widget class="QPushButton" name="BtnOutFileView6">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="rtkconv_qt.qrc">
-           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="3">
-        <widget class="QPushButton" name="BtnOutFileView7">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="rtkconv_qt.qrc">
-           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile4"/>
-       </item>
-       <item row="10" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile5"/>
-       </item>
-       <item row="11" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile6"/>
-       </item>
-       <item row="12" column="1" colspan="2">
-        <widget class="QLineEdit" name="OutFile7"/>
-       </item>
-       <item row="4" column="3" colspan="2">
-        <widget class="QComboBox" name="Format"/>
-       </item>
-       <item row="2" column="4">
-        <widget class="QPushButton" name="BtnInFile">
+       <item row="14" column="4">
+        <widget class="QPushButton" name="BtnOutFile9">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -511,49 +623,11 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="3">
-        <widget class="QPushButton" name="BtnInFileView">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="rtkconv_qt.qrc">
-           <normaloff>:/buttons/doc.bmp</normaloff>:/buttons/doc.bmp</iconset>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-        </widget>
+       <item row="13" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile8"/>
        </item>
-       <item row="2" column="0" colspan="3">
-        <widget class="QComboBox" name="InFile">
-         <property name="editable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="BtnKey">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>?</string>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QLabel" name="LabelInFile">
-         <property name="text">
-          <string>RTCM, RCV RAW or RINEX OBS</string>
-         </property>
-        </widget>
+       <item row="14" column="1" colspan="2">
+        <widget class="QLineEdit" name="OutFile9"/>
        </item>
       </layout>
      </widget>
