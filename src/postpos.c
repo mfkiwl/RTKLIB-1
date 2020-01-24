@@ -480,7 +480,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 newsol = fillsoltm(oldsol,rtk->sol,rtk->sol.eventime);
                 num++;
                 if (!solstatic && mode == 0) {
-                    outsol(fptm,&newsol,rb,sopt);
+                    outsol(fptm,&newsol,rtk->rb,sopt);
                 }
             }
             oldsol = rtk->sol;
