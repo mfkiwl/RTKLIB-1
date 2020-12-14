@@ -5,12 +5,27 @@ project(C Fortran)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_FLAGS "-Wall -O3")
 
-
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1 -DSHARED)
 
 #Internal definitions to support generating ashared library
-add_definitions( -DSHARED)
+add_definitions(-DSHARED)
+
+#RTKLIB Build Options
+add_definitions(  -DTRACE
+                  -DENAGLO
+                  -DENAQZS
+                  -DENAGAL
+                  -DENACMP
+                  -DENAIRN
+                  -DNFREQ=3
+                  -DSVR_REUSEADDR
+                  #-DIERS_MODEL
+                  -DEXTLEX
+                  -DNEXOBS=2
+                  -DMAXOBS=128
+)
+
 
 include_directories(
   src
@@ -24,10 +39,8 @@ add_subdirectory(lib)
 add_subdirectory(src)
 add_subdirectory(app)
 
-
 #Install
 include(GNUInstallDirs)
-
 
 include(InstallRequiredSystemLibraries)
 
