@@ -1,53 +1,11 @@
-### Emlid's RTKLIB fork
+### RTKLIB 
 
-This fork powers all the [Reach](https://emlid.com/reach/) units. 
+This fork is being developed from the [Emlid RTKLIB Fork](https://github.com/emlid/RTKLIB)
 
-We've added a couple of new features:
+Additional work:
+- Added cmake support for CLI apps
 
-* Added a new ERB output protocol to use RTKLIB with APM autopilot
-* Time mark support. UBX-TIM-TM2 messages are parsed and added as external events to the RINEX logs
-* Improved NMEA support
-
-And fixed some bugs, for which a big thanks goes to **RTKLIBexplorer** and his [excellent blog](https://rtklibexplorer.wordpress.com/).
-
-This fork contains work by [Alexey Bulatov](https://github.com/AlexeyBulatov) and [Egor Fedorov](https://github.com/egorf), [Aleksey Proshutinskiy](https://github.com/justprosh).
-
-Thanks to all RTKLIB maintainers, who made all this possible.
-
-### Build instructions(for Linux)
-
-#### CLI apps
-
-* Make sure you have `gfortran` installed
-* `make`
-
-#### Qt apps
-
-* Make sure you have dev libs installed. For Ubuntu, run `sudo apt-get install qt5-default libqt5serialport5-dev`
-* Download the latest Linux deploy Qt [tool](https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage)
-* `make qt_appimages LINUX_DEPLOY_QT=path/to/linuxdeployqt`
-
-### Build instructions(for Windows)
-
-#### Qt installation
-
-1. Download and run [Qt Online Installer for Windows](https://www.qt.io/download)
-4. To use MinGW 7.3 select 'Qt/Qt 5.12.X/MinGW 7.3.0 64-bit' component in 'Select component' menu
-5. Accept license agreement
-6. Install
- 
-#### Deploy Qt apps
-
-1. Launch Qt Creator
-2. Go to 'Projects' tab
-3. Click to 'Add' button and choose 'Release' in drop-down menu
-4. Enter 'Deploy' as new configuration name and click to 'OK' button
-5. Find 'Build Steps' section and click to 'Details' for qmake step
-6. Put `CONFIG+=deploy` to 'Additional arguments' and make sure Qt Quick Compiler is disabled
-7. Return to 'Edit' tab and build 'RTKLib' project
-8. You can find deployed apps in: %BUILD_DIRECTORY%/RTKLib_winapp_qt
-
-Notes: Deploy for win32 requires Qt 5.2 or newer
+  ```mkdir build && cd build && cmake .. && make```
 
 ### Original RTKLIB Readme at the time of the fork
 
