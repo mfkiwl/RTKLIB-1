@@ -1,0 +1,1 @@
+add_library(RTKLib_rcv OBJECT cmr.c gw10.c novatel.c rcvlex.c septentrio.c ss2.c ublox.c binex.c crescent.c javad.c nvs.c rt17.c skytraq.c tersus.c)

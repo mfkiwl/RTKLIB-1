@@ -1,0 +1,1 @@
+add_library(RTKLib_math_lsq OBJECT irls.c lsq.c ols.c ransac.c robust_lsq.c)

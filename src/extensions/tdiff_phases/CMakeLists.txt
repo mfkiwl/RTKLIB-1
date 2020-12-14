@@ -1,0 +1,1 @@
+add_library(RTKLib_tdiff_phases OBJECT tdpd.c)

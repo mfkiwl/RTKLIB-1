@@ -1,0 +1,1 @@
+add_library(RTKLib_glo_ifb OBJECT glo_ifb.c)
