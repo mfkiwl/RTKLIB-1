@@ -15,9 +15,6 @@ add_subdirectory(rcv)
 add_subdirectory(math)
 add_subdirectory(extensions)
 
-
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl")
-
 add_library(RTKLib SHARED
 $<TARGET_OBJECTS:RTKLib_math>
 $<TARGET_OBJECTS:RTKLib_math_lsq>
@@ -25,7 +22,6 @@ $<TARGET_OBJECTS:RTKLib_rcv>
 $<TARGET_OBJECTS:RTKLib_tdiff_phases>
 $<TARGET_OBJECTS:RTKLib_glo_ifb>
 $<TARGET_OBJECTS:RTKLib_base>
-
 )
 
 set_target_properties(RTKLib PROPERTIES PUBLIC_HEADER "rtklib.h")
