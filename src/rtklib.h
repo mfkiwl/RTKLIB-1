@@ -612,7 +612,7 @@ typedef struct {        /* observation data record */
 
 typedef struct {         /* data related to smoothing of code */
     double  P_smooth[MAXRCV_SMOOTH][MAXSAT][MAXFREQ];    /* smoothed code measurements (m) */
-    double  L       [MAXRCV_SMOOTH][MAXSAT][MAXFREQ];    /* phase measurements (cycle) */ 
+    double  L       [MAXRCV_SMOOTH][MAXSAT][MAXFREQ];    /* phase measurements (cycle) */
     double  D       [MAXRCV_SMOOTH][MAXSAT][MAXFREQ];    /* doppler measurements (Hz) */
     gtime_t time_start[MAXRCV_SMOOTH][MAXSAT][MAXFREQ];  /* the first epoch involved */
     gtime_t time      [MAXRCV_SMOOTH][MAXSAT][MAXFREQ];  /* the last epoch involved */
@@ -1101,8 +1101,8 @@ typedef struct {        /* RTCM control struct type */
     unsigned short lock[MAXSAT][NFREQ+NEXOBS]; /* lock time */
     unsigned short loss[MAXSAT][NFREQ+NEXOBS]; /* loss of lock count */
     gtime_t lltime[MAXSAT][NFREQ+NEXOBS]; /* last lock time */
-    int nbyte;          /* number of bytes in message buffer */ 
-    int nbit;           /* number of bits in word buffer */ 
+    int nbyte;          /* number of bytes in message buffer */
+    int nbit;           /* number of bits in word buffer */
     int len;            /* message length (bytes) */
     unsigned char buff[1200]; /* message buffer */
     unsigned int word;  /* word buffer for rtcm 2 */
@@ -1192,19 +1192,19 @@ typedef struct {        /* processing options type */
                         /* [0]:reserved */
                         /* [1-3]:error factor a/b/c of phase (m) */
                         /* [4]:doppler frequency (hz) */
-                        
+
     int    smoothing_mode;   /* is code smoothing carried out? (0:off,1:on) */
     double smoothing_window; /* smoothing window (s)  */
     double smoothing_varratio; /* asymptotic factor of code variance decrease due to smoothing */
-    
+
     int    base_multi_epoch; /* is base data from different epochs allowed? (0:off,1:on) */
 
     int    residual_mode;         /* on/off */
-    int    residual_maxiter;      /* max number of iterations */ 
+    int    residual_maxiter;      /* max number of iterations */
     double residual_reset_fix;    /* carrier-phase residual threshold to reset phase-bias when solution status is FIX (m) */
     double residual_reset_float;  /* carrier-phase residual threshold to reset phase-bias when solution status is FLOAT (m) */
     double residual_block_fix_sat;/* carrier-phase residual threshold to prevent using a satellite for ambiguity resolution (m) */
-    
+
     double std[3];      /* initial-state std [0]bias,[1]iono [2]trop */
     double prn[6];      /* process-noise std [0]bias,[1]iono [2]trop [3]acch [4]accv [5] pos */
     double sclkstab;    /* satellite clock stability (sec/sec) */
@@ -1383,6 +1383,13 @@ typedef struct half_cyc_tag {  /* half-cycle correction list type */
     struct half_cyc_tag *next; /* pointer to next correction */
 } half_cyc_t;
 
+typedef struct
+{
+    int msgType[MAXSAT];                   /* Current RLM message type per-SV */
+    int msgPartCount[MAXSAT];              /* Current RLM message receive state per-SV */
+    unsigned char msgBuffer[MAXSAT][8][3]; /* RLM message receive buffer per-SV */
+} galSAR_t;
+
 typedef struct {        /* receiver raw data control type */
     gtime_t time;       /* message time */
     gtime_t tobs[MAXSAT][NFREQ+NEXOBS]; /* observation data time */
@@ -1412,6 +1419,8 @@ typedef struct {        /* receiver raw data control type */
     half_cyc_t *half_cyc; /* half-cycle correction list */
     int format;         /* receiver stream format */
     void *rcv_data;     /* receiver dependent data */
+    galSAR_t galSAR;    /* Galileo SAR RLM data */
+
 } raw_t;
 
 typedef struct {        /* stream type */
@@ -1693,9 +1702,9 @@ EXPORT double satazel(const double *pos, const double *e, double *azel);
 EXPORT double geodist(const double *rs, const double *rr, double *e);
 EXPORT void dops(int ns, const double *azel, double elmin, double *dop);
 EXPORT void csmooth(obs_t *obs, int ns);
-EXPORT int  smoothing_carrier(obsd_t obs, rtk_t *rtk, int freq, 
+EXPORT int  smoothing_carrier(obsd_t obs, rtk_t *rtk, int freq,
                               double wavelength, double window_max);
-EXPORT double smoothing_weight_from_count(const smoothing_data_t *smoothing_data, 
+EXPORT double smoothing_weight_from_count(const smoothing_data_t *smoothing_data,
                                           const prcopt_t *opt, int rcv, int sat, int freq);
 
 /* atmosphere models ---------------------------------------------------------*/
@@ -1991,8 +2000,8 @@ EXPORT int lambda_search(int n, int m, const double *a, const double *Q,
                          double *F, double *s);
 
 /* standard positioning ------------------------------------------------------*/
-EXPORT int pntpos(const obsd_t *obs, int n, const nav_t *nav, 
-                  const smoothing_data_t *smoothing_data, const prcopt_t *opt, 
+EXPORT int pntpos(const obsd_t *obs, int n, const nav_t *nav,
+                  const smoothing_data_t *smoothing_data, const prcopt_t *opt,
                   sol_t *sol, double *azel, ssat_t *ssat, char *msg);
 
 /* precise positioning -------------------------------------------------------*/
