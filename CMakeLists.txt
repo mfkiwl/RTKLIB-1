@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.19)
 project(rtklib VERSION 0.0.0)
-project(C Fortran)
 
 #Default build config
-#option(BUILD_QT_APPS "Build QT GUI Apps" ON)
-set(BUILD_QT_APPS ON)
+option(BUILD_QT_APPS "Build QT GUI applications" OFF)
+
+if(BUILD_QT_APPS)
+  project(C CXX Fortran)
+else(BUILD_QT_APPS)
+  project(C Fortran)
+endif(BUILD_QT_APPS)
 
 set(CMAKE_C_FLAGS "-Wall -O3")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -81,6 +85,13 @@ install(TARGETS ${cli_apps}
 
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "RTKLIB")
+set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
+set(CPACK_SOURCE_IGNORE_FILES
+    /.git
+    /.*build.*
+    /\\\\.DS_Store
+)
+
 set(CPACK_PACKAGE_VENDOR "RTKLIB")
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")

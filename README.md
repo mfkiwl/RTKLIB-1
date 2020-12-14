@@ -1,11 +1,29 @@
-### RTKLIB 
+## RTKLIB
 
 This fork is being developed from the [Emlid RTKLIB Fork](https://github.com/emlid/RTKLIB)
 
-Additional work:
-- Added cmake support for CLI apps
 
-  ```mkdir build && cd build && cmake .. && make```
+### New Features
+#### Added cmake support
+
+  CLI apps are built by default.
+
+  ```
+  mkdir build && cd build
+  cmake ..
+  make
+  make install
+  ```
+
+  QT apps are built if configured:
+  ```
+  cmake -DBUILD_QT_APPS=1
+  ```
+  Or interactively set build configuration
+  ```
+  cmake ..
+  ccmake ..
+  ```
 
 ### Original RTKLIB Readme at the time of the fork
 
@@ -105,7 +123,7 @@ UPDATE HISTORY
 2016/09/03  2.4.3 b20 add ntrip caster functions
 2016/09/05  2.4.3 b21 fix several bugs
 2016/09/06  2.4.3 b22 fix several bugs
-                      add app/str2str/run_cast.sh for ntrip caster control 
+                      add app/str2str/run_cast.sh for ntrip caster control
 2016/09/06  2.4.3 b23 fix several bugs
                       add -sys option for rnx2rtkp
                       add 4- and 5-panel modes for rtknavi
