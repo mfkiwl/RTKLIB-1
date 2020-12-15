@@ -114,19 +114,11 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 ## Install/Packaging Steps
 #Permit install of CLI executables directly on unix systems
-if(UNIX)
-  install(TARGETS ${cli_apps}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT cli_apps
-  )
-endif(UNIX)
-
-if(APPLE)
-  install(TARGETS ${cli_apps}
-    BUNDLE DESTINATION bin
-    COMPONENT cli_apps
-  )
-endif(APPLE)
+install(TARGETS ${cli_apps}
+  BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT cli_apps
+)
 
 #Only package the QT apps if built
 if(BUILD_QT_APPS)

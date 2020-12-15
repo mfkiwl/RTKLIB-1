@@ -16,12 +16,14 @@ target_link_libraries(${APP} Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG
 target_include_directories(${APP} PRIVATE ${PNG_INCLUDE_DIRS})
 target_link_directories(${APP} PRIVATE ${PNG_LIBRARY_DIRS})
 
+install(TARGETS ${APP}
+  BUNDLE DESTINATION .
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT qt_apps
+)
+
 if(APPLE)
 
-  install(TARGETS ${APP}
-    BUNDLE DESTINATION .
-    COMPONENT qt_apps
-  )
   #Copy the rtklib shared library and QT libraries into each app.
   #ToDo - Share libraries
   #Adds bloat but it's portable
@@ -34,9 +36,4 @@ if(APPLE)
   #   "
   #   COMPONENT qt_apps
   # )
-else()
-  install(TARGETS ${APP}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT qt_apps
-  )
 endif(APPLE)
