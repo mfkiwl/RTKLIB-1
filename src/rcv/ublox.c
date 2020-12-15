@@ -1079,12 +1079,17 @@ static int decode_trkd5(raw_t *raw)
     return 1;
 }
 /* decode gps and qzss navigation data ---------------------------------------*/
-static int decode_nav(raw_t *raw, int sat, int off)
+static int decode_nav(raw_t *raw, int sat, int off, int sigID)
 {
     unsigned int words[10];
     int i, id;
     unsigned char *p = raw->buff + 6 + off;
 
+    if(!(sigID == CODE_L1C) || (sigID == CODE_L2C))
+    {
+        trace(2, "No rawsfrbx GPS/QZS support for code: %d", sigID);
+        return -1;
+    }
     if (raw->len < 48 + off)
     {
         trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
@@ -1125,23 +1130,26 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     unsigned char *p = raw->buff + 6 + off, buff[32], crc_buff[26] = {0};
     int i, j, k, part1, page1, part2, page2, type;
 
-    if ((sigID == CODE_L1X) || (sigID == CODE_L7X))
+    if (!(sigID == CODE_L1X) || (sigID == CODE_L7X))
     {
-        if (raw->len < (sigID == CODE_L1X ? 44 : 40) + off)
-        {
-            trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
-            return -1;
-        }
-        for (i = k = 0; i < 8; i++, p += 4)
-            for (j = 0; j < 4; j++)
-            {
-                buff[k++] = p[3 - j];
-            }
-        part1 = getbitu(buff, 0, 1);
-        page1 = getbitu(buff, 1, 1);
-        part2 = getbitu(buff + 16, 0, 1);
-        page2 = getbitu(buff + 16, 1, 1);
+        trace(2, "No GAL support for code: %d", sigID);
+        return -1;
     }
+
+    if (raw->len < (sigID == CODE_L1X ? 44 : 40) + off)
+    {
+        trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
+        return -1;
+    }
+    for (i = k = 0; i < 8; i++, p += 4)
+        for (j = 0; j < 4; j++)
+        {
+            buff[k++] = p[3 - j];
+        }
+    part1 = getbitu(buff, 0, 1);
+    page1 = getbitu(buff, 1, 1);
+    part2 = getbitu(buff + 16, 0, 1);
+    page2 = getbitu(buff + 16, 1, 1);
 
     /* skip alert page */
     if (page1 == 1 || page2 == 1)
@@ -1490,12 +1498,9 @@ static int decode_rxmsfrbx(raw_t *raw)
     switch (sys)
     {
     case SYS_GPS:
-        if (sigID == CODE_L1C) // L1C/A LNAV
-            return decode_nav(raw, sat, 8);
-        if (sigID == CODE_L2X) // L2C CNAV - Not yet supported
-            break;
+        return decode_nav(raw, sat, 8, sigID);
     case SYS_QZS:
-        return decode_nav(raw, sat, 8);
+        return decode_nav(raw, sat, 8, sigID);
     case SYS_GAL:
         return decode_enav(raw, sat, 8, sigID);
     case SYS_CMP:
@@ -1534,9 +1539,9 @@ static int decode_trksfrbx(raw_t *raw)
     switch (sys)
     {
     case SYS_GPS:
-        return decode_nav(raw, sat, 13);
+        return decode_nav(raw, sat, 13, CODE_L1C);
     case SYS_QZS:
-        return decode_nav(raw, sat, 13);
+        return decode_nav(raw, sat, 13, CODE_L1C);
     case SYS_GAL:
         return decode_enav(raw, sat, 13, CODE_L1X);
     case SYS_CMP:
@@ -1635,8 +1640,6 @@ static int decode_timtm2(raw_t *raw)
 static int decode_ubx(raw_t *raw)
 {
     int type = (U1(raw->buff + 2) << 8) + U1(raw->buff + 3);
-
-    trace(3, "decode_ubx: type=%04x len=%d\n", type, raw->len);
 
     /* checksum */
     if (!checksum(raw->buff, raw->len))
