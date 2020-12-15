@@ -105,7 +105,6 @@ static double getbitg(const unsigned char *buff, int pos, int len)
 *-----------------------------------------------------------------------------*/
 extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
 {
-    printf("hi");
     double tow,toc,tt,sqrtA;
     int i, time_f, week, svid, e5b_hs, e1b_hs, e5b_dvs, e1b_dvs, gst_wn, gst_tow,
         az_ai0, az_ai1, az_ai2, r1_flag, r2_flag, r3_flag, r4_flag, r5_flag,
@@ -160,12 +159,12 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     az_ai0     =getbitu(buff,i, 11);            i+= 11; //ionospheric Correction
     az_ai1     =getbitu(buff,i, 11);            i+= 11;
     az_ai2     =getbitu(buff,i, 14);            i+= 14;
-    r1_flag    =getbitu(buff,i, 1);             i+= 1;
-    r1_flag    =getbitu(buff,i, 1);             i+= 1;
-    r2_flag    =getbitu(buff,i, 1);             i+= 1;
-    r3_flag    =getbitu(buff,i, 1);             i+= 1;
-    r4_flag    =getbitu(buff,i, 1);             i+= 1;
-    r5_flag    =getbitu(buff,i, 1);             i+= 1;
+    r1_flag    =getbitu(buff,i, 1);              i+= 1;
+    r1_flag    =getbitu(buff,i, 1);              i+= 1;
+    r2_flag    =getbitu(buff,i, 1);              i+= 1;
+    r3_flag    =getbitu(buff,i, 1);              i+= 1;
+    r4_flag    =getbitu(buff,i, 1);              i+= 1;
+    r5_flag    =getbitu(buff,i, 1);              i+= 1;
     eph->tgd[0]=getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5a/E1 */
     eph->tgd[1]=getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5b/E1 */
     e5b_hs     =getbitu(buff,i, 2);              i+= 2;
@@ -174,18 +173,6 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     e1b_dvs    =getbitu(buff,i, 1);              i+= 1;
     gst_wn     =getbitu(buff,i, 1);              i+= 1;
     gst_tow    =getbitu(buff,i, 1);
-
-    //Az = ai0 + ai1 x MODIP + ai2 x (MODIP)2
-    // region 1: for the northern region (60°<MODIP ≤90°)
-    // region 2: for the northern middle region (30°<MODIP ≤60°)
-    // region 3: for the equatorial region (-30°≤MODIP ≤30°)
-    // region 4: for the southern middle region (-60°≤MODIP <-30°)
-
-
-    // region 5: for the southern region (-90°≤MODIP <-60°)
-    printf("gst_wn %d gst_tow %d\n", gst_wn, gst_tow);
-    printf("az_ai0 %d az_ai1 %d az_ai2 %d\n", az_ai0, az_ai1, az_ai2);
-    printf("r1 %d r2 %d r3 %d r4 %d r5 %d\n", r1_flag, r2_flag, r3_flag, r4_flag, r5_flag);
 
     /* test word types */
     if (type[0] != 0 || type[1] != 1 || type[2] != 2 || type[3] != 3 || type[4] != 4 || type[5] != 5)

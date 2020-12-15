@@ -1143,22 +1143,16 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         page2 = getbitu(buff + 16, 1, 1);
     }
 
-    else
-    {
-        printf("unsupported: sigID=%d\n", sigID);
-    }
-
     /* skip alert page */
     if (page1 == 1 || page2 == 1)
     {
-        printf("Skip Alert\n");
         return 0;
     }
 
     /* test even-odd parts */
     if (part1 != 0 || part2 != 1)
     {
-        printf("ubx rawsfrbx gal page even/odd error: sat=%2d\n", sat);
+        trace("ubx rawsfrbx gal page even/odd error: sat=%2d\n", sat);
         return -1;
     }
     /* test crc (4(pad) + 114 + 82 bits) */
@@ -1168,11 +1162,11 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         setbitu(crc_buff, j, 8, getbitu(buff + 16, i * 8, 8));
     if (rtk_crc24q(crc_buff, 25) != getbitu(buff + 16, 82, 24))
     {
-        printf("ubx rawsfrbx gal page crc error: sat=%2d\n", sat);
+        trace(3, "ubx rawsfrbx gal page crc error: sat=%2d", sat);
         return -1;
     }
 
-    /* SAR RLM only sent on E1-B odd pages
+    /* Galileo SAR RLM only sent on E1-B odd pages
        Successful decode requires 4 or 8 messages
        to be received in order */
 
@@ -1188,14 +1182,13 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         int maxMessages = (msgType == 0) ? 4 : 8;
 
         // Message decode state
-        int msgPart = raw->galSAR.msgPartCount[sat - 1];
+        int msgPart = raw->sarRLM.msgPartCount[sat - 1];
 
         // First part of message (or spare/no message)
         if (startBit == 1)
         {
-            raw->galSAR.msgPartCount[sat - 1] = msgPart = 0;
-            raw->galSAR.msgType[sat - 1] = msgType;
-            //printf("SAR(%d)  - reset - msg type %d\n", sat, msgType);
+            raw->sarRLM.msgPartCount[sat - 1] = msgPart = 0;
+            raw->sarRLM.msgType[sat - 1] = msgType;
         }
 
         // Check for inconsistent decode state:
@@ -1204,19 +1197,17 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         {
             if (msgPart == 0)
             {
-                //printf("SAR(%d): Can't decode mid message\n", sat);
                 check = false;
             }
-            if (msgType != raw->galSAR.msgType[sat - 1])
+            if (msgType != raw->sarRLM.msgType[sat - 1])
             {
-                //printf("SAR(%d): Message type inconsistent\n", sat);
                 check = false;
             }
             // 0 = Short RLM = 4 Part Messages
             // 1 = Long RLM = 8 Part Messages
             if (msgPart > maxMessages)
             {
-                //printf("SAR(%d): Message too long (%d>%d)\n", sat, msgPart, maxMessages);
+                trace(3, "RLM(%d): Message too long (%d>%d)", sat, msgPart, maxMessages);
                 check = false;
             }
         }
@@ -1225,43 +1216,32 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         {
             // Read 20 bit message part into buffer
             for (i = 0, j = 2; i < 3; i++, j += 8)
-                raw->galSAR.msgBuffer[sat - 1][msgPart][i] = getbitu(buff, j, 8);
+                raw->sarRLM.msgBuffer[sat - 1][msgPart][i] = getbitu(buff, j, 8);
 
             // increment counter
             msgPart++;
-            raw->galSAR.msgPartCount[sat - 1] = msgPart;
-
-            //printf("SAR(%d) - read %d/%d\n", sat, msgPart, maxMessages);
+            raw->sarRLM.msgPartCount[sat - 1] = msgPart;
 
             if (msgPart == maxMessages)
             {
-                printf("SAR(%d) - read complete RLM message\n", sat);
-
-                //read 60-bit beacon ID
-                //20 bits in first 3 messages
+                // Read 60-bit beacon ID with 20 bits over 3 messages
                 unsigned char beaconID[8];
                 for (i = 0; i < 3; i++)
                 {
                     // read from each msg part, 2 bit header offset
-                    setbitu(beaconID, 20 * i, 20, getbitu(raw->galSAR.msgBuffer[sat - 1][i], 2, 20));
+                    setbitu(beaconID, 20 * i, 20, getbitu(raw->sarRLM.msgBuffer[sat - 1][i], 2, 20));
                 }
 
                 unsigned char *cp = beaconID;
-                printf("SAR(%d) Beacon: 0x", sat);
-                for (; *cp != '\0'; ++cp)
-                {
-                    printf("%02x", *cp);
-                }
-                printf("\n");
+                trace(2, "RLM(%d) - Message From Beacon: %s", sat, beaconID);
 
                 // reset message receive state
-                raw->galSAR.msgPartCount[sat - 1] = 0;
+                raw->sarRLM.msgPartCount[sat - 1] = 0;
                 for (i = 0; i < maxMessages; i++)
                 {
                     for (j = 0; j < 4; j++)
                     {
-
-                        raw->galSAR.msgBuffer[sat - 1][i][j] = 0;
+                        raw->sarRLM.msgBuffer[sat - 1][i][j] = 0;
                     }
                 }
             }
@@ -1269,10 +1249,9 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     }
 
     type = getbitu(buff, 2, 6); /* word type */
-    //printf("len:%d, sigID:%d, sat:%d word:%d\n", raw->len, sigID, sat, type);
 
     /* skip word except for ephemeris, iono, utc parameters */
-    //if (type>6) return 0;
+    if (type>6) return 0;
 
     /* clear word 0-6 flags */
     if (type == 2)
@@ -1295,24 +1274,18 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
 
     if (strstr(raw->opt, "-GALFNAV"))
     {
-        printf("no");
         return 0;
     }
     /* decode galileo inav ephemeris */
     if (!decode_gal_inav(raw->subfrm[sat - 1], &eph))
     {
-        printf("Didn't decode INAV\n");
-
         return 0;
     }
-
-    /* deocde SAR message */
-    // Only sent on E1-B page, offset 58b (8 bytes, 10 bits)
 
     /* test svid consistency */
     if (eph.sat != sat)
     {
-        printf("ubx rawsfrbx gal svid error: sat=%2d %2d\n", sat, eph.sat);
+        trace(3, "ubx rawsfrbx gal svid error: sat=%2d %2d\n", sat, eph.sat);
         return -1;
     }
     if (!strstr(raw->opt, "-EPHALL"))
@@ -1536,32 +1509,32 @@ static int decode_rxmsfrbx(raw_t *raw)
 /* decode ubx-trk-sfrbx: subframe buffer extension ---------------------------*/
 static int decode_trksfrbx(raw_t *raw)
 {
-    // int prn,sat,sys;
-    // unsigned char *p=raw->buff+6;
+    int prn,sat,sys;
+    unsigned char *p=raw->buff+6;
 
-    // trace(4,"decode_trksfrbx: len=%d\n",raw->len);
+    trace(4,"decode_trksfrbx: len=%d\n",raw->len);
 
-    // if (raw->outtype) {
-    //     sprintf(raw->msgtype,"UBX TRK-SFRBX (%4d): sys=%d prn=%3d",raw->len,
-    //             U1(p+1),U1(p+2));
-    // }
-    // if (!(sys=ubx_sys(U1(p+1)))) {
-    //     trace(2,"ubx trksfrbx sys id error: sys=%d\n",U1(p+1));
-    //     return -1;
-    // }
-    // prn=U1(p+2)+(sys==SYS_QZS?192:0);
-    // if (!(sat=satno(sys,prn))) {
-    //     trace(2,"ubx trksfrbx sat number error: sys=%d prn=%d\n",sys,prn);
-    //     return -1;
-    // }
-    // switch (sys) {
-    //     case SYS_GPS: return decode_nav (raw,sat,13);
-    //     case SYS_QZS: return decode_nav (raw,sat,13);
-    //     case SYS_GAL: return decode_enav(raw,sat,13,0,0,0,0,0,0);
-    //     case SYS_CMP: return decode_cnav(raw,sat,13);
-    //     case SYS_GLO: return decode_gnav(raw,sat,13,U1(p+4));
-    //     case SYS_SBS: return decode_snav(raw,sat,13);
-    // }
+    if (raw->outtype) {
+        sprintf(raw->msgtype,"UBX TRK-SFRBX (%4d): sys=%d prn=%3d",raw->len,
+                U1(p+1),U1(p+2));
+    }
+    if (!(sys=ubx_sys(U1(p+1)))) {
+        trace(2,"ubx trksfrbx sys id error: sys=%d\n",U1(p+1));
+        return -1;
+    }
+    prn=U1(p+2)+(sys==SYS_QZS?192:0);
+    if (!(sat=satno(sys,prn))) {
+        trace(2,"ubx trksfrbx sat number error: sys=%d prn=%d\n",sys,prn);
+        return -1;
+    }
+    switch (sys) {
+        case SYS_GPS: return decode_nav (raw,sat,13);
+        case SYS_QZS: return decode_nav (raw,sat,13);
+        case SYS_GAL: return decode_enav(raw,sat,13,CODE_L1X);
+        case SYS_CMP: return decode_cnav(raw,sat,13);
+        case SYS_GLO: return decode_gnav(raw,sat,13,U1(p+4));
+        case SYS_SBS: return decode_snav(raw,sat,13);
+    }
     return 0;
 }
 /* decode ubx-tim-tm2: time mark data ----------------------------------------*/

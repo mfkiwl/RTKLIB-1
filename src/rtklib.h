@@ -1388,7 +1388,7 @@ typedef struct
     int msgType[MAXSAT];                   /* Current RLM message type per-SV */
     int msgPartCount[MAXSAT];              /* Current RLM message receive state per-SV */
     unsigned char msgBuffer[MAXSAT][8][3]; /* RLM message receive buffer per-SV */
-} galSAR_t;
+} sarRLM_t;
 
 typedef struct {        /* receiver raw data control type */
     gtime_t time;       /* message time */
@@ -1419,7 +1419,7 @@ typedef struct {        /* receiver raw data control type */
     half_cyc_t *half_cyc; /* half-cycle correction list */
     int format;         /* receiver stream format */
     void *rcv_data;     /* receiver dependent data */
-    galSAR_t galSAR;    /* Galileo SAR RLM data */
+    sarRLM_t sarRLM;    /* Galileo SAR RLM data */
 
 } raw_t;
 
