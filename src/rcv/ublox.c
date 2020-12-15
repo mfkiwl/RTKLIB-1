@@ -1462,9 +1462,6 @@ static int decode_rxmsfrbx(raw_t *raw)
     int prn, sat, sys, freqID, channel, svid, sigID, r2;
     unsigned char *p = raw->buff + 6;
 
-    //trace(4,"decode_rxmsfrbx: len=%d\n",raw->len);
-
-    //if (raw->outtype) {
     sys = ubx_sys(U1(p));
     svid = U1(p + 1);
     prn = U1(p + 1) + (sys == SYS_QZS ? 192 : 0);
@@ -1492,9 +1489,12 @@ static int decode_rxmsfrbx(raw_t *raw)
     switch (sys)
     {
     case SYS_GPS:
-        return decode_nav(raw, sat, 8);
+        if (sigID == CODE_L1C) // L1C/A LNAV
+            return decode_nav(raw, sat, 8);
+        if (sigID == CODE_L2X) // L2C CNAV - Not yet supported
+            break;
     case SYS_QZS:
-        return decode_nav(raw, sat, 8);
+            return decode_nav(raw, sat, 8);
     case SYS_GAL:
         return decode_enav(raw, sat, 8, sigID);
     case SYS_CMP:
