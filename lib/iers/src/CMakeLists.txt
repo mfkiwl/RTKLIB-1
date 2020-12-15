@@ -1,1 +1,1 @@
-add_library(iers dehanttideinel.f norm8.f st1isem.f step2lon.f zero_vec8.f cal2jd.f gmf.f sprod.f st1l1.f vmf1.f dat.f gpt.f st1idiu.f step2diu.f vmf1_ht.f)
+add_library(RTKLib_iers OBJECT dehanttideinel.f norm8.f st1isem.f step2lon.f zero_vec8.f cal2jd.f gmf.f sprod.f st1l1.f vmf1.f dat.f gpt.f st1idiu.f step2diu.f vmf1_ht.f)

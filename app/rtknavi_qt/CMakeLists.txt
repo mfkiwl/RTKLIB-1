@@ -1,8 +1,6 @@
-find_package(Qt5 COMPONENTS Core Widgets SerialPort REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PNG libpng16 REQUIRED)
+set(APP rtknavi_qt)
 
-add_executable(rtknavi_qt
+set(SOURCES
   ../appcmn_qt/aboutdlg.cpp
   ../appcmn_qt/cmdoptdlg.cpp
   ../appcmn_qt/fileoptdlg.cpp
@@ -49,6 +47,4 @@ add_executable(rtknavi_qt
 
 )
 
-target_link_libraries(rtknavi_qt Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG_LIBRARIES})
-target_include_directories(rtknavi_qt PRIVATE ${PNG_INCLUDE_DIRS})
-target_link_directories(rtknavi_qt PRIVATE ${PNG_LIBRARY_DIRS})
+include(../qtApp.cmake)

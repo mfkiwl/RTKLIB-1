@@ -1,8 +1,6 @@
-find_package(Qt5 COMPONENTS Core Widgets SerialPort REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PNG libpng16 REQUIRED)
+set(APP rtkconv_qt)
 
-add_executable(rtkconv_qt
+set(SOURCES
   codeopt.cpp
   convmain.cpp
   convopt.cpp
@@ -27,6 +25,4 @@ add_executable(rtkconv_qt
   rtkconv_qt.qrc
 )
 
-target_link_libraries(rtkconv_qt Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG_LIBRARIES})
-target_include_directories(rtkconv_qt PRIVATE ${PNG_INCLUDE_DIRS})
-target_link_directories(rtkconv_qt PRIVATE ${PNG_LIBRARY_DIRS})
+include(../qtApp.cmake)

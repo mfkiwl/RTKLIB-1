@@ -15,17 +15,31 @@ add_subdirectory(rcv)
 add_subdirectory(math)
 add_subdirectory(extensions)
 
-add_library(RTKLib SHARED
-$<TARGET_OBJECTS:RTKLib_math>
-$<TARGET_OBJECTS:RTKLib_math_lsq>
-$<TARGET_OBJECTS:RTKLib_rcv>
-$<TARGET_OBJECTS:RTKLib_tdiff_phases>
-$<TARGET_OBJECTS:RTKLib_glo_ifb>
-$<TARGET_OBJECTS:RTKLib_base>
+
+set (LIBRTKLIB_OBJ
+  $<TARGET_OBJECTS:RTKLib_math>
+  $<TARGET_OBJECTS:RTKLib_math_lsq>
+  $<TARGET_OBJECTS:RTKLib_rcv>
+  $<TARGET_OBJECTS:RTKLib_tdiff_phases>
+  $<TARGET_OBJECTS:RTKLib_glo_ifb>
+  $<TARGET_OBJECTS:RTKLib_base>
+  $<TARGET_OBJECTS:RTKLib_iers>
 )
+
+add_library(RTKLib SHARED ${LIBRTKLIB_OBJ})
 
 set_target_properties(RTKLib PROPERTIES PUBLIC_HEADER "rtklib.h")
 
 install(TARGETS RTKLib
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  COMPONENT librtklib
+)
+
+if(APPLE)
+  install(TARGETS RTKLib
+    BUNDLE DESTINATION lib
+    PUBLIC_HEADER DESTINATION include
+    COMPONENT librtklib
+  )
+endif(APPLE)

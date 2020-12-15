@@ -1,8 +1,6 @@
-find_package(Qt5 COMPONENTS Core Widgets SerialPort REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PNG libpng16 REQUIRED)
+set(APP rtkpost_qt)
 
-add_executable(rtkpost_qt
+set(SOURCES
   extopt.cpp
   kmzconv.cpp
   postmain.cpp
@@ -32,6 +30,4 @@ add_executable(rtkpost_qt
   rtkpost_qt.qrc
 )
 
-target_link_libraries(rtkpost_qt Qt5::Widgets Qt5::Core RTKLib ${PNG_LIBRARIES})
-target_include_directories(rtkpost_qt PRIVATE ${PNG_INCLUDE_DIRS})
-target_link_directories(rtkpost_qt PRIVATE ${PNG_LIBRARY_DIRS})
+include(../qtApp.cmake)
