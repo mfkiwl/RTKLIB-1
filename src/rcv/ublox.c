@@ -1125,7 +1125,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     unsigned char *p = raw->buff + 6 + off, buff[32], crc_buff[26] = {0};
     int i, j, k, part1, page1, part2, page2, type;
 
-    if (sigID == CODE_L1X || CODE_L7X)
+    if ((sigID == CODE_L1X) || (sigID == CODE_L7X))
     {
         if (raw->len < (sigID == CODE_L1X ? 44 : 40) + off)
         {
@@ -1251,7 +1251,8 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     type = getbitu(buff, 2, 6); /* word type */
 
     /* skip word except for ephemeris, iono, utc parameters */
-    if (type>6) return 0;
+    if (type > 6)
+        return 0;
 
     /* clear word 0-6 flags */
     if (type == 2)
@@ -1494,7 +1495,7 @@ static int decode_rxmsfrbx(raw_t *raw)
         if (sigID == CODE_L2X) // L2C CNAV - Not yet supported
             break;
     case SYS_QZS:
-            return decode_nav(raw, sat, 8);
+        return decode_nav(raw, sat, 8);
     case SYS_GAL:
         return decode_enav(raw, sat, 8, sigID);
     case SYS_CMP:
@@ -1509,31 +1510,41 @@ static int decode_rxmsfrbx(raw_t *raw)
 /* decode ubx-trk-sfrbx: subframe buffer extension ---------------------------*/
 static int decode_trksfrbx(raw_t *raw)
 {
-    int prn,sat,sys;
-    unsigned char *p=raw->buff+6;
+    int prn, sat, sys;
+    unsigned char *p = raw->buff + 6;
 
-    trace(4,"decode_trksfrbx: len=%d\n",raw->len);
+    trace(4, "decode_trksfrbx: len=%d\n", raw->len);
 
-    if (raw->outtype) {
-        sprintf(raw->msgtype,"UBX TRK-SFRBX (%4d): sys=%d prn=%3d",raw->len,
-                U1(p+1),U1(p+2));
+    if (raw->outtype)
+    {
+        sprintf(raw->msgtype, "UBX TRK-SFRBX (%4d): sys=%d prn=%3d", raw->len,
+                U1(p + 1), U1(p + 2));
     }
-    if (!(sys=ubx_sys(U1(p+1)))) {
-        trace(2,"ubx trksfrbx sys id error: sys=%d\n",U1(p+1));
+    if (!(sys = ubx_sys(U1(p + 1))))
+    {
+        trace(2, "ubx trksfrbx sys id error: sys=%d\n", U1(p + 1));
         return -1;
     }
-    prn=U1(p+2)+(sys==SYS_QZS?192:0);
-    if (!(sat=satno(sys,prn))) {
-        trace(2,"ubx trksfrbx sat number error: sys=%d prn=%d\n",sys,prn);
+    prn = U1(p + 2) + (sys == SYS_QZS ? 192 : 0);
+    if (!(sat = satno(sys, prn)))
+    {
+        trace(2, "ubx trksfrbx sat number error: sys=%d prn=%d\n", sys, prn);
         return -1;
     }
-    switch (sys) {
-        case SYS_GPS: return decode_nav (raw,sat,13);
-        case SYS_QZS: return decode_nav (raw,sat,13);
-        case SYS_GAL: return decode_enav(raw,sat,13,CODE_L1X);
-        case SYS_CMP: return decode_cnav(raw,sat,13);
-        case SYS_GLO: return decode_gnav(raw,sat,13,U1(p+4));
-        case SYS_SBS: return decode_snav(raw,sat,13);
+    switch (sys)
+    {
+    case SYS_GPS:
+        return decode_nav(raw, sat, 13);
+    case SYS_QZS:
+        return decode_nav(raw, sat, 13);
+    case SYS_GAL:
+        return decode_enav(raw, sat, 13, CODE_L1X);
+    case SYS_CMP:
+        return decode_cnav(raw, sat, 13);
+    case SYS_GLO:
+        return decode_gnav(raw, sat, 13, U1(p + 4));
+    case SYS_SBS:
+        return decode_snav(raw, sat, 13);
     }
     return 0;
 }
