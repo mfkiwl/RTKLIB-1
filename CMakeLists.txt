@@ -1,27 +1,54 @@
 cmake_minimum_required(VERSION 3.19)
+include(CheckLanguage)
+include(CMakeDependentOption)
 
 set(VERSION_MAJOR 2)
 set(VERSION_MINOR 4)
 set(VERSION_PATCH 3)
 
-set(REL_TYPE "dev")
-project(rtklib VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-add_definitions(-DVER_RTKLIB_EXT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-add_definitions(-DPATCH_LEVEL_EXT="${REL_TYPE}")
+project(rtklib
+  VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+  LANGUAGES C
+)
 
-if(BUILD_QT_APPS)
-  project(RTKLIB C CXX)
-else(BUILD_QT_APPS)
-  project(RTKLIB C)
-endif(BUILD_QT_APPS)
+add_definitions(-DVER_RTKLIB_EXT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+add_definitions(-DPATCH_LEVEL_EXT="${CMAKE_BUILD_TYPE}")
 
 #Configurable Options
 option(BUILD_QT_APPS "Build QT GUI applications" OFF)
+if(BUILD_QT_APPS)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(STATUS "No CXX support")
+  endif()
+endif(BUILD_QT_APPS)
+
+
+cmake_dependent_option(OPTIMISE_NATIVE_ARCH_CXX "Optimise CXX compiler features for native architecture" ON "BUILD_QT_APPS" OFF)
+if(OPTIMISE_NATIVE_ARCH_CXX)
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+  if(CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  endif(CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+endif(OPTIMISE_NATIVE_ARCH_CXX)
+
+
+option(OPTIMISE_NATIVE_ARCH_C "Optimise C compiler features for native architecture" ON)
+if(OPTIMISE_NATIVE_ARCH)
+  include(CheckCCompilerFlag)
+  CHECK_C_COMPILER_FLAG("-march=native" C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+  if(C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+  endif(C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+endif(OPTIMISE_NATIVE_ARCH)
 
 option(D_ENAGLO "GLONASS Support" ON)
 if(D_ENGALO)
   add_definitions(-DENAGLO)
-endif()
+endif(D_ENGALO)
 
 option(D_ENAQZS "QZSS Support" ON)
 if(D_ENAQZS)
@@ -31,69 +58,88 @@ endif()
 option(D_ENAGAL "Galileo Support" ON)
 if(D_ENAGAL)
   add_definitions(-DENAGAL)
-endif()
+endif(D_ENAGAL)
 
 option(D_ENACMP "BeiDou/Compass Support" ON)
 if(D_ENACMP)
   add_definitions(-DENACMP)
-endif()
+endif(D_ENACMP)
 
 option(D_ENAIRN "IRNSS Support" ON)
 if(D_ENAIRN)
   add_definitions(-DENAIRN)
-endif()
+endif(D_ENAIRN)
+
+option(D_LEO "LEO Support" ON)
+if(D_ENALEO)
+  add_definitions(-DENALEO)
+endif(D_ENALEO)
 
 option(D_OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" OFF)
+if(D_OUTSTAT_AMB)
+  add_definitions(-DOUTSTAT_AMB)
+endif(D_OUTSTAT_AMB)
 
 option(D_IERS_MODEL "Use IERS GMF instead of NMF (Requires gfortran)" ON)
 if(D_IERS_MODEL)
   add_definitions(-DIERS_MODEL)
   enable_language(Fortran)
-endif()
+endif(D_IERS_MODEL)
+
+cmake_dependent_option(OPTIMISE_NATIVE_ARCH_FORTRAN "Optimise Fortran compiler features for native architecture" ON "D_IERS_MODEL" OFF)
+if(OPTIMISE_NATIVE_ARCH_FORTRAN)
+  include(CheckFortranCompilerFlag)
+  CHECK_FORTRAN_COMPILER_FLAG("-march=native" FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+  if(FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+    set(CMAKE_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} -march=native")
+  endif(FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+endif(OPTIMISE_NATIVE_ARCH_FORTRAN)
 
 option(D_EXTLEX "QZSS LEX Support" ON)
 if(D_EXTLEX)
   add_definitions(-DEXTLEX)
-endif()
+endif(D_EXTLEX)
 
 option(D_MKL "Intel Math Kernel Library (MKL) Support" OFF)
 if(D_MKL)
   add_definitions(-DMKL)
-endif()
+endif(D_MKL)
 
 option(D_LAPACK "Use LAPACK/BLAS" OFF)
+if(D_LAPACK)
+  add_definitions(-DLAPACK)
+endif(D_LAPACK)
 
 option(D_TRACE "Tracing Support" ON)
 if(D_TRACE)
   add_definitions(-DTRACE)
-endif()
-
+endif(D_TRACE)
 
 option(D_SHARED "Shared library compatibility" ON)
 if(D_SHARED)
   add_definitions(-DSHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
+endif(D_SHARED)
 
 option(D_DWIN32 "Use WIN32 API" OFF)
 if(D_DWIN32)
   add_definitions(-DWIN32)
-endif()
+endif(D_DWIN32)
 
 option(D_WIN_DLL "Generate library as Windows DLL" OFF)
 if(D_WIN_DLL)
   add_definitions(-DWINDLL)
-endif()
+endif(D_WIN_DLL)
 
 option(D_NOCALLOC "Don't use calloc for zero matrix" OFF)
 if(D_NOCALLOC)
   add_definitions(-DNOCALLOC)
-endif()
+endif(D_NOCALLOC)
 
 option(D_CPUTIME_IN_GPST "cputime operated in gpst" OFF)
 if(D_CPUTIME_IN_GPST)
   add_definitions(-DCPUTIME_IN_GPST)
-endif()
+endif(D_CPUTIME_IN_GPST)
 
 add_definitions(-DNFREQ=3)    # Frequencies supported
 add_definitions(-DNEXOBS=0)   # Number of extended obs codes
@@ -114,6 +160,8 @@ include_directories(
   src/math
   src/math/lsq
 )
+
+
 
 add_subdirectory(lib)
 add_subdirectory(src)
