@@ -159,6 +159,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Check for pthreads support
 find_package(Threads REQUIRED)
 
+# Check math funcs available, or link to libm
+include(CheckLibraryExists)
+message(STATUS "Checking whether libm is required for math")
+CHECK_LIBRARY_EXISTS(m sin "" HAVE_LIB_M)
+if (HAVE_LIB_M)
+    set(EXTRA_LIBS ${EXTRA_LIBS} m)
+endif (HAVE_LIB_M)
+
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)
 

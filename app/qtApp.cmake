@@ -12,10 +12,9 @@ else()
 endif(APPLE)
 
 #For portability, link the GUI apps against the static library
-target_link_libraries(${APP} Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${APP} Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 target_include_directories(${APP} PRIVATE ${PNG_INCLUDE_DIRS})
 target_link_directories(${APP} PRIVATE ${PNG_LIBRARY_DIRS})
-
 
 if(APPLE)
   install(TARGETS ${APP}
