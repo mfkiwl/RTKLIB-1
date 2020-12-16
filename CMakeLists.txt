@@ -11,6 +11,11 @@ project(rtklib
   LANGUAGES C
 )
 
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, defaulting to \"Release\"")
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 add_definitions(-DVER_RTKLIB_EXT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 add_definitions(-DPATCH_LEVEL_EXT="${CMAKE_BUILD_TYPE}")
 
@@ -20,6 +25,7 @@ if(BUILD_QT_APPS)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
     enable_language(CXX)
+    add_definitions(-DQT)
   else()
     message(STATUS "No CXX support")
   endif()
@@ -46,9 +52,9 @@ if(OPTIMISE_NATIVE_ARCH)
 endif(OPTIMISE_NATIVE_ARCH)
 
 option(D_ENAGLO "GLONASS Support" ON)
-if(D_ENGALO)
+if(D_ENAGLO)
   add_definitions(-DENAGLO)
-endif(D_ENGALO)
+endif(D_ENAGLO)
 
 option(D_ENAQZS "QZSS Support" ON)
 if(D_ENAQZS)
@@ -70,7 +76,7 @@ if(D_ENAIRN)
   add_definitions(-DENAIRN)
 endif(D_ENAIRN)
 
-option(D_LEO "LEO Support" ON)
+option(D_ENALEO "LEO Support" ON)
 if(D_ENALEO)
   add_definitions(-DENALEO)
 endif(D_ENALEO)

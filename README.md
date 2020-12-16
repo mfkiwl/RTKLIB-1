@@ -2,17 +2,17 @@
 
 This fork is being developed from the [Emlid RTKLIB Fork](https://github.com/emlid/RTKLIB)
 
-
 ### New Features
 #### Added cmake support
 
   CLI apps are built by default.
+  Default build type is 'Release'
 
   ```
   mkdir build && cd build
-  cmake ..
-  make
-  make install
+  cmake .. -DCMAKE_BUILD_TYPE=Release ..
+  make -j$(nproc)
+  sudo make install
   ```
 
   QT apps are built if configured:
