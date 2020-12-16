@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 include(CheckLanguage)
 include(CMakeDependentOption)
 
+
 set(VERSION_MAJOR 2)
 set(VERSION_MINOR 4)
 set(VERSION_PATCH 3)
@@ -154,6 +155,9 @@ add_definitions(-DMAXOBS=128) # Max number of observations
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Check for pthreads support
+find_package(Threads REQUIRED)
 
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)
