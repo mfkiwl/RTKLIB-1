@@ -1,22 +1,104 @@
 cmake_minimum_required(VERSION 3.19)
 
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 4)
+set(VERSION_PATCH 3)
 
+set(REL_TYPE "dev")
 project(rtklib VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-
-#Default build config
-option(BUILD_QT_APPS "Build QT GUI applications" OFF)
+add_definitions(-DVER_RTKLIB_EXT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+add_definitions(-DPATCH_LEVEL_EXT="${REL_TYPE}")
 
 if(BUILD_QT_APPS)
-  project(RTKLIB C CXX Fortran)
+  project(RTKLIB C CXX)
 else(BUILD_QT_APPS)
-  project(RTKLIB C Fortran)
+  project(RTKLIB C)
 endif(BUILD_QT_APPS)
 
-set(CMAKE_C_FLAGS "-Wall -O3")
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#Configurable Options
+option(BUILD_QT_APPS "Build QT GUI applications" OFF)
+
+option(D_ENAGLO "GLONASS Support" ON)
+if(D_ENGALO)
+  add_definitions(-DENAGLO)
+endif()
+
+option(D_ENAQZS "QZSS Support" ON)
+if(D_ENAQZS)
+  add_definitions(-DENAQZS)
+endif()
+
+option(D_ENAGAL "Galileo Support" ON)
+if(D_ENAGAL)
+  add_definitions(-DENAGAL)
+endif()
+
+option(D_ENACMP "BeiDou/Compass Support" ON)
+if(D_ENACMP)
+  add_definitions(-DENACMP)
+endif()
+
+option(D_ENAIRN "IRNSS Support" ON)
+if(D_ENAIRN)
+  add_definitions(-DENAIRN)
+endif()
+
+option(D_OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" OFF)
+
+option(D_IERS_MODEL "Use IERS GMF instead of NMF (Requires gfortran)" ON)
+if(D_IERS_MODEL)
+  add_definitions(-DIERS_MODEL)
+  enable_language(Fortran)
+endif()
+
+option(D_EXTLEX "QZSS LEX Support" ON)
+if(D_EXTLEX)
+  add_definitions(-DEXTLEX)
+endif()
+
+option(D_MKL "Intel Math Kernel Library (MKL) Support" OFF)
+if(D_MKL)
+  add_definitions(-DMKL)
+endif()
+
+option(D_LAPACK "Use LAPACK/BLAS" OFF)
+
+option(D_TRACE "Tracing Support" ON)
+if(D_TRACE)
+  add_definitions(-DTRACE)
+endif()
+
+
+option(D_SHARED "Shared library compatibility" ON)
+if(D_SHARED)
+  add_definitions(-DSHARED)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
+option(D_DWIN32 "Use WIN32 API" OFF)
+if(D_DWIN32)
+  add_definitions(-DWIN32)
+endif()
+
+option(D_WIN_DLL "Generate library as Windows DLL" OFF)
+if(D_WIN_DLL)
+  add_definitions(-DWINDLL)
+endif()
+
+option(D_NOCALLOC "Don't use calloc for zero matrix" OFF)
+if(D_NOCALLOC)
+  add_definitions(-DNOCALLOC)
+endif()
+
+option(D_CPUTIME_IN_GPST "cputime operated in gpst" OFF)
+if(D_CPUTIME_IN_GPST)
+  add_definitions(-DCPUTIME_IN_GPST)
+endif()
+
+add_definitions(-DNFREQ=3)    # Frequencies supported
+add_definitions(-DNEXOBS=0)   # Number of extended obs codes
+add_definitions(-DMAXOBS=128) # Max number of observations
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -24,23 +106,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)
 
-#RTKLIB Build Options
-add_definitions(-DSHARED
-                -DTRACE
-                -DENAGLO
-                -DENAQZS
-                -DENAGAL
-                -DENACMP
-                -DENAIRN
-                -DNFREQ=3
-                -DSVR_REUSEADDR
-                -DIERS_MODEL
-                -DEXTLEX
-                -DNEXOBS=2
-                -DMAXOBS=128
-)
-
-#Shared components
 #Common build settings
 include_directories(
   src
@@ -50,80 +115,6 @@ include_directories(
   src/math/lsq
 )
 
-set(cli_apps
-    convbin
-    pos2kml
-    rnx2rtkp
-    rtkrcv
-    str2str
-)
-
 add_subdirectory(lib)
 add_subdirectory(src)
-
-#QT Common Settings
-if(BUILD_QT_APPS)
-  set(qt_apps
-    rtkconv_qt
-    rtkget_qt
-    rtklaunch_qt
-    rtknavi_qt
-    rtkplot_qt
-    rtkpost_qt
-    strsvr_qt
-  )
-endif(BUILD_QT_APPS)
-
-#Build all executables
 add_subdirectory(app)
-
-## Install Configuration
-
-## General CPACK Options
-set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}//app/rtknavi_qt/rtknavi_Icon.ico")
-set(CPACK_PACKAGE_VENDOR "RTKLIB")
-set(CPACK_PACKAGE_NAME "RTKLIB")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "RTKLIB")
-
-set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
-
-include(GNUInstallDirs)
-include(InstallRequiredSystemLibraries)
-
-## CPACK Config
-set(CPACK_COMPONENTS_ALL librtklib cli_apps)
-
-## Set generators depending on host
-set(CPACK_GENERATOR "TBZ2" )
-
-if(${APPLE})
-  set(CPACK_GENERATOR "DragNDrop")
-endif(${APPLE})
-
-## Source
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_src")
-set(CPACK_SOURCE_GENERATOR "TBZ2")
-set(CPACK_SOURCE_IGNORE_FILES
-    /.git
-    /.*build.*
-    /\\\\.DS_Store
-)
-
-## Install/Packaging Steps
-#Permit install of CLI executables directly on unix systems
-install(TARGETS ${cli_apps}
-  BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT cli_apps
-)
-
-#Only package the QT apps if built
-if(BUILD_QT_APPS)
-  list(APPEND CPACK_COMPONENTS_ALL qt_apps)
-endif(BUILD_QT_APPS)
-
-include(CPack)
-

@@ -1,2 +1,4 @@
-add_executable(convbin convbin.c)
-target_link_libraries(convbin RTKLib)
+
+set(APP convbin)
+set(SOURCES convbin.c)
+include(../cliApp.cmake)

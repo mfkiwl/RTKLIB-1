@@ -1,2 +1,3 @@
-add_executable(str2str str2str.c)
-target_link_libraries(str2str RTKLib)
+set(APP str2str)
+set(SOURCES str2str.c)
+include(../cliApp.cmake)

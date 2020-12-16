@@ -1,2 +1,3 @@
-add_executable(rtkrcv rtkrcv.c vt.c)
-target_link_libraries(rtkrcv RTKLib)
+set(APP rtkrcv)
+set(SOURCES rtkrcv.c vt.c)
+include(../cliApp.cmake)
