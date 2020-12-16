@@ -2230,15 +2230,15 @@ static int decode_msm7(rtcm_t *rtcm, int sys)
 /* TODO : Biases are logged but not currently compensated for */
 static int decode_type1230(rtcm_t *rtcm)
 {
-    uint16_t i = 24+12;
+    unsigned short i = 24+12;
 
-    uint16_t stn_id = getbitu(rtcm->buff, i, 12); // DF003
+    unsigned short stn_id = getbitu(rtcm->buff, i, 12); // DF003
     i += 12;
-    bool bias_indicator = getbitu(rtcm->buff, i, 1); // DF421
+    unsigned int bias_indicator = getbitu(rtcm->buff, i, 1); // DF421
     i += 1;
     // DF001 - Reserved
     i += 3;
-    uint8_t fdma_signal_mask = getbitu(rtcm->buff, i, 4); // DF422
+    unsigned int fdma_signal_mask = getbitu(rtcm->buff, i, 4); // DF422
     i += 4;
 
 
