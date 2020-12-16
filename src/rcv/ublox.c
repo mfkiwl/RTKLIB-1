@@ -1173,7 +1173,8 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         trace(3, "ubx rawsfrbx gal page crc error: sat=%s", satno2id_str(sat));
         return -1;
     }
-
+    
+#if 0
     /* Galileo SAR RLM only sent on E1-B odd pages
        Successful decode requires 4 or 8 messages
        to be received in order */
@@ -1255,6 +1256,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
             }
         }
     }
+#endif
 
     type = getbitu(buff, 2, 6); /* word type */
 

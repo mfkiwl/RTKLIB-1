@@ -155,7 +155,7 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     eph->f2    =getbits(buff,i, 6)*P2_59;
 
     i=128*5; /* word type 5 */
-    type[5]    =getbitu(buff,i, 6);              i+= 6;//+41;
+    type[5]    =getbitu(buff,i, 6);              i  ;//+41;
     az_ai0     =getbitu(buff,i, 11);            i+= 11; //ionospheric Correction
     az_ai1     =getbitu(buff,i, 11);            i+= 11;
     az_ai2     =getbitu(buff,i, 14);            i+= 14;
@@ -173,40 +173,6 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     e1b_dvs    =getbitu(buff,i, 1);              i+= 1;
     gst_wn     =getbitu(buff,i, 1);              i+= 1;
     gst_tow    =getbitu(buff,i, 1);
-
-    // i=128*6; /* word type 6 : GST-UTC conversion parameters */
-    // type[6]    =getbitu(buff,i, 6);              i+= 6;//+41;
-    // A0         ;
-    // A1;
-    // DtLS;
-    // tot;
-    // WN0t
-    // WNLSF
-    // DN
-    // ΔtLSF
-    // TOW;
-
-    // i = 128 * 7; /* word type 7 */
-    // /* Almanac for SVID 1 (1/2), almanac reference time and almanac reference week number */
-    // type[7]    =getbitu(buff,i, 6);              i+= 6;//+41;
-    // IODa
-    // WNa
-    // t0a
-    // SVID1
-    // DA1_2
-    // e
-    // ω
-    // δi
-    // Ω0
-    // Ωdot
-    // M0
-
-
-        // raw->nav.utc_gal[1] = R4(p + 8);             /*   A1 */
-        // raw->nav.utc_gal[0] = R8(p + 12);            /*   A0 */
-        // raw->nav.utc_gal[2] = U4(p + 20);            /*  tot */
-        // raw->nav.utc_gal[3] = adjgpsweek(U2(p + 4)); /*   WN */
-        // raw->nav.leaps = I1(p + 25);                 /* Dtls */
 
         /* test word types */
         if (type[0] != 0 || type[1] != 1 || type[2] != 2 || type[3] != 3 || type[4] != 4 || type[5] != 5)
