@@ -8,6 +8,7 @@
 *           -DENAQZS   enable QZSS
 *           -DENACMP   enable BeiDou
 *           -DENAIRN   enable IRNSS
+*           -DENALEO   enable LEO
 *           -DNFREQ=n  set number of obs codes/frequencies
 *           -DNEXOBS=n set number of extended obs codes
 *           -DMAXOBS=n set max number of obs data in an epoch
@@ -67,12 +68,20 @@ extern "C" {
 
 /* constants -----------------------------------------------------------------*/
 
-#define VER_RTKLIB  "2.4.3 Emlid"       /* library version */
+#ifdef VER_RTKLIB_EXT
+#define VER_RTKLIB VER_RTKLIB_EXT
+#else
+#define VER_RTKLIB  "0.0.0"       /* library version */
+#endif
 
-#define PATCH_LEVEL "b33"               /* patch level */
+#ifdef PATCH_LEVEL_EXT
+#define PATCH_LEVEL PATCH_LEVEL_EXT
+#else
+#define PATCH_LEVEL "dev"               /* patch level */
+#endif
 
 #define COPYRIGHT_RTKLIB \
-            "Copyright (C) 2007-2019 T.Takasu\nAll rights reserved."
+            "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
 
 #define PI          3.1415926535897932  /* pi */
 #define D2R         (PI/180.0)          /* deg to rad */
@@ -157,7 +166,7 @@ extern "C" {
 #define NSYSGLO     1
 #else
 #define MINPRNGLO   0
-#define MAXPRNGLO   0
+#define MAXPRNGLO   0   
 #define NSATGLO     0
 #define NSYSGLO     0
 #endif
@@ -1579,6 +1588,8 @@ EXPORT int  satno   (int sys, int prn);
 EXPORT int  satsys  (int sat, int *prn);
 EXPORT int  satid2no(const char *id);
 EXPORT void satno2id(int sat, char *id);
+EXPORT char *satno2id_str(int sat);
+
 EXPORT unsigned char obs2code(const char *obs, int *freq);
 EXPORT char *code2obs(unsigned char code, int *freq);
 EXPORT int  satexclude(int sat, double var, int svh, const prcopt_t *opt);

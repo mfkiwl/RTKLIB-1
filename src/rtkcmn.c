@@ -9,7 +9,7 @@
 *           -DWIN32    use WIN32 API
 *           -DNOCALLOC no use calloc for zero matrix
 *           -DIERS_MODEL use GMF instead of NMF
-*           -DDLL      built for shared library
+*           -DSHARED      built for shared library
 *           -DCPUTIME_IN_GPST cputime operated in gpst
 *
 * references :
@@ -545,6 +545,20 @@ extern void satno2id(int sat, char *id)
     }
     strcpy(id,"");
 }
+
+/* satellite number to satellite id --------------------------------------------
+* convert satellite number to satellite id
+* args   : int    sat       I   satellite number
+* return : char   *id       O   satellite id (Gnn,Rnn,Enn,Jnn,Cnn,Inn or nnn)
+* notes  : not reentrant, do not use multiple in a function.
+*-----------------------------------------------------------------------------*/
+extern char *satno2id_str(int sat)
+{
+    static char id[6];
+    satno2id(sat, id);
+    return id;
+}
+
 /* test excluded satellite -----------------------------------------------------
 * test excluded satellite
 * args   : int    sat       I   satellite number

@@ -542,7 +542,7 @@ static int decode_rxmrawx(raw_t *raw)
 
         if (f == 0 || f > NFREQ + NEXOBS)
         {
-            trace(2, "ubx rxmrawx signal error: sat=%2d sigid=%d\n", sat, sigid);
+            trace(2, "ubx rxmrawx signal error: sat=%s sigid=%d\n", satno2id_str(sat), sigid);
             continue;
         }
         /* offset by time tag adjustment */
@@ -600,7 +600,7 @@ static int save_subfrm(int sat, raw_t *raw)
     unsigned char *p = raw->buff + 6, *q;
     int i, j, n, id = (U4(p + 6) >> 2) & 0x7;
 
-    trace(4, "save_subfrm: sat=%2d id=%d\n", sat, id);
+    trace(4, "save_subfrm: sat=%s id=%d\n", satno2id_str(sat), id);
 
     if (id < 1 || 5 < id)
         return 0;
@@ -623,7 +623,7 @@ static int decode_ephem(int sat, raw_t *raw)
 {
     eph_t eph = {0};
 
-    trace(4, "decode_ephem: sat=%2d\n", sat);
+    trace(4, "decode_ephem: sat=%s\n", satno2id_str(sat));
 
     if (decode_frame(raw->subfrm[sat - 1], &eph, NULL, NULL, NULL, NULL) != 1 ||
         decode_frame(raw->subfrm[sat - 1] + 30, &eph, NULL, NULL, NULL, NULL) != 2 ||
@@ -646,7 +646,7 @@ static int decode_alm1(int sat, raw_t *raw)
 {
     int sys = satsys(sat, NULL);
 
-    trace(4, "decode_alm1 : sat=%2d\n", sat);
+    trace(4, "decode_alm1 : sat=%s\n", satno2id_str(sat));
 
     if (sys == SYS_GPS)
     {
@@ -667,7 +667,7 @@ static int decode_alm2(int sat, raw_t *raw)
 {
     int sys = satsys(sat, NULL);
 
-    trace(4, "decode_alm2 : sat=%2d\n", sat);
+    trace(4, "decode_alm2 : sat=%s\n", satno2id_str(sat));
 
     if (sys == SYS_GPS)
     {
@@ -1092,12 +1092,12 @@ static int decode_nav(raw_t *raw, int sat, int off, int sigID)
     }
     if (raw->len < 48 + off)
     {
-        trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
+        trace(2, "ubx rawsfrbx length error: sat=%s len=%d\n", satno2id_str(sat), raw->len);
         return -1;
     }
     if ((U4(p) >> 24) == PREAMB_CNAV)
     {
-        trace(3, "ubx rawsfrbx cnav not supported sat=%d prn=%d\n", sat,
+        trace(3, "ubx rawsfrbx cnav not supported sat=%s prn=%d\n", satno2id_str(sat),
               (U4(p) >> 18) & 0x3F);
         return 0;
     }
@@ -1107,7 +1107,7 @@ static int decode_nav(raw_t *raw, int sat, int off, int sigID)
     id = (words[1] >> 2) & 7;
     if (id < 1 || 5 < id)
     {
-        trace(2, "ubx rawsfrbx subfrm id error: sat=%2d id=%d len=%d\n", sat, id,
+        trace(2, "ubx rawsfrbx subfrm id error: sat=%s id=%d len=%d\n", satno2id_str(sat), id,
               raw->len);
         return -1;
     }
@@ -1138,7 +1138,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
 
     if (raw->len < (sigID == CODE_L1X ? 44 : 40) + off)
     {
-        trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
+        trace(2, "ubx rawsfrbx length error: sat=%s len=%d\n", satno2id_str(sat), raw->len);
         return -1;
     }
     for (i = k = 0; i < 8; i++, p += 4)
@@ -1160,7 +1160,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     /* test even-odd parts */
     if (part1 != 0 || part2 != 1)
     {
-        trace("ubx rawsfrbx gal page even/odd error: sat=%2d\n", sat);
+        trace(3, "ubx rawsfrbx gal page even/odd error: sat=%s\n", satno2id_str(sat));
         return -1;
     }
     /* test crc (4(pad) + 114 + 82 bits) */
@@ -1170,7 +1170,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
         setbitu(crc_buff, j, 8, getbitu(buff + 16, i * 8, 8));
     if (rtk_crc24q(crc_buff, 25) != getbitu(buff + 16, 82, 24))
     {
-        trace(3, "ubx rawsfrbx gal page crc error: sat=%2d", sat);
+        trace(3, "ubx rawsfrbx gal page crc error: sat=%s", satno2id_str(sat));
         return -1;
     }
 
@@ -1294,7 +1294,7 @@ static int decode_enav(raw_t *raw, int sat, int off, int sigID)
     /* test svid consistency */
     if (eph.sat != sat)
     {
-        trace(3, "ubx rawsfrbx gal svid error: sat=%2d %2d\n", sat, eph.sat);
+        trace(3, "ubx rawsfrbx gal svid error: sat=%s %2d\n", satno2id_str(sat), satno2id_str(eph.sat));
         return -1;
     }
     if (!strstr(raw->opt, "-EPHALL"))
@@ -1319,7 +1319,7 @@ static int decode_cnav(raw_t *raw, int sat, int off)
 
     if (raw->len < 48 + off)
     {
-        trace(2, "ubx rawsfrbx length error: sat=%d len=%d\n", sat, raw->len);
+        trace(2, "ubx rawsfrbx length error: sat=%s len=%d\n", satno2id_str(sat), raw->len);
         return -1;
     }
     for (i = 0; i < 10; i++, p += 4)
@@ -1329,7 +1329,7 @@ static int decode_cnav(raw_t *raw, int sat, int off)
     id = (words[0] >> 12) & 0x07; /* subframe id (3bit) */
     if (id < 1 || 5 < id)
     {
-        trace(2, "ubx rawsfrbx subfrm id error: sat=%2d\n", sat);
+        trace(2, "ubx rawsfrbx subfrm id error: sat=%s\n", satno2id_str(sat));
         return -1;
     }
     if (prn > 5 && prn < 59)
@@ -1355,7 +1355,7 @@ static int decode_cnav(raw_t *raw, int sat, int off)
         pgn = (words[1] >> 14) & 0x0F; /* page number (4bit) */
         if (pgn < 1 || 10 < pgn)
         {
-            trace(2, "ubx rawsfrbx page number error: sat=%2d\n", sat);
+            trace(2, "ubx rawsfrbx page number error: sat=%s\n", satno2id_str(sat));
             return -1;
         }
         for (i = 0; i < 10; i++)
@@ -1403,13 +1403,13 @@ static int decode_gnav(raw_t *raw, int sat, int off, int frq)
     /* test hamming of glonass string */
     if (!test_glostr(buff))
     {
-        trace(2, "ubx rawsfrbx glo string hamming error: sat=%2d\n", sat);
+        trace(2, "ubx rawsfrbx glo string hamming error: sat=%s\n", satno2id_str(sat));
         return -1;
     }
     m = getbitu(buff, 1, 4);
     if (m < 1 || 15 < m)
     {
-        trace(2, "ubx rawsfrbx glo string no error: sat=%2d\n", sat);
+        trace(2, "ubx rawsfrbx glo string no error: sat=%s\n", satno2id_str(sat));
         return -1;
     }
     /* flush frame buffer if frame-id changed */
