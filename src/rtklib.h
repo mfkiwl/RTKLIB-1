@@ -30,11 +30,12 @@
 *           2013/03/28 1.10 rtklib ver.2.4.2
 *           2016/01/26 1.11 rtklib ver.2.4.3
 *-----------------------------------------------------------------------------*/
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
+#if __STDC_VERSION__ >= 201112L
+#define _XOPEN_SOURCE 700
 #else
 #define _XOPEN_SOURCE 500
 #endif /* __STDC_VERSION__ */
+
 #ifndef RTKLIB_H
 #define RTKLIB_H
 #include <stdio.h>
@@ -166,7 +167,7 @@ extern "C" {
 #define NSYSGLO     1
 #else
 #define MINPRNGLO   0
-#define MAXPRNGLO   0   
+#define MAXPRNGLO   0
 #define NSATGLO     0
 #define NSYSGLO     0
 #endif
