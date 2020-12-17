@@ -155,7 +155,7 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     eph->f2    =getbits(buff,i, 6)*P2_59;
 
     i=128*5; /* word type 5 */
-    type[5]    =getbitu(buff,i, 6);              i  ;//+41;
+    type[5]    =getbitu(buff,i, 6);              i+= 6;
     az_ai0     =getbitu(buff,i, 11);            i+= 11; //ionospheric Correction
     az_ai1     =getbitu(buff,i, 11);            i+= 11;
     az_ai2     =getbitu(buff,i, 14);            i+= 14;
