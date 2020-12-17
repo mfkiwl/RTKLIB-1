@@ -20,7 +20,7 @@
 *           2016/09/03 1.9  support ntrip caster function
 *           2016/09/06 1.10 add api strsvrsetsrctbl()
 *           2016/09/17 1.11 add relay back function of output stream
-*                           fix bug on rtcm cyclic output of beidou ephemeris 
+*                           fix bug on rtcm cyclic output of beidou ephemeris
 *           2016/10/01 1.12 change api startstrserver()
 *           2017/04/11 1.13 fix bug on search of next satellite in nextsat()
 *           2018/11/05 1.14 update message type of beidou ephemeirs
@@ -57,38 +57,38 @@ static int is_tint(gtime_t time, gtime_t time_last_msg, double tint)
 {
     double time_sec          = gtime2sec(time);
     double time_last_msg_sec = gtime2sec(time_last_msg);
-    
+
     if ( tint <= 0.0 ) return 1;
-    return ( time_sec >= (time_last_msg_sec + 0.5 * tint) ); 
+    return ( time_sec >= (time_last_msg_sec + 0.5 * tint) );
 }
 /* update time of last message received for obs messages --------------------*/
 static void update_time_last_msg(gtime_t time, strconv_t *conv)
 {
-    
+
     double  time_sec = gtime2sec(time);
     gtime_t time_last_msg;
     double  time_last_msg_sec;
-    double  tint;    
-    
+    double  tint;
+
     int i;
 
     for ( i = 0; i < conv->nmsg; i++ ) {
-        
+
         if ( is_obsmsg(conv->msgs[i]) ) {
 
             tint              = conv->tint[i];
-            time_last_msg     = conv->time_last_msg[i]; 
-            time_last_msg_sec = gtime2sec(time_last_msg); 
-             
+            time_last_msg     = conv->time_last_msg[i];
+            time_last_msg_sec = gtime2sec(time_last_msg);
+
             if ( is_tint(time, time_last_msg, tint) ) {
 
                 if (time_sec - time_last_msg_sec > 1.5 * tint)
-                    time_last_msg_sec = tint * ( (long) (time_sec / tint + 0.5) );                                
+                    time_last_msg_sec = tint * ( (long) (time_sec / tint + 0.5) );
                 else
                     time_last_msg_sec += tint;
 
                 conv->time_last_msg[i].time = (time_t) time_last_msg_sec;
-                conv->time_last_msg[i].sec  = time_last_msg_sec - (double) conv->time_last_msg[i].time; 
+                conv->time_last_msg[i].sec  = time_last_msg_sec - (double) conv->time_last_msg[i].time;
             }
         }
     }
@@ -110,9 +110,9 @@ extern strconv_t *strconvnew(int itype, int otype, const char *msgs, int staid,
     double tint;
     char buff[1024],*p;
     int msg;
-    
+
     if (!(conv=(strconv_t *)malloc(sizeof(strconv_t)))) return NULL;
-    
+
     conv->nmsg=0;
     strcpy(buff,msgs);
     for (p=strtok(buff,",");p;p=strtok(NULL,",")) {
@@ -165,9 +165,9 @@ extern void strconvfree(strconv_t *conv)
 static void raw2rtcm(rtcm_t *out, const raw_t *raw, int ret)
 {
     int i,sat,prn;
-    
+
     out->time=raw->time;
-    
+
     if (ret==1) {
         for (i=0;i<raw->obs.n;i++) {
             out->time=raw->obs.data[i].time;
@@ -201,11 +201,11 @@ static void raw2rtcm(rtcm_t *out, const raw_t *raw, int ret)
 static void rtcm2rtcm(rtcm_t *out, const rtcm_t *rtcm, int ret, int stasel)
 {
     int i,sat,prn;
-    
+
     out->time=rtcm->time;
-    
+
     if (!stasel) out->staid=rtcm->staid;
-    
+
     if (ret==1) {
         for (i=0;i<rtcm->obs.n;i++) {
             out->obs.data[i]=rtcm->obs.data[i];
@@ -268,7 +268,7 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
 {
     obsd_t *data,buff[MAXOBS];
     int i,j,n,ns,sys,nobs,code,nsat=0,nsig=0,nmsg,mask[MAXCODE]={0};
-    
+
     if      (1071<=msg&&msg<=1077) sys=SYS_GPS;
     else if (1081<=msg&&msg<=1087) sys=SYS_GLO;
     else if (1091<=msg&&msg<=1097) sys=SYS_GAL;
@@ -276,10 +276,10 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
     else if (1111<=msg&&msg<=1117) sys=SYS_QZS;
     else if (1121<=msg&&msg<=1127) sys=SYS_CMP;
     else goto redirect;
-    
+
     data=out->obs.data;
     nobs=out->obs.n;
-    
+
     /* count number of satellites and signals */
     for (i=0;i<nobs&&i<MAXOBS;i++) {
         if (satsys(data[i].sat,NULL)!=sys) continue;
@@ -297,7 +297,7 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
         trace(4,"write_rtcm3_msm: error nsig=%d\n",nsig);
         return;
     }
-    
+
     /* pack data to multiple messages if nsat x nsig > 64 */
     ns=64/nsig;         /* max number of sats in a message */
     nmsg=(nsat-1)/ns+1; /* number of messages */
@@ -305,16 +305,16 @@ static void write_rtcm3_msm(stream_t *str, rtcm_t *out, int msg, int sync)
     if (nmsg<=0) {
         goto redirect;
     }
-    
+
     out->obs.data=buff;
-    
+
     for (i=j=0;i<nmsg;i++) {
         for (n=0;n<ns&&j<nobs&&j<MAXOBS;j++) {
             if (satsys(data[j].sat,NULL)!=sys) continue;
             out->obs.data[n++]=data[j];
         }
         out->obs.n=n;
-        
+
         if (gen_rtcm3(out,msg,i<nmsg-1?1:sync)) {
             strwrite(str,out->buff,out->nbyte);
         }
@@ -333,20 +333,20 @@ redirect:
 static void write_obs(gtime_t time, stream_t *str, strconv_t *conv, double min_snr)
 {
     int i,j=0;
-    
+
     for (i=0;i<conv->nmsg;i++) {
         if (!is_obsmsg(conv->msgs[i])||!is_tint(time, conv->time_last_msg[i], conv->tint[i])) continue;
-        
+
         j=i; /* index of last message */
     }
     for (i=0;i<conv->nmsg;i++) {
         if (!is_obsmsg(conv->msgs[i])||!is_tint(time, conv->time_last_msg[i], conv->tint[i])) continue;
-        
+
         obs_exclude_by_snr(&conv->out.obs, min_snr);
         /* generate messages */
         if (conv->otype==STRFMT_RTCM2) {
             if (!gen_rtcm2(&conv->out,conv->msgs[i],i!=j)) continue;
-            
+
             /* write messages to stream */
             strwrite(str,conv->out.buff,conv->out.nbyte);
         }
@@ -360,7 +360,7 @@ static void write_obs(gtime_t time, stream_t *str, strconv_t *conv, double min_s
             }
         }
     }
-    
+
     update_time_last_msg(time, conv);
 
 }
@@ -368,10 +368,10 @@ static void write_obs(gtime_t time, stream_t *str, strconv_t *conv, double min_s
 static void write_nav(gtime_t time, stream_t *str, strconv_t *conv)
 {
     int i;
-    
+
     for (i=0;i<conv->nmsg;i++) {
         if (!is_navmsg(conv->msgs[i])||conv->tint[i]>0.0) continue;
-        
+
         /* generate messages */
         if (conv->otype==STRFMT_RTCM2) {
             if (!gen_rtcm2(&conv->out,conv->msgs[i],0)) continue;
@@ -380,7 +380,7 @@ static void write_nav(gtime_t time, stream_t *str, strconv_t *conv)
             if (!gen_rtcm3(&conv->out,conv->msgs[i],0)) continue;
         }
         else continue;
-        
+
         /* write messages to stream */
         strwrite(str,conv->out.buff,conv->out.nbyte);
     }
@@ -389,7 +389,7 @@ static void write_nav(gtime_t time, stream_t *str, strconv_t *conv)
 static int nextsat(nav_t *nav, int sat, int msg)
 {
     int sys,p,p0,p1,p2;
-    
+
     switch (msg) {
         case 1019: sys=SYS_GPS; p1=MINPRNGPS; p2=MAXPRNGPS; break;
         case 1020: sys=SYS_GLO; p1=MINPRNGLO; p2=MAXPRNGLO; break;
@@ -401,10 +401,10 @@ static int nextsat(nav_t *nav, int sat, int msg)
         default: return 0;
     }
     if (satsys(sat,&p0)!=sys) return satno(sys,p1);
-    
+
     /* search next valid ephemeris */
     for (p=p0>=p2?p1:p0+1;p!=p0;p=p>=p2?p1:p+1) {
-        
+
         if (sys==SYS_GLO) {
             sat=satno(sys,p);
             if (nav->geph[p-1].sat==sat) return sat;
@@ -421,21 +421,21 @@ static void write_nav_cycle(stream_t *str, strconv_t *conv)
 {
     unsigned int tick=tickget();
     int i,sat,tint;
-    
+
     for (i=0;i<conv->nmsg;i++) {
         if (!is_navmsg(conv->msgs[i])||conv->tint[i]<=0.0) continue;
-        
+
         /* output cycle */
         tint=(int)(conv->tint[i]*1000.0);
         if ((int)(tick-conv->tick[i])<tint) continue;
         conv->tick[i]=tick;
-        
+
         /* next satellite */
         if (!(sat=nextsat(&conv->out.nav,conv->ephsat[i],conv->msgs[i]))) {
             continue;
         }
         conv->out.ephsat=conv->ephsat[i]=sat;
-        
+
         /* generate messages */
         if (conv->otype==STRFMT_RTCM2) {
             if (!gen_rtcm2(&conv->out,conv->msgs[i],0)) continue;
@@ -444,7 +444,7 @@ static void write_nav_cycle(stream_t *str, strconv_t *conv)
             if (!gen_rtcm3(&conv->out,conv->msgs[i],0)) continue;
         }
         else continue;
-        
+
         /* write messages to stream */
         strwrite(str,conv->out.buff,conv->out.nbyte);
     }
@@ -454,15 +454,15 @@ static void write_sta_cycle(stream_t *str, strconv_t *conv)
 {
     unsigned int tick=tickget();
     int i,tint;
-    
+
     for (i=0;i<conv->nmsg;i++) {
         if (!is_stamsg(conv->msgs[i])) continue;
-        
+
         /* output cycle */
         tint=conv->tint[i]==0.0?30000:(int)(conv->tint[i]*1000.0);
         if ((int)(tick-conv->tick[i])<tint) continue;
         conv->tick[i]=tick;
-        
+
         /* generate messages */
         if (conv->otype==STRFMT_RTCM2) {
             if (!gen_rtcm2(&conv->out,conv->msgs[i],0)) continue;
@@ -471,7 +471,7 @@ static void write_sta_cycle(stream_t *str, strconv_t *conv)
             if (!gen_rtcm3(&conv->out,conv->msgs[i],0)) continue;
         }
         else continue;
-        
+
         /* write messages to stream */
         strwrite(str,conv->out.buff,conv->out.nbyte);
     }
@@ -480,9 +480,9 @@ static void write_sta_cycle(stream_t *str, strconv_t *conv)
 static void strconv(stream_t *str, strconv_t *conv, unsigned char *buff, int n, double min_snr)
 {
     int i,ret;
-    
+
     for (i=0;i<n;i++) {
-        
+
         /* input rtcm 2 messages */
         if (conv->itype==STRFMT_RTCM2) {
             ret=input_rtcm2(&conv->rtcm,buff[i]);
@@ -514,11 +514,11 @@ static void periodic_cmd(int cycle, const char *cmd, stream_t *stream)
     const char *p=cmd,*q;
     char msg[1024],*r;
     int n,period;
-    
+
     for (p=cmd;;p=q+1) {
         for (q=p;;q++) if (*q=='\r'||*q=='\n'||*q=='\0') break;
         n=(int)(q-p); strncpy(msg,p,n); msg[n]='\0';
-        
+
         period=0;
         if ((r=strrchr(msg,'#'))) {
             sscanf(r,"# %d",&period);
@@ -546,24 +546,24 @@ static void *strsvrthread(void *arg)
     int i,n,cyc;
 
     tracet(3,"strsvrthread:\n");
-    
+
     svr->tick=tickget();
 
     for (cyc=0;atomic_load(&svr->state)/*svr->state*/;cyc++) {
         tick=tickget();
-        
+
         /* read data from input stream */
         while ((n=strread(svr->stream,svr->buff,svr->buffsize))>0 &&
                atomic_load(&svr->state)/*svr->state*/) {
             /* get stream selection */
             strgetsel(svr->stream,sel);
-            
+
             /* write data to output streams */
             for (i=1;i<svr->nstr;i++) {
-                
+
                 /* set stream selection */
                 strsetsel(svr->stream+i,sel);
-                
+
                 if (svr->conv[i-1]) {
                     strconv(svr->stream+i,svr->conv[i-1],svr->buff,n,svr->min_snr);
                 }
@@ -571,17 +571,17 @@ static void *strsvrthread(void *arg)
                     strwrite(svr->stream+i,svr->buff,n);
                 }
             }
-            lock(&svr->lock);
+            rtk_lock(&svr->lock);
             for (i=0;i<n&&svr->npb<svr->buffsize;i++) {
                 svr->pbuf[svr->npb++]=svr->buff[i];
             }
-            unlock(&svr->lock);
+            rtk_unlock(&svr->lock);
         }
         for (i=1;i<svr->nstr;i++) {
-            
+
             /* read message from output stream */
             while ((n=strread(svr->stream+i,buff,sizeof(buff)))>0) {
-                
+
                 /* relay back message from output stream to input stream */
                 if (i==svr->relayback) {
                     strwrite(svr->stream,buff,n);
@@ -598,7 +598,7 @@ static void *strsvrthread(void *arg)
     svr->npb=0;
     free(svr->buff); svr->buff=NULL;
     free(svr->pbuf); svr->pbuf=NULL;
-    
+
     return 0;
 }
 /* initialize stream server ----------------------------------------------------
@@ -610,9 +610,9 @@ static void *strsvrthread(void *arg)
 extern void strsvrinit(strsvr_t *svr, int nout)
 {
     int i;
-    
+
     tracet(3,"strsvrinit: nout=%d\n",nout);
-    
+
     svr->state=0;
     svr->cycle=0;
     svr->buffsize=0;
@@ -628,7 +628,7 @@ extern void strsvrinit(strsvr_t *svr, int nout)
     for (i=0;i<16;i++) svr->conv[i]=NULL;
     svr->thread=0;
     svr->min_snr=0.0;
-    initlock(&svr->lock);
+    rtk_initlock(&svr->lock);
 }
 /* start stream server ---------------------------------------------------------
 * start stream server
@@ -675,13 +675,13 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, char **paths,
 {
     int i,rw,stropt[8]={0};
     char file1[MAXSTRPATH],file2[MAXSTRPATH],*p;
-    
+
     trace(2,"strsvrstart: cmds_periodic=%s\n",cmds_periodic[0]);
 
     if (/*svr->state*/atomic_load(&svr->state)) return 0;
-    
+
     strinitcom();
-    
+
     for (i=0;i<4;i++) stropt[i]=opts[i];
     stropt[4]=opts[6];
     strsetopt(stropt);
@@ -695,7 +695,7 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, char **paths,
         strcpy(svr->cmds_periodic[i],!cmds_periodic[i]?"":cmds_periodic[i]);
     }
     for (i=0;i<svr->nstr-1;i++) svr->conv[i]=conv[i];
-    
+
     if (!(svr->buff=(unsigned char *)malloc(svr->buffsize))||
         !(svr->pbuf=(unsigned char *)malloc(svr->buffsize))) {
         free(svr->buff); free(svr->pbuf);
@@ -728,7 +728,7 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, char **paths,
         strsendcmd(svr->stream+i,cmds[i]);
     }
     svr->state=1;
-    
+
     /* create stream server thread */
 #ifdef WIN32
     if (!(svr->thread=CreateThread(NULL,0,strsvrthread,svr,0,NULL))) {
@@ -754,16 +754,16 @@ extern int strsvrstart(strsvr_t *svr, int *opts, int *strs, char **paths,
 extern void strsvrstop(strsvr_t *svr, char **cmds)
 {
     int i;
-    
+
     tracet(3,"strsvrstop:\n");
-    
+
     for (i=0;i<svr->nstr;i++) {
         if (cmds[i]) strsendcmd(svr->stream+i,cmds[i]);
     }
 
     /*svr->state = 0*/
     atomic_sub_fetch(&svr->state, 1);
-    
+
 #ifdef WIN32
     WaitForSingleObject(svr->thread,10000);
     CloseHandle(svr->thread);
@@ -784,9 +784,9 @@ extern void strsvrstat(strsvr_t *svr, int *stat, int *byte, int *bps, char *msg)
 {
     char s[MAXSTRMSG]="",*p=msg;
     int i,bps_in;
-    
+
     tracet(4,"strsvrstat:\n");
-    
+
     for (i=0;i<svr->nstr;i++) {
         if (i==0) {
             strsum(svr->stream,byte,bps,NULL,NULL);
@@ -809,10 +809,10 @@ extern void strsvrstat(strsvr_t *svr, int *stat, int *byte, int *bps, char *msg)
 extern int strsvrpeek(strsvr_t *svr, unsigned char *buff, int nmax)
 {
     int n;
-    
+
     if (!svr->state) return 0;
-    
-    lock(&svr->lock);
+
+    rtk_lock(&svr->lock);
     n=svr->npb<nmax?svr->npb:nmax;
     if (n>0) {
         memcpy(buff,svr->pbuf,n);
@@ -821,7 +821,7 @@ extern int strsvrpeek(strsvr_t *svr, unsigned char *buff, int nmax)
         memmove(svr->pbuf,svr->pbuf+n,svr->npb-n);
     }
     svr->npb-=n;
-    unlock(&svr->lock);
+    rtk_unlock(&svr->lock);
     return n;
 }
 /* set ntrip source table for stream server ------------------------------------
@@ -833,7 +833,7 @@ extern int strsvrpeek(strsvr_t *svr, unsigned char *buff, int nmax)
 extern void strsvrsetsrctbl(strsvr_t *svr, const char *file)
 {
     int i;
-    
+
     for (i=0;i<svr->nstr;i++) {
         strsetsrctbl(svr->stream+i,file);
     }

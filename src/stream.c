@@ -103,9 +103,7 @@
 #define EXTA 19200
 #define EXTB 38400
 
-#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
-#define SOL_TCP IPPROTO_TCP
-#endif
+
 #if !defined(TCP_KEEPIDLE) && defined(TCP_KEEPALIVE)
 #define TCP_KEEPIDLE TCP_KEEPALIVE
 #define TCP_USER_TIMEOUT TCP_CONNECTIONTIMEOUT
@@ -378,17 +376,17 @@ static void* _gethostipbyname(void *arg)
     char saddr[SADDR_LEN];
     int error;
 
-    lock(&hostent_nb.mem_alloc_lock);
+    rtk_lock(&hostent_nb.mem_alloc_lock);
 
     if (hostent_nb.released) {
         atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
-        unlock(&hostent_nb.mem_alloc_lock);
+        rtk_unlock(&hostent_nb.mem_alloc_lock);
         return NULL;
     }
 
     elem = (hostent_elem_t*)arg;
     strcpy(saddr, elem->saddr);
-    unlock(&hostent_nb.mem_alloc_lock);
+    rtk_unlock(&hostent_nb.mem_alloc_lock);
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET; /* only IPv4 addresses */
@@ -396,11 +394,11 @@ static void* _gethostipbyname(void *arg)
     /* resolve the domain name into a list of addresses */
     error = getaddrinfo(saddr, NULL, &hints, &result);
 
-    lock(&hostent_nb.mem_alloc_lock);
+    rtk_lock(&hostent_nb.mem_alloc_lock);
 
     if (hostent_nb.released) {
         atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
-        unlock(&hostent_nb.mem_alloc_lock);
+        rtk_unlock(&hostent_nb.mem_alloc_lock);
         return NULL;
     }
 
@@ -411,7 +409,7 @@ static void* _gethostipbyname(void *arg)
 
     /* set state as resolved/failed */
     atomic_store(&elem->state, (error == 0) ? 1 : 2);
-    unlock(&hostent_nb.mem_alloc_lock);
+    rtk_unlock(&hostent_nb.mem_alloc_lock);
 
     atomic_sub_fetch(&hostent_nb.thread_cnt, 1);
     return NULL;
@@ -517,12 +515,12 @@ static int readseribuff(serial_t *serial, unsigned char *buff, int nmax)
 
     tracet(5,"readseribuff: dev=%d\n",serial->dev);
 
-    lock(&serial->lock);
+    rtk_lock(&serial->lock);
     for (ns=0;serial->rp!=serial->wp&&ns<nmax;ns++) {
        buff[ns]=serial->buff[serial->rp];
        if (++serial->rp>=serial->buffsize) serial->rp=0;
     }
-    unlock(&serial->lock);
+    rtk_unlock(&serial->lock);
     tracet(5,"readseribuff: ns=%d rp=%d wp=%d\n",ns,serial->rp,serial->wp);
     return ns;
 }
@@ -532,7 +530,7 @@ static int writeseribuff(serial_t *serial, unsigned char *buff, int n)
 
     tracet(5,"writeseribuff: dev=%d n=%d\n",serial->dev,n);
 
-    lock(&serial->lock);
+    rtk_lock&serial->lock);
     for (ns=0;ns<n;ns++) {
         serial->buff[wp=serial->wp]=buff[ns];
         if (++wp>=serial->buffsize) wp=0;
@@ -542,7 +540,7 @@ static int writeseribuff(serial_t *serial, unsigned char *buff, int n)
             break;
         }
     }
-    unlock(&serial->lock);
+    rtk_unlock(&serial->lock);
     tracet(5,"writeseribuff: ns=%d rp=%d wp=%d\n",ns,serial->rp,serial->wp);
     return ns;
 }
@@ -654,7 +652,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     PurgeComm(serial->dev,PURGE_TXABORT|PURGE_RXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
 
     /* create write thread */
-    initlock(&serial->lock);
+    rtk_initlock(&serial->lock);
     serial->state=serial->wp=serial->rp=serial->error=0;
     serial->buffsize=buffsize;
     if (!(serial->buff=(unsigned char *)malloc(buffsize))) {
@@ -1065,7 +1063,7 @@ static file_t *openfile(const char *path, int mode, char *msg)
     file->start=start;
     file->speed=speed;
     file->swapintv=swapintv;
-    initlock(&file->lock);
+    rtk_initlock(&file->lock);
 
     time=utc2gpst(timeget());
 
@@ -1414,7 +1412,7 @@ static int setkeepalive(socket_t sock, char *msg)
      * transmitted data may remain unacknowledged before TCP will forcibly close
      * the corresponding connection
      */
-    if (setsockopt(sock,SOL_TCP,TCP_USER_TIMEOUT,(const char *)&tcp_timeout,sizeof(tcp_timeout))==-1) {
+    if (setsockopt(sock,IPPROTO_TCP,TCP_USER_TIMEOUT,(const char *)&tcp_timeout,sizeof(tcp_timeout))==-1) {
         tracet(1,"setkeepalive: setsockopt error 2 sock=%d err=%d\n",sock,errsock());
         sprintf(msg,"sockopt error: tcp timeout");
         return 0;
@@ -2346,7 +2344,7 @@ static ntripc_t *openntripc(const char *path, int type, char *msg)
         for (j=0;j<NTRIP_MAXRSP;j++) ntripc->con[i].buff[j]=0;
     }
     ntripc->srctbl=NULL;
-    initlock(&ntripc->lock_srctbl);
+    rtk_initlock(&ntripc->lock_srctbl);
 
     /* decode tcp/ntrip path */
     if (ntrippathfmt==STRPATHFMT_VER1) {
@@ -2402,16 +2400,16 @@ static int test_mntpnt(ntripc_t *ntripc, const char *mntpnt)
 {
     char *p,str[256];
 
-    lock(&ntripc->lock_srctbl);
+    rtk_lock(&ntripc->lock_srctbl);
 
     if (!ntripc->srctbl) {
-        unlock(&ntripc->lock_srctbl);
+        rtk_unlock(&ntripc->lock_srctbl);
         return 1;
     }
     for (p=ntripc->srctbl;(p=strstr(p,"STR;"));p++) {
         if (sscanf(p,"STR;%255[^;]",str)&&!strcmp(str,mntpnt)) break;
     }
-    unlock(&ntripc->lock_srctbl);
+    rtk_unlock(&ntripc->lock_srctbl);
 
     return p!=NULL;
 }
@@ -2421,7 +2419,7 @@ static void send_srctbl(ntripc_t *ntripc, socket_t sock)
     char buff[1024],*p=buff;
     int len;
 
-    lock(&ntripc->lock_srctbl);
+    rtk_lock(&ntripc->lock_srctbl);
 
     len=ntripc->srctbl?strlen(ntripc->srctbl):0;
     p+=sprintf(p,"%s",NTRIP_RSP_SRCTBL);
@@ -2434,7 +2432,7 @@ static void send_srctbl(ntripc_t *ntripc, socket_t sock)
     if (len>0) {
         send_nb(sock,(unsigned char *)ntripc->srctbl,len);
     }
-    unlock(&ntripc->lock_srctbl);
+    rtk_unlock(&ntripc->lock_srctbl);
 }
 /* test ntrip-caster client request ------------------------------------------*/
 static void rsp_ntripc_c(ntripc_t *ntripc, int i)
@@ -3157,7 +3155,7 @@ static membuf_t *openmembuf(const char *path, char *msg)
         return NULL;
     }
     membuf->bufsize=bufsize;
-    initlock(&membuf->lock);
+    rtk_initlock(&membuf->lock);
 
     sprintf(msg,"membuf sizebuf=%d",bufsize);
 
@@ -3180,14 +3178,14 @@ static int readmembuf(membuf_t *membuf, unsigned char *buff, int n, char *msg)
 
     if (!membuf) return 0;
 
-    lock(&membuf->lock);
+    rtk_lock(&membuf->lock);
 
     for (i=membuf->rp;i!=membuf->wp&&nr<n;i++) {
         if (i>=membuf->bufsize) i=0;
         buff[nr++]=membuf->buf[i];
     }
     membuf->rp=i;
-    unlock(&membuf->lock);
+    rtk_unlock(&membuf->lock);
     return nr;
 }
 /* write memory buffer -------------------------------------------------------*/
@@ -3199,7 +3197,7 @@ static int writemembuf(membuf_t *membuf, unsigned char *buff, int n, char *msg)
 
     if (!membuf) return 0;
 
-    lock(&membuf->lock);
+    rtk_lock(&membuf->lock);
 
     for (i=0;i<n;i++) {
         membuf->buf[membuf->wp++]=buff[i];
@@ -3207,11 +3205,11 @@ static int writemembuf(membuf_t *membuf, unsigned char *buff, int n, char *msg)
         if (membuf->wp==membuf->rp) {
            strcpy(msg,"mem-buffer overflow");
            membuf->state=-1;
-           unlock(&membuf->lock);
+           rtk_unlock(&membuf->lock);
            return i+1;
         }
     }
-    unlock(&membuf->lock);
+    rtk_unlock(&membuf->lock);
     return i;
 }
 /* get state memory buffer ---------------------------------------------------*/
@@ -3263,7 +3261,7 @@ extern void strinit(stream_t *stream)
     stream->state=0;
     stream->inb=stream->inr=stream->outb=stream->outr=0;
     stream->tick_i=stream->tick_o=stream->tact=stream->inbt=stream->outbt=0;
-    initlock(&stream->lock);
+    rtk_initlock(&stream->lock);
     stream->port=NULL;
     stream->path[0]='\0';
     stream->msg [0]='\0';
@@ -3480,8 +3478,8 @@ extern void strsync(stream_t *stream1, stream_t *stream2)
 * args   : stream_t *stream I  stream
 * return : none
 *-----------------------------------------------------------------------------*/
-extern void strlock  (stream_t *stream) {lock  (&stream->lock);}
-extern void strunlock(stream_t *stream) {unlock(&stream->lock);}
+extern void strlock  (stream_t *stream) {rtk_lock  (&stream->lock);}
+extern void strunlock(stream_t *stream) {rtk_unlock(&stream->lock);}
 
 /* read stream -----------------------------------------------------------------
 * read data from stream (unblocked)
@@ -3865,12 +3863,12 @@ extern int strsetsrctbl(stream_t *stream, const char *file)
     fclose(fp);
     tracet(3,"strsetsrctbl: n=%d\n",n);
 
-    lock(&ntripc->lock_srctbl);
+    rtk_lock(&ntripc->lock_srctbl);
 
     free(ntripc->srctbl);
     ntripc->srctbl=srctbl;
 
-    unlock(&ntripc->lock_srctbl);
+    rtk_unlock(&ntripc->lock_srctbl);
     strunlock(stream);
     return 1;
 }
@@ -4092,7 +4090,7 @@ extern void strfreeres(void)
     curr_elem = hostent_nb.head;
 
     /* iterate over list and remove all elements */
-    lock(&hostent_nb.mem_alloc_lock);
+    rtk_lock(&hostent_nb.mem_alloc_lock);
 
     while (curr_elem) {
         next_elem = curr_elem->next;
@@ -4102,7 +4100,7 @@ extern void strfreeres(void)
     hostent_nb.head = NULL;
     hostent_nb.released = 1;
 
-    unlock(&hostent_nb.mem_alloc_lock);
+    rtk_unlock(&hostent_nb.mem_alloc_lock);
 #endif
 }
 /* generate general hex message ----------------------------------------------*/

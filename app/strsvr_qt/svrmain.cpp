@@ -141,11 +141,11 @@ MainForm::MainForm(QWidget *parent)
 void MainForm::FormCreate()
 {
     int autorun=0,tasktray=0;
-    
+
     strsvrinit(&strsvr,3);
-    
+
     setWindowTitle(QString("%1 ver.%2 %3").arg(PRGNAME).arg(VER_RTKLIB).arg(PATCH_LEVEL));
-    
+
 
     QCommandLineParser parser;
     parser.setApplicationDescription("stream server");
@@ -182,14 +182,14 @@ void MainForm::FormCreate()
         IniFile=parser.value(iniFileOption);
 
     LoadOpt();
-    
+
     if (parser.isSet(windowTitleOption))
         setWindowTitle(parser.value(windowTitleOption));
     if (parser.isSet(autoOption)) autorun=1;
     if (parser.isSet(trayOption)) tasktray=1;
 
     SetTrayIcon(0);
-    
+
     if (tasktray) {
         setVisible(false);
         TrayIcon->setVisible(true);
@@ -238,10 +238,10 @@ void MainForm::BtnOptClick()
     svrOptDialog->StaSel=StaSel;
     svrOptDialog->AntType=AntType;
     svrOptDialog->RcvType=RcvType;
-    
+
     svrOptDialog->exec();
     if (svrOptDialog->result()!=QDialog::Accepted) return;
-    
+
     for (int i=0;i<6;i++) SvrOpt[i]=svrOptDialog->SvrOpt[i];
     for (int i=0;i<3;i++) AntPos[i]=svrOptDialog->AntPos[i];
     for (int i=0;i<3;i++) AntOff[i]=svrOptDialog->AntOff[i];
@@ -336,7 +336,7 @@ void MainForm::BtnOutput3Click()
         case 2: TcpOpt(3,1); break;
         case 3: TcpOpt(3,0); break;
         case 4: TcpOpt(3,2); break;
-        case 5: FileOpt(3,1); break; 
+        case 5: FileOpt(3,1); break;
     }
 }
 // callback on button-output1-conv ------------------------------------------
@@ -465,7 +465,7 @@ void MainForm::InputChange()
 // callback on output1 type change ------------------------------------------
 void MainForm::Output1Change()
 {
-    UpdateEnable(); 
+    UpdateEnable();
 }
 // callback on output2 type change ------------------------------------------
 void MainForm::Output2Change()
@@ -488,7 +488,7 @@ void MainForm::Timer1Timer()
     int stat[4]={0},byte[4]={0},bps[4]={0};
     char msg[MAXSTRMSG*4]="",s1[256],s2[256];
     double ctime,t[4];
-    
+
     strsvrstat(&strsvr,stat,byte,bps,msg);
     for (int i=0;i<4;i++) {
         num2cnum(byte[i],s1);
@@ -498,10 +498,10 @@ void MainForm::Timer1Timer()
         e2[i]->setText(s2);
     }
     Progress->setValue(!stat[0]?0:MIN(100,(int)(fmod(byte[0]/500.0,110.0))));
-    
+
     time2str(time,s1,0);
     Time->setText(QString(tr("%1 GPST")).arg(s1));
-    
+
     if (Panel1->isEnabled()) {
         ctime=timediff(EndTime,StartTime);
     }
@@ -514,11 +514,11 @@ void MainForm::Timer1Timer()
     t[2]=floor(ctime/60.0   ); ctime-=t[2]*60.0;
     t[3]=ctime;
     ConTime->setText(QString("%1d %2:%3:%4").arg(t[0],0,'f',0).arg(t[1],2,'f',0,QChar('0')).arg(t[2],2,'f',0,QChar('0')).arg(t[3],2,'f',2,QChar('0')));
-    
+
     num2cnum(byte[0],s1); num2cnum(bps[0],s2);
     TrayIcon->setToolTip(QString(tr("%1 bytes %2 bps")).arg(s1).arg(s2));
     SetTrayIcon(stat[0]<=0?0:(stat[0]==3?2:1));
-    
+
     Message->setText(msg);
 }
 // start stream server ------------------------------------------------------
@@ -537,23 +537,23 @@ void MainForm::SvrStart(void)
     char *cmd[1024], *cmds_periodic[3]={0};
     char *ant[3]={0},*rcv[3]={0},*p;
     FILE *fp;
-    
+
     if (TraceLevel>0) {
         traceopen(TRACEFILE);
         tracelevel(TraceLevel);
     }
     for (int i=0;i<4;i++) paths[i]=str[i];
-    
+
     strs[0]=itype[Input->currentIndex()];
     strs[1]=otype[Output1->currentIndex()];
     strs[2]=otype[Output2->currentIndex()];
     strs[3]=otype[Output3->currentIndex()];
-    
+
     strcpy(paths[0],qPrintable(Paths[0][ip[Input->currentIndex()]]));
     strcpy(paths[1],!Output1->currentIndex()?"":qPrintable(Paths[1][ip[Output1->currentIndex()-1]]));
     strcpy(paths[2],!Output2->currentIndex()?"":qPrintable(Paths[2][ip[Output2->currentIndex()-1]]));
     strcpy(paths[3],!Output3->currentIndex()?"":qPrintable(Paths[3][ip[Output3->currentIndex()-1]]));
-    
+
     if (Input->currentIndex()==0) {
         if (CmdEna[0]) strncpy(*cmd,qPrintable(Cmds[0]),1024);
     }
@@ -565,7 +565,7 @@ void MainForm::SvrStart(void)
     }
     opt[5]=NmeaReq?SvrOpt[5]:0;
     opt[6]=FileSwapMargin;
-    
+
     for (int i=1;i<4;i++) {
         if (strs[i]!=STR_FILE) continue;
         strcpy(filepath,paths[i]);
@@ -577,7 +577,7 @@ void MainForm::SvrStart(void)
     }
     strsetdir(qPrintable(LocalDirectory));
     strsetproxy(qPrintable(ProxyAddress));
-    
+
     for (int i=0;i<3;i++) {
         if (!ConvEna[i]) continue;
         if (!(conv[i]=strconvnew(ConvInp[i],ConvOut[i],qPrintable(ConvMsg[i]),
@@ -597,7 +597,7 @@ void MainForm::SvrStart(void)
     }
     // stream server start
     if (!strsvrstart(&strsvr,opt,strs,paths,conv,cmd,cmds_periodic,AntPos)) return;
-    
+
     StartTime=utc2gpst(timeget());
     Panel1    ->setEnabled(false);
     BtnStart  ->setVisible(false);
@@ -613,7 +613,7 @@ void MainForm::SvrStart(void)
 void MainForm::SvrStop(void)
 {
     char *cmd[1024];
-    
+
     if (Input->currentIndex()==0) {
         if (CmdEna[1]) strncpy(*cmd,qPrintable(Cmds[1]),1024);
     }
@@ -621,7 +621,7 @@ void MainForm::SvrStop(void)
         if (CmdEnaTcp[1]) strncpy(*cmd,qPrintable(CmdsTcp[1]),1024);
     }
     strsvrstop(&strsvr,cmd);
-    
+
     EndTime=utc2gpst(timeget());
     Panel1    ->setEnabled(true);
     BtnStart  ->setVisible(true);
@@ -632,7 +632,7 @@ void MainForm::SvrStop(void)
     MenuStop  ->setEnabled(false);
     MenuExit  ->setEnabled(true);
     SetTrayIcon(0);
-    
+
     for (int i=0;i<3;i++) {
         if (ConvEna[i]) strconvfree(strsvr.conv[i]);
     }
@@ -643,20 +643,20 @@ void MainForm::Timer2Timer()
 {
     unsigned char *msg=0;
     int len;
-    
-    lock(&strsvr.lock);
-    
+
+    rtk_lock(&strsvr.lock);
+
     len=strsvr.npb;
     if (len>0&&(msg=(unsigned char *)malloc(len))) {
         memcpy(msg,strsvr.pbuf,len);
         strsvr.npb=0;
     }
-    unlock(&strsvr.lock);
-    
+    rtk_unlock(&strsvr.lock);
+
     if (len<=0||!msg) return;
-    
+
     console->AddMsg(msg,len);
-    
+
     free(msg);
 }
 // set serial options -------------------------------------------------------
@@ -738,7 +738,7 @@ void MainForm::LoadOpt(void)
 {
     QSettings settings(IniFile,QSettings::IniFormat);
     int optdef[]={10000,10000,1000,32768,10,0};
-    
+
     Input  ->setCurrentIndex(settings.value("set/input",       0).toInt());
     Output1->setCurrentIndex(settings.value("set/output1",     0).toInt());
     Output2->setCurrentIndex(settings.value("set/output2",     0).toInt());
@@ -750,7 +750,7 @@ void MainForm::LoadOpt(void)
     StaSel            =settings.value("set/stasel"      ,0).toInt();
     AntType           =settings.value("set/anttype",    "").toString();
     RcvType           =settings.value("set/rcvtype",    "").toString();
-    
+
     for (int i=0;i<6;i++) {
         SvrOpt[i]=settings.value(QString("set/svropt_%1").arg(i),optdef[i]).toInt();
     }
@@ -790,14 +790,14 @@ void MainForm::LoadOpt(void)
     ExeDirectory  =settings.value("dirs/exedirectory",  "").toString();
     LocalDirectory=settings.value("dirs/localdirectory","").toString();
     ProxyAddress  =settings.value("dirs/proxyaddress",  "").toString();
-    
+
     UpdateEnable();
 }
 // save options--------------------------------------------------------------
 void MainForm::SaveOpt(void)
 {
     QSettings settings(IniFile,QSettings::IniFormat);
-    
+
     settings.setValue("set/input",      Input  ->currentIndex());
     settings.setValue("set/output1",    Output1->currentIndex());
     settings.setValue("set/output2",    Output2->currentIndex());
@@ -809,7 +809,7 @@ void MainForm::SaveOpt(void)
     settings.setValue("set/stasel",     StaSel);
     settings.setValue("set/anttype",    AntType);
     settings.setValue("set/rcvtype",    RcvType);
-    
+
     for (int i=0;i<6;i++) {
         settings.setValue(QString("set/svropt_%1").arg(i),SvrOpt[i]);
     }

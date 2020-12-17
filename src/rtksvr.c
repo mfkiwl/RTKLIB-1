@@ -396,7 +396,7 @@ static void decodefile(rtksvr_t *svr, int index)
         svr->nav.peph=nav.peph;
         svr->ftime[index]=utc2gpst(timeget());
         strcpy(svr->files[index],file);
-        
+
     }
     else if (svr->format[index]==STRFMT_RNXCLK) { /* precise clock */
 
@@ -528,29 +528,29 @@ static int is_data_current(gtime_t time_current, gtime_t time_data, double maxag
 {
     if ( maxage <= 0.0 )          return 1;
     if ( time_current.time <= 0 ) return 1;
-    
+
     if ( fabs(timediff(time_current, time_data)) > maxage ) return 0;
-    
+
     return 1;
 }
 
 static void navsys_convert_binary_to_array(int sys_binary, int *sys_array, int *nsys)
 {
     *nsys = 0;
-    
+
     assert( sys_array != NULL );
     assert( nsys != NULL );
-    
+
     /* unite GPS, QZSS and SBAS satellite groups since they are considered as one group in rtkpos */
     if ( sys_binary & (SYS_GPS | SYS_QZS | SYS_SBS) ) { sys_array[*nsys] = (SYS_GPS | SYS_QZS | SYS_SBS); (*nsys)++; }
-    
+
     /* other systems are single */
     if ( sys_binary & SYS_GLO ) { sys_array[*nsys] = SYS_GLO; (*nsys)++; }
     if ( sys_binary & SYS_GAL ) { sys_array[*nsys] = SYS_GAL; (*nsys)++; }
     if ( sys_binary & SYS_CMP ) { sys_array[*nsys] = SYS_CMP; (*nsys)++; }
     if ( sys_binary & SYS_IRN ) { sys_array[*nsys] = SYS_IRN; (*nsys)++; }
     if ( sys_binary & SYS_LEO ) { sys_array[*nsys] = SYS_LEO; (*nsys)++; }
-    
+
     assert( *nsys <= MAXSYS );
 }
 
@@ -560,19 +560,19 @@ static obs_t* obs_init()
 {
     obs_t *obs = malloc(sizeof(obs_t));
     if ( !obs ) return NULL;
-    
+
     obs->n        = 0;
     obs->nmax     = MAXOBS;
     obs->flag     = 0;
     obs->rcvcount = 0;
     obs->tmcount  = 0;
-    
+
     obs->data = malloc(MAXOBS * sizeof(obsd_t));
     if ( !obs->data ) {
         free(obs);
         return NULL;
     }
-    
+
     return obs;
 }
 
@@ -588,7 +588,7 @@ static int obs_is_valid(const obs_t *obs)
 static void obs_free(obs_t *obs)
 {
     assert( obs_is_valid(obs) );
-    
+
     free(obs->data);
     free(obs);
 }
@@ -597,10 +597,10 @@ static void obs_copy(const obs_t *obs_source, obs_t *obs_destination)
 {
     int i;
     obsd_t *data;
-    
+
     assert( obs_is_valid(obs_source) );
     assert( obs_is_valid(obs_destination) );
-    
+
     data = obs_destination->data;
     *obs_destination = *obs_source;
     for (i = 0; i < obs_source->n; i++) data[i] = obs_source->data[i];
@@ -611,7 +611,7 @@ static gtime_t obs_get_time(const obs_t *obs)
 {
     assert( obs_is_valid(obs) );
     assert( obs->n > 0 );
-    
+
     return obs->data[0].time;
 }
 
@@ -619,9 +619,9 @@ static gtime_t obs_get_time(const obs_t *obs)
 static int obs_test_sys(const obs_t *obs, int sys)
 {
     int i;
-    
+
     assert( obs_is_valid(obs) );
-    
+
     for (i = 0; i < obs->n; i++) {
         if ( satsys(obs->data[i].sat, NULL) & sys ) return 1;
     }
@@ -634,13 +634,13 @@ static void obs_copy_sys(const obs_t *obs_source, obs_t *obs_destination, int sy
 {
     int i, j;
     obsd_t *data;
-    
+
     assert( obs_is_valid(obs_source) );
     assert( obs_is_valid(obs_destination) );
-    
+
     data = obs_destination->data;
     *obs_destination = *obs_source;
-    for (i = j = 0; i < obs_source->n; i++) { 
+    for (i = j = 0; i < obs_source->n; i++) {
         if ( satsys(obs_source->data[i].sat, NULL) & sys ) {
              data[j] = obs_source->data[i];
              j++;
@@ -653,16 +653,16 @@ static void obs_copy_sys(const obs_t *obs_source, obs_t *obs_destination, int sy
 static void obs_append(obs_t *obs, const obs_t *obs_add)
 {
     int i, n;
-    
+
     assert( obs_is_valid(obs) );
     assert( obs_is_valid(obs_add) );
     assert( ((obs->n + obs_add->n) <= MAXOBS) && "too many obs in sum" );
-    
+
     n = obs->n;
     for (i = 0; i < obs_add->n; i++) {
-        obs->data[i + n] = obs_add->data[i]; 
+        obs->data[i + n] = obs_add->data[i];
     }
-    
+
     obs->n += obs_add->n;
 }
 
@@ -670,11 +670,11 @@ static int obs_get_number_of_good_sats(const obs_t *obs)
 {
     int i, freq;
     int nsat = 0;
-    
+
     assert( obs_is_valid(obs) );
-    
+
     if ( obs->n <= 0 ) return 0;
-    
+
     for (i = 0; i < obs->n; i++ ) {
         for (freq = 0; freq < NFREQ; freq++) {
             if ( (obs->data[i].P[freq] != 0.0) && (obs->data[i].L[freq] != 0.0) ) {
@@ -683,7 +683,7 @@ static int obs_get_number_of_good_sats(const obs_t *obs)
             }
         }
     }
-    
+
     return nsat;
 }
 
@@ -691,7 +691,7 @@ static int obs_compare_data_by_sat(const void *obs_data_1, const void *obs_data_
 {
     obsd_t *obsd1 = (obsd_t *) obs_data_1;
     obsd_t *obsd2 = (obsd_t *) obs_data_2;
-    
+
     return (int) (obsd1->sat) - (int) (obsd2->sat);
 }
 
@@ -699,10 +699,10 @@ static int obs_compare_data_by_sat(const void *obs_data_1, const void *obs_data_
 static int obs_sort_data_by_sat(obs_t *obs)
 {
     assert( obs_is_valid(obs) );
-    
+
     if (obs->n <= 0) return 0;
     qsort(obs->data, obs->n, sizeof(obsd_t), obs_compare_data_by_sat);
-    
+
     return 1;
 }
 
@@ -713,9 +713,9 @@ extern obs_queue_t *obs_queue_init()
     int i, j, sat, freq;
     obs_queue_t *obs_queue = malloc(sizeof(obs_queue_t));
     if ( !obs_queue ) return NULL;
-    
+
     obs_queue->length = 0;
-    
+
     for (sat = 0; sat < MAXSAT; sat++) {
         for (freq = 0; freq < NFREQ; freq++) {
             obs_queue->is_cycle_slip_detected[sat][freq] = 0;
@@ -723,7 +723,7 @@ extern obs_queue_t *obs_queue_init()
     }
 
     for (i = 0; i < MAXOBSQUEUE; i++) {
-        
+
         obs_queue->offset[i] = i;
         obs_queue->obs[i] = obs_init();
         if ( !obs_queue->obs[i] ) {
@@ -732,7 +732,7 @@ extern obs_queue_t *obs_queue_init()
             return NULL;
         }
     }
-    
+
     return obs_queue;
 }
 
@@ -765,7 +765,7 @@ extern void obs_queue_free(obs_queue_t *obs_queue)
     for (i = 0; i < MAXOBSQUEUE; i++) {
         if ( obs_queue->obs[i] ) obs_free(obs_queue->obs[i]);
     }
-    
+
     free(obs_queue);
 }
 
@@ -790,7 +790,7 @@ static int obs_queue_cut(obs_queue_t *obs_queue, int index_cut)
     int i;
     int offset_cut[MAXOBSQUEUE];
     assert( obs_queue_is_index_valid(obs_queue, index_cut) );
-    
+
     if ( index_cut > 0 ) {
         for (i = 0; i < index_cut; i++ ) {
             offset_cut[i] = obs_queue->offset[i];
@@ -803,7 +803,7 @@ static int obs_queue_cut(obs_queue_t *obs_queue, int index_cut)
         }
         obs_queue->length -= index_cut;
     }
-        
+
     return 1;
 }
 
@@ -812,17 +812,17 @@ static void obs_queue_add(obs_queue_t *obs_queue, const obs_t *obs, int nobs)
 {
     int i, j;
     int sat, freq, offset;
-    
+
     assert( obs_queue_is_valid(obs_queue) );
     assert( obs_is_valid(obs) );
     assert( nobs >= 0 );
-    
+
     for (i = 0; i < nobs; i++) {
-        
+
         /* check if cycle slip occurred for every satellite/frequency */
         for (j = 0; j < obs[i].n; j++) {
             for (freq = 0; freq < NFREQ; freq++) {
-                
+
                 sat = obs[i].data[j].sat;
                 if ( obs[i].data[j].LLI[freq] & 1 ) { /* cycle slip occurred */
                     obs_queue->is_cycle_slip_detected[sat][freq] = 1;
@@ -847,15 +847,15 @@ static void obs_queue_add(obs_queue_t *obs_queue, const obs_t *obs, int nobs)
             obs_queue->length = MAXOBSQUEUE;
         }
         obs_copy(&obs[i], obs_queue->obs[offset]);
-        
+
         /*
          * check if cycle slip occurred previously;
-         * if cycle slip detected set LLI flag for all subsequent obs data 
+         * if cycle slip detected set LLI flag for all subsequent obs data
          * of specified sat/freq until cycle slip been handled
          */
         for (j = 0; j < obs[i].n; j++) {
             for (freq = 0; freq < NFREQ; freq++) {
-                
+
                 sat = obs[i].data[j].sat;
                 if ( obs_queue->is_cycle_slip_detected[sat][freq] == 1 ) { /* cycle slip detected previously */
                     obs_queue->obs[offset]->data[j].LLI[freq] |= 1;
@@ -863,7 +863,7 @@ static void obs_queue_add(obs_queue_t *obs_queue, const obs_t *obs, int nobs)
             }
         }
     }
-    
+
 }
 
 /* get compilation which contain the most recent data separately for each satellite system specified */
@@ -877,53 +877,53 @@ static void obs_queue_get_projection(obs_queue_t *obs_queue, obs_t *obs_destinat
     obs_t *obs;
     obs_t *obs_sys;
     gtime_t time_sys;
-    
+
     assert( obs_queue_is_valid(obs_queue) );
     assert( obs_is_valid(obs_destination) );
-    
+
     obs_destination->n = 0;
-    
+
     length = obs_queue->length;
     if ( length <= 0 ) return;
-    
+
     obs_sys = obs_init();
-    
+
     navsys_convert_binary_to_array(navsys, sys_array, &nsys);
-    
+
     for (i = 0; i < nsys; i++) {
-        
+
         sys = sys_array[i];
-        
+
         /* find first obs record containing specified sat sys */
         for (j = length-1; j >= 0; j--) {
-            
+
             offset = obs_queue->offset[j];
             obs = obs_queue->obs[offset];
-            
+
             if ( obs_test_sys(obs, sys) ) {
                 obs_copy_sys(obs, obs_sys, sys);
                 if ( obs_get_number_of_good_sats(obs_sys) > 0 ) break;
             }
         }
-        
+
         if ( j < 0 ) continue;           /* skip if not found */
-        
+
         time_sys = obs_get_time(obs_sys);
         if ( !is_data_current(time_current, time_sys, maxage) ) continue; /* skip if epoch outdated */
-            
+
         /* reset cycle-slip flags on get obs */
         for ( j = 0; j < obs_sys->n; j++ ) {
             sat = obs_sys->data[j].sat;
             for ( freq = 0; freq < NFREQ; freq++ ) {
-                obs_queue->is_cycle_slip_detected[sat][freq] = 0;  
+                obs_queue->is_cycle_slip_detected[sat][freq] = 0;
             }
         }
-    
+
         obs_append(obs_destination, obs_sys);
     }
-    
+
     obs_sort_data_by_sat(obs_destination);
-    
+
     obs_free(obs_sys);
 }
 
@@ -945,7 +945,7 @@ static void *rtksvrthread(void *arg)
     int i,n,cycle,cputime, stream_number;
     gtime_t time_base, time_rover, time_last;
     double maxage = svr->rtk.opt.maxtdiff;
-    int    navsys = svr->rtk.opt.navsys; 
+    int    navsys = svr->rtk.opt.navsys;
     int ntrip_single_required = 0;
 
     /* This "fake" solution structure is passed to strsendnmea
@@ -962,7 +962,7 @@ static void *rtksvrthread(void *arg)
     svr->tick=tickget();
     ticknmea=tick1hz=svr->tick-1000;
     tickreset=svr->tick-MIN_INT_RESET;
-    
+
     if (svr->nmeareq == NMEAREQ_SEND_SINGLE) {
         ntrip_single_required = 1;
     }
@@ -975,8 +975,8 @@ static void *rtksvrthread(void *arg)
             q = svr->buff[stream_number] + svr->buffsize;
 
             /* don't connect if single solution is required but absent */
-            if (svr->stream[stream_number].type == STR_NTRIPCLI && ntrip_single_required) 
-                if (stream_number == BASE_STREAM && svr->rtk.sol.stat == SOLQ_NONE) 
+            if (svr->stream[stream_number].type == STR_NTRIPCLI && ntrip_single_required)
+                if (stream_number == BASE_STREAM && svr->rtk.sol.stat == SOLQ_NONE)
                     continue;
 
             /* read receiver raw/rtcm data from input stream */
@@ -994,11 +994,11 @@ static void *rtksvrthread(void *arg)
             svr->npb[stream_number]+=n;
             rtksvrunlock(svr);
         }
-        
+
         rtksvrlock(svr);
         rtksvrstep(svr, &sol, &time_base, &time_rover, &time_last, maxage, navsys, &obs, 1);
         rtksvrunlock(svr);
-        
+
         /* send null solution if no solution (1hz) */
         if (svr->rtk.sol.stat==SOLQ_NONE&&(int)(tick-tick1hz)>=1000) {
             writesol(svr,0);
@@ -1206,7 +1206,7 @@ extern int rtksvrinit(rtksvr_t *svr)
     for (i=0;i<N_INPUTSTR;i++) *svr->cmds_periodic[i]='\0';
     *svr->cmd_reset='\0';
     svr->bl_reset=10.0;
-    initlock(&svr->lock);
+    rtk_initlock(&svr->lock);
 
     return 1;
 }
@@ -1232,8 +1232,8 @@ extern void rtksvrfree(rtksvr_t *svr)
 * args   : rtksvr_t *svr    IO rtk server
 * return : status (1:ok 0:error)
 *-----------------------------------------------------------------------------*/
-extern void rtksvrlock  (rtksvr_t *svr) {lock  (&svr->lock);}
-extern void rtksvrunlock(rtksvr_t *svr) {unlock(&svr->lock);}
+extern void rtksvrlock  (rtksvr_t *svr) {rtk_lock  (&svr->lock);}
+extern void rtksvrunlock(rtksvr_t *svr) {rtk_unlock(&svr->lock);}
 
 /* start rtk server ------------------------------------------------------------
 * start rtk server thread
@@ -1435,7 +1435,7 @@ extern void rtksvrstop(rtksvr_t *svr, char **cmds)
 
     /* stop rtk server */
     svr->state=0;
-    
+
     /* free rtk server thread */
 #ifdef WIN32
     WaitForSingleObject(svr->thread,10000);
