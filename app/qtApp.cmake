@@ -6,7 +6,8 @@ pkg_check_modules(PNG libpng16 REQUIRED)
 if(APPLE)
   set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/${APP}.icns)
   set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-  add_executable(${APP} MACOSX_BUNDLE ${SOURCES} ${APP_ICON_MACOSX})
+  add_executable(${APP} ${SOURCES} ${APP_ICON_MACOSX})
+  SET_TARGET_PROPERTIES(${APP} PROPERTIES MACOSX_BUNDLE TRUE)
 else()
   add_executable(${APP} ${SOURCES})
 endif(APPLE)
@@ -18,9 +19,12 @@ target_link_directories(${APP} PRIVATE ${PNG_LIBRARY_DIRS})
 
 if(APPLE)
   install(TARGETS ${APP}
-    BUNDLE DESTINATION /Applications
+    #BUNDLE DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    DESTINATION .
+    #BUNDLE DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     COMPONENT qt_apps
   )
+
 else()
   install(TARGETS ${APP}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
