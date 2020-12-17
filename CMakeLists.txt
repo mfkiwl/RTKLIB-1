@@ -234,7 +234,13 @@ add_subdirectory(app)
 ### PACKAGE
 ##################
 
+#Add install text to binary packages
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/CI_INSTALL.md"  DESTINATION "." COMPONENT bin_archive)
 
+#Copy install text
+SET(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+SET(CPACK_COMPONENTS_ALL cli_apps qt_apps librtklib bin_archive)
 
 
 set(CPACK_SOURCE_GENERATOR "TBZ2")
@@ -244,7 +250,5 @@ set(CPACK_SOURCE_IGNORE_FILExS
   .git/
   build/
 )
-
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
 
 include(CPack)

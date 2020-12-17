@@ -77,6 +77,12 @@ jobs:
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --parallel $(nproc) --config $BUILD_TYPE
 
+    - name: Install
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --install . --prefix ${{runner.workspace}}/build/install --config $BUILD_TYPE
+
     - name: Package
       working-directory: ${{runner.workspace}}/build
       shell: bash
@@ -89,4 +95,3 @@ jobs:
         name: rtklib-${{ matrix.os }}
         path: ${{runner.workspace}}/build/*.bz2
         if-no-files-found: error
-
