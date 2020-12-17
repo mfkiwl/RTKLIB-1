@@ -1,6 +1,19 @@
-name: cmake
+name: build workflow
 
-on: [push]
+on:
+  push:
+    branches:
+    - master
+    paths-ignore:
+    - '**.md'
+
+  pull_request:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    paths-ignore:
+    - '**.md'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -22,7 +35,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install Dependencies (Linux)
-      run: sudo apt update && apt -y install libqt5serialport5 qtbase5-dev
+      run: sudo apt update && sudo apt -y install libqt5serialport5 qtbase5-dev
       if: matrix.os == 'ubuntu-latest'
 
     - name: Install Dependencies (MacOS)
