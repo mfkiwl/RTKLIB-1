@@ -13,6 +13,9 @@ project(RTKLIB
   LANGUAGES C
 )
 
+#Set for more verbose logging
+#set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, defaulting to \"Release\"")
   set(CMAKE_BUILD_TYPE "Release")
@@ -58,6 +61,9 @@ if(BUILD_QT_APPS)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
     enable_language(CXX)
+    SET(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
     add_definitions(-DQT)
   else()
     message(FATAL_ERROR "No CXX support - Can't build QT Applications")
@@ -188,9 +194,6 @@ add_definitions(-DMAXOBS=128) # Max number of observations
 ##################
 
 set(CMAKE_C_STANDARD 11)
-SET(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 #Threads isn't always found
@@ -210,6 +213,9 @@ CHECK_LIBRARY_EXISTS(m sin "" HAVE_LIB_M)
 if (HAVE_LIB_M)
     set(EXTRA_LIBS ${EXTRA_LIBS} m)
 endif (HAVE_LIB_M)
+
+#Occasionally libstdc++ must be explicitly specified
+set(EXTRA_LIBS ${EXTRA_LIBS} stdc++)
 
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)
