@@ -1266,7 +1266,7 @@ typedef struct {        /* solution options type */
     double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
                         /* nmeaintv[0]:gprmc,gpgga,nmeaintv[1]:gpgsv */
     char sep[64];       /* field separator */
-    char prog[64];      /* program name */
+    char prog[256];      /* program name */
     double maxsolstd;   /* max std-dev for solution output (m) (0:all) */
 } solopt_t;
 
