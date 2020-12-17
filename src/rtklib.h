@@ -324,6 +324,7 @@ extern "C" {
 #define FREQTYPE_L9 0x40                /* frequency type: S */
 #define FREQTYPE_ALL 0xFF               /* frequency type: all */
 
+
 #define CODE_NONE   0                   /* obs code: none or unknown */
 #define CODE_L1C    1                   /* obs code: L1C/A,G1C/A,E1C (GPS,GLO,GAL,QZS,SBS) */
 #define CODE_L1P    2                   /* obs code: L1P,G1P    (GPS,GLO) */
@@ -1265,7 +1266,7 @@ typedef struct {        /* solution options type */
     double nmeaintv[2]; /* nmea output interval (s) (<0:no,0:all) */
                         /* nmeaintv[0]:gprmc,gpgga,nmeaintv[1]:gpgsv */
     char sep[64];       /* field separator */
-    char prog[64];      /* program name */
+    char prog[256];      /* program name */
     double maxsolstd;   /* max std-dev for solution output (m) (0:all) */
 } solopt_t;
 
