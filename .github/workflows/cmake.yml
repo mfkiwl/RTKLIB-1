@@ -75,7 +75,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
+      run: cmake --build . --parallel $(nproc) --verbose --config $BUILD_TYPE
 
     - name: Package
       working-directory: ${{runner.workspace}}/build
@@ -86,7 +86,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v2
       with:
-        name: rtklib
+        name: rtklib-${{ matrix.os }}
         path: ${{runner.workspace}}/build/*.bz2
         if-no-files-found: error
 

@@ -13,9 +13,6 @@ project(RTKLIB
   LANGUAGES C
 )
 
-#Set for more verbose logging
-#set(CMAKE_VERBOSE_MAKEFILE TRUE)
-
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, defaulting to \"Release\"")
   set(CMAKE_BUILD_TYPE "Release")
