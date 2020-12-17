@@ -1,26 +1,58 @@
 cmake_minimum_required(VERSION 3.17)
 include(CheckLanguage)
 include(CMakeDependentOption)
+find_package(Git REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules/")
+include(GetGitRevisionDescription)
 
+###VERSIONING
+#############
 
-set(VERSION_MAJOR 2)
-set(VERSION_MINOR 4)
-set(VERSION_PATCH 3)
-
-project(rtklib
-  VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+project(RTKLIB
+  VERSION 0.0.0.0
   LANGUAGES C
 )
 
 if (NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected, defaulting to \"Release\"")
-    set(CMAKE_BUILD_TYPE "Release")
+  message(STATUS "No build type selected, defaulting to \"Release\"")
+  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-add_definitions(-DVER_RTKLIB_EXT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-add_definitions(-DPATCH_LEVEL_EXT="${CMAKE_BUILD_TYPE}")
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_local_changes(GIT_STATE)
 
-#Configurable Options
+# TODO: Use consistnet versioning/release type fields
+set(PATCH_LEVEL_EXT ${CMAKE_BUILD_TYPE})
+set(VER_RTKLIB_EXT "${GIT_SHA1}-${GIT_STATE}")
+set(CPACK_PACKAGE_VERSION "${GIT_SHA1}-${GIT_STATE}-${CMAKE_BUILD_TYPE}")
+
+#Only allow versioning if the repo state is clean
+option(USE_TAG_VERSION "Use tag at current git head to set version" OFF)
+if(USE_TAG_VERSION)
+  if(GIT_STATE EQUAL "CLEAN")
+    git_get_exact_tag(GIT_TAG)
+    #Split the version string into groups
+    string(REGEX MATCH "([^\.v-]+)" ${GIT_TAG_MATCH} ${GIT_TAG})
+    set(VERSION_MAJOR ${CMAKE_MATCH_1})
+    set(VERSION_MINOR ${CMAKE_MATCH_2})
+    set(VERSION_PATCH ${CMAKE_MATCH_3})
+    set(VERSION_TWEAK ${CMAKE_MATCH_4})
+    set(VER_RTKLIB_EXT "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
+    set(CPACK_PACKAGE_VERSION ${CMAKE_VERSION})
+
+  else()
+    message( FATAL_ERROR "Can't make tagged release - repo is dirty")
+  endif(GIT_STATE)
+endif(USE_TAG_VERSION)
+
+add_definitions(-DVER_RTKLIB_EXT="${VER_RTKLIB_EXT}")
+add_definitions(-DPATCH_LEVEL_EXT="${PATCH_LEVEL_EXT}")
+
+message(STATUS "Building: ${VER_RTKLIB_EXT}-${PATCH_LEVEL_EXT}")
+
+### CONFIG
+##########
+
 option(BUILD_QT_APPS "Build QT GUI applications" OFF)
 if(BUILD_QT_APPS)
   check_language(CXX)
@@ -28,7 +60,7 @@ if(BUILD_QT_APPS)
     enable_language(CXX)
     add_definitions(-DQT)
   else()
-    message(STATUS "No CXX support")
+    message(FATAL_ERROR "No CXX support - Can't build QT Applications")
   endif()
 endif(BUILD_QT_APPS)
 
@@ -152,6 +184,9 @@ add_definitions(-DNFREQ=3)    # Frequencies supported
 add_definitions(-DNEXOBS=0)   # Number of extended obs codes
 add_definitions(-DMAXOBS=128) # Max number of observations
 
+### COMPILE & LINK
+##################
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -179,8 +214,25 @@ include_directories(
   src/math/lsq
 )
 
-
-
 add_subdirectory(lib)
 add_subdirectory(src)
 add_subdirectory(app)
+
+
+### PACKAGE
+##################
+
+
+
+
+set(CPACK_SOURCE_GENERATOR "TBZ2")
+set(CPACK_GENERATOR "TBZ2")
+
+set(CPACK_SOURCE_IGNORE_FILExS
+  .git/
+  build/
+)
+
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
+
+include(CPack)
