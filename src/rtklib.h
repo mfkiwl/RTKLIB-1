@@ -324,6 +324,7 @@ extern "C" {
 #define FREQTYPE_L9 0x40                /* frequency type: S */
 #define FREQTYPE_ALL 0xFF               /* frequency type: all */
 
+
 #define CODE_NONE   0                   /* obs code: none or unknown */
 #define CODE_L1C    1                   /* obs code: L1C/A,G1C/A,E1C (GPS,GLO,GAL,QZS,SBS) */
 #define CODE_L1P    2                   /* obs code: L1P,G1P    (GPS,GLO) */
