@@ -276,13 +276,8 @@ extern "C" {
 #define MAXSTRPATH  1024                /* max length of stream path */
 #define MAXSTRMSG   1024                /* max length of stream message */
 
-#if defined(WIN32) | defined(QT)
 #define MAXSTRRTK   8                   /* max number of stream in RTK server */
 #define MAXSOLRTK   2                   /* max number of solution streams in RTK server */
-#else
-#define MAXSTRRTK   10                  /* max number of stream in RTK server */
-#define MAXSOLRTK   4                   /* max number of solution streams in RTK server */
-#endif
 
 #define ROVER_STREAM 0                    /* number of rover stream in RTK server */
 #define BASE_STREAM  1                   /* number of base stream in RTK server */
