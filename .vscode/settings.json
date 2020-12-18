@@ -3,5 +3,9 @@
         "args": [
             "testData.ubx"
         ]
-    }
+
+    },
+     "cmake.configureArgs": [
+        "-DBUILD_QT_APPS=True"
+    ]
 }
