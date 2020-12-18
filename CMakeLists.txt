@@ -184,7 +184,8 @@ if(D_CPUTIME_IN_GPST)
 endif(D_CPUTIME_IN_GPST)
 
 add_definitions(-DNFREQ=3)    # Frequencies supported
-add_definitions(-DNEXOBS=0)   # Number of extended obs codes
+# This is set to 1 to handle some hard coded assumption in the LEX code
+add_definitions(-DNEXOBS=1)   # Number of extended obs codes
 add_definitions(-DMAXOBS=128) # Max number of observations
 
 ### COMPILE & LINK
