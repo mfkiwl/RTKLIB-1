@@ -117,7 +117,7 @@ if(D_ENALEO)
   add_definitions(-DENALEO)
 endif(D_ENALEO)
 
-option(D_OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" OFF)
+option(D_OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" ON)
 if(D_OUTSTAT_AMB)
   add_definitions(-DOUTSTAT_AMB)
 endif(D_OUTSTAT_AMB)

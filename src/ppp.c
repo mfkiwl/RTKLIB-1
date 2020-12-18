@@ -127,7 +127,7 @@ extern int pppoutstat(rtk_t *rtk, char *buff)
 {
     ssat_t *ssat;
     double tow,pos[3],vel[3],acc[3],*x;
-    int i,j,week;
+    int i,j,k,week;
     char id[32],*p=buff;
 
     if (!rtk->sol.stat) return 0;
@@ -712,6 +712,7 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
                     lam[0]==0.0||lam[l]==0.0||lam[f]==0.0) continue;
                 ion=(obs[i].P[0]-obs[i].P[l])/(1.0-SQR(lam[l]/lam[0]));
                 bias[i]=L[f]-P[f]+2.0*ion*SQR(lam[f]/lam[0]);
+                printf("%d: %3.2f\n",i,bias[i]);
             }
             if (rtk->x[j]==0.0||slip[i]||bias[i]==0.0) continue;
 
