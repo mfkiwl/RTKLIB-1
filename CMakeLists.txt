@@ -158,11 +158,6 @@ if(D_CPUTIME_IN_GPST)
   add_definitions(-DCPUTIME_IN_GPST)
 endif(D_CPUTIME_IN_GPST)
 
-option(D_GALILEO_SAR_RLM "Decode SAR RLM messages" ON)
-if(D_GALILEO_SAR_RLM)
-  add_definitions(-DGALILEO_SAR_RLM)
-endif(D_GALILEO_SAR_RLM)
-
 # CAUTION: The codebase currently contains hardcoded expectations
 # regarding number of frequencies. These settings are the defaults
 # in rtklib.h - You have been warned.

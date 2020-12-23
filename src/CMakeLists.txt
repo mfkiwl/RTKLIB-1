@@ -25,11 +25,8 @@ set (LIBRTKLIB_OBJ
   $<TARGET_OBJECTS:RTKLib_tdiff_phases>
   $<TARGET_OBJECTS:RTKLib_glo_ifb>
   $<TARGET_OBJECTS:RTKLib_iers>
+  $<TARGET_OBJECTS:RTKLIB_sar_rlm>
 )
-
-if(D_GALILEO_SAR_RLM)
-  list(APPEND LIBRTKLIB_OBJ $<TARGET_OBJECTS:RTKLIB_sar_rlm>)
-endif(D_GALILEO_SAR_RLM)
 
 #This contains dummy function implementations for writing to the
 #console in QT applications

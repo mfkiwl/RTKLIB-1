@@ -1400,10 +1400,10 @@ typedef struct half_cyc_tag {  /* half-cycle correction list type */
 
 typedef struct
 {
-    int msgType[MAXSAT];                   /* Current RLM message type per-SV */
-    int msgPartCount[MAXSAT];              /* Current RLM message receive state per-SV */
-    unsigned char msgBuffer[MAXSAT][8][3]; /* RLM message receive buffer per-SV */
-} sarRLM_t;
+    uint8_t part_count[MAXSAT];              /* Current RLM message type per-SV */
+    uint8_t msg_parts[MAXSAT];              /* Current RLM message receive state per-SV */
+    unsigned char msg_buffer[MAXSAT][8];  /* RLM message receive buffer per-SV */
+} sar_rlm_t;
 
 typedef struct {        /* receiver raw data control type */
     gtime_t time;       /* message time */
@@ -1434,7 +1434,7 @@ typedef struct {        /* receiver raw data control type */
     half_cyc_t *half_cyc; /* half-cycle correction list */
     int format;         /* receiver stream format */
     void *rcv_data;     /* receiver dependent data */
-    sarRLM_t sarRLM;    /* Galileo SAR RLM data */
+    sar_rlm_t sar_rlm;    /* Galileo SAR RLM data */
 
 } raw_t;
 
@@ -1842,7 +1842,10 @@ EXPORT int test_glostr(const unsigned char *buff);
 EXPORT int decode_glostr(const unsigned char *buff, geph_t *geph);
 EXPORT int decode_bds_d1(const unsigned char *buff, eph_t *eph);
 EXPORT int decode_bds_d2(const unsigned char *buff, eph_t *eph);
-EXPORT int decode_gal_inav(const unsigned char *buff, eph_t *eph);
+
+EXPORT int decode_gal_inav(const unsigned char *buff, int sig_code, eph_t *eph, alm_t *alm,
+                           double *ion_gal, double *utc_gal, int *leaps);
+EXPORT void decode_gal_inav_rlm(raw_t *raw, int sat);
 
 EXPORT int init_raw   (raw_t *raw, int format);
 EXPORT void free_raw  (raw_t *raw);
