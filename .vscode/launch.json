@@ -3,12 +3,13 @@
     "configurations": [
 
         {
-            "name": "convbin",
+            "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
             // Resolved by CMake Tools:
             "program": "${command:cmake.launchTargetPath}",
-            "args": ["-h"],
+
+            "args": [""],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
@@ -21,6 +22,7 @@
             ],
             "externalConsole": false,
             "MIMode": "lldb",
+
         }
     ]
 }
