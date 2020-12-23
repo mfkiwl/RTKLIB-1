@@ -37,9 +37,7 @@
 #include <QPainter>
 #include <QDebug>
 
-#ifdef QT5
 #include <QCommandLineParser>
-#endif
 
 #include "rtklib.h"
 #include "instrdlg.h"
@@ -239,7 +237,6 @@ void  MainWindow::showEvent(QShowEvent *event)
     InitSolBuff();
     strinitcom();
 
-#ifdef QT5
     QCommandLineParser parser;
     parser.setApplicationDescription("RTK Navi");
     parser.addHelpOption();
@@ -254,7 +251,7 @@ void  MainWindow::showEvent(QShowEvent *event)
 
     if (parser.isSet(iniFileOption))
         IniFile=parser.value(iniFileOption);
-#endif /*TODO: alternative for QT4 */
+
     LoadOpt();
 
     LoadNav(&rtksvr.nav);

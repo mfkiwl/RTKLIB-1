@@ -368,7 +368,6 @@ void Plot::showEvent (QShowEvent *event)
 
     trace(3,"FormShow\n");
 
-#ifdef QT5
     QCommandLineParser parser;
     parser.setApplicationDescription("RTK plot");
     parser.addHelpOption();
@@ -424,7 +423,6 @@ void Plot::showEvent (QShowEvent *event)
     QString file;
     foreach(file,args)
         OpenFiles.append(file);
-#endif /*TODO: alternative for QT4 */
 
     UpdateType(PlotType>=PLOT_OBS?PLOT_TRK:PlotType);
     
