@@ -354,12 +354,10 @@ void  MainWindow::BtnPlotClick()
         QMessageBox::critical(this,tr("Error"),tr("monitor port not open"));
         return;
     }
-    // cmd=QString("rtkplot_qt' -p tcpcli://localhost:%1 -t \"%2 %3\"").arg(OpenPort)
-    //             .arg(windowTitle()).arg(": RTKPLOT");
 
     args << "rtkplot_qt" << "-p" << QString("tcpcli://localhost:%1").arg(OpenPort) << "-t"
     << QString("%2").arg(windowTitle()) << QString("%3").arg(": RTKPLOT");
-    
+
     if (!ExecCmd(cmd,args,1)) {
         QMessageBox::critical(this,tr("Error"),tr("error: rtkplot execution"));
     }
