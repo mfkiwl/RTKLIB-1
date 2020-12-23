@@ -1,0 +1,1 @@
+add_library(RTKLIB_sar_rlm OBJECT sar_rlm.c)

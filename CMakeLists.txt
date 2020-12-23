@@ -62,6 +62,9 @@ if(BUILD_QT_APPS)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     add_definitions(-DQT)
+    add_definitions(-DQT5)
+    #Occasionally libstdc++ must be explicitly specified
+    set(CXX_BASE_LIBS stdc++)
   else()
     message(FATAL_ERROR "No CXX support - Can't build QT Applications")
   endif()
@@ -155,6 +158,11 @@ if(D_CPUTIME_IN_GPST)
   add_definitions(-DCPUTIME_IN_GPST)
 endif(D_CPUTIME_IN_GPST)
 
+option(D_GALILEO_SAR_RLM "Decode SAR RLM messages" ON)
+if(D_GALILEO_SAR_RLM)
+  add_definitions(-DGALILEO_SAR_RLM)
+endif(D_GALILEO_SAR_RLM)
+
 # CAUTION: The codebase currently contains hardcoded expectations
 # regarding number of frequencies. These settings are the defaults
 # in rtklib.h - You have been warned.
@@ -178,17 +186,15 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Check for pthreads support
 find_package(Threads REQUIRED)
+set(C_BASE_LIBS ${CMAKE_THREAD_LIBS_INIT})
 
 # Check math funcs available, or link to libm
 include(CheckLibraryExists)
 message(STATUS "Checking whether libm is required for math")
 CHECK_LIBRARY_EXISTS(m sin "" HAVE_LIB_M)
 if (HAVE_LIB_M)
-    set(EXTRA_LIBS ${EXTRA_LIBS} m)
+    list(APPEND C_BASE_LIBS m)
 endif (HAVE_LIB_M)
-
-#Occasionally libstdc++ must be explicitly specified
-set(EXTRA_LIBS ${EXTRA_LIBS} stdc++)
 
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)

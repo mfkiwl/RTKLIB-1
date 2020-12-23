@@ -79,6 +79,7 @@ static gtime_t tend_  ={0,0};         // time end for progress-bar
 
 MainForm *mainForm;
 
+// Implementations of C functions called in postpos.c
 extern "C" {
 
 // show message in message area ---------------------------------------------
@@ -163,7 +164,7 @@ void ProcessingThread::run()
 {
     if ((stat=postpos(ts,te,ti,tu,&prcopt,&solopt,&filopt,infile,n,outfile,
                       rov,base))==1) {
-        showmsg("aborted");
+        emit StatusMsg("aborted");
     };
     emit done(stat);
 }
@@ -265,7 +266,6 @@ void MainForm::showEvent(QShowEvent* event)
     QComboBox *ifile[]={InputFile3,InputFile4,InputFile5,InputFile6};
     int inputflag=0;
 
-#ifdef QT5
     QCommandLineParser parser;
     parser.setApplicationDescription("RTK post");
     parser.addHelpOption();
@@ -379,9 +379,6 @@ void MainForm::showEvent(QShowEvent* event)
         TimeUnitF->setChecked(true);
         TimeUnit->setText(parser.value(timeUnitOption));
     }
-#else /*TODO: alternative for QT4 */
-    LoadOpt();
-#endif
 
     if (inputflag) SetOutFile();
     
@@ -474,15 +471,15 @@ void MainForm::BtnExecClick()
     AbortFlag = false;
 
     if (InputFile1->currentText()=="") {
-        showmsg("error : no rinex obs file (rover)");
+        ShowMsg(QString("error : no rinex obs file (rover)"));
         return;
     }
     if (InputFile2->currentText()==""&&PMODE_DGPS<=PosMode&&PosMode<=PMODE_FIXED) {
-        showmsg("error : no rinex obs file (base station)");
+        ShowMsg(QString("error : no rinex obs file (base station)"));
         return;
     }
     if (OutputFile->currentText()=="") {
-        showmsg("error : no output file");
+        ShowMsg(QString("error : no output file"));
         return;
     }
     if (OutputFile_Text.contains(".obs",Qt::CaseInsensitive)||
@@ -494,10 +491,10 @@ void MainForm::BtnExecClick()
         OutputFile_Text.contains(QRegExp(".??d",Qt::CaseInsensitive))||
         OutputFile_Text.contains(QRegExp(".??n",Qt::CaseInsensitive))||
         OutputFile_Text.contains(QRegExp(".??g",Qt::CaseInsensitive))){
-        showmsg("error : invalid extension of output file (%s)",qPrintable(OutputFile_Text));
+        ShowMsg(QString("error : invalid extension of output file (%1)").arg(OutputFile_Text));
         return;
     }
-    showmsg("");
+    ShowMsg(QString(""));
     BtnAbort ->setVisible(true);
     BtnExec  ->setVisible(false);
     BtnExit  ->setEnabled(false);
@@ -526,7 +523,7 @@ void MainForm::ProcessingFinished(int stat)
     }
 
     if (Message->text().contains("processing")) {
-        showmsg("done");
+        ShowMsg(QString("done"));
     }
     BtnAbort ->setVisible(false);
     BtnExec  ->setVisible(true);
@@ -542,7 +539,7 @@ void MainForm::ProcessingFinished(int stat)
 void MainForm::BtnAbortClick()
 {
     AbortFlag=1;
-    showmsg("aborted");
+    ShowMsg(QString("aborted"));
 }
 // callback on button-exit --------------------------------------------------
 void MainForm::BtnExitClick()
@@ -704,7 +701,7 @@ void MainForm::BtnInputPlot1Click()
         files[4]+"\" \""+files[5]+"\"";
     
     if (!ExecCmd(cmd1+opts,1)&&!ExecCmd(cmd2+opts,1)) {
-        ShowMsg("error : rtkplot_qt execution");
+        ShowMsg(QString("error : rtkplot_qt execution"));
     }
 }
 // callback on button-inputplot-2 -------------------------------------------
@@ -734,7 +731,7 @@ void MainForm::BtnInputPlot2Click()
          files[4]+"\" \""+files[5]+"\"";
     
     if (!ExecCmd(cmd1+opts,1)&&!ExecCmd(cmd2+opts,1)) {
-        ShowMsg("error : rtkplot_qt execution");
+        ShowMsg(QString("error : rtkplot_qt execution"));
     }
 }
 // callback on button-output-directory --------------------------------------
@@ -848,7 +845,7 @@ void MainForm::ExecProc(void)
         thread->addInput(InputFile3_Text);
     }
     else if (!ObsToNav(InputFile1_Text,temp)) {
-        showmsg("error: no navigation data");
+        ShowMsg(QString("error: no navigation data"));
         ProcessingFinished(0);
         return;
     } else thread->addInput(temp);
@@ -876,7 +873,7 @@ void MainForm::ExecProc(void)
 
     Progress->setValue(0);
     Progress->setVisible(true);
-    showmsg("reading...");
+    ShowMsg(QString("reading..."));
 
     setCursor(Qt::WaitCursor);
     
