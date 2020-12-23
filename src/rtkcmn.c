@@ -4133,13 +4133,6 @@ extern int atomic_sub_fetch(int* ptr, int val)
     return __atomic_sub_fetch(ptr, val, __ATOMIC_SEQ_CST);
 }
 
-#ifdef SHARED
-/* dummy application functions for shared library ----------------------------*/
-extern int showmsg(char *format,...) {return 0;}
-extern void settspan(gtime_t ts, gtime_t te) {}
-extern void settime(gtime_t time) {}
-#endif
-
 /* dummy functions for lex extensions ----------------------------------------*/
 #ifndef EXTLEX
 extern int input_lexr(raw_t *raw, unsigned char data) {return 0;}
