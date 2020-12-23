@@ -96,7 +96,7 @@ static int solflag      =2;             /* sol flag (1:std+2:age/ratio/ns) */
 static int strtype[]={                  /* stream types */
     STR_FILE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE
 };
-static char strpath[MAXSTRRTK][MAXSTR]={"","","","","","","","","",""}; /* stream paths */
+static char strpath[MAXSTRRTK][MAXSTR]={"","","","","","","",""}; /* stream paths */
 static int strfmt[]={                   /* stream formats */
     STRFMT_UBX,STRFMT_RTCM3,STRFMT_SP3,SOLF_LLH,SOLF_NMEA,SOLF_LLH,SOLF_LLH
 };
