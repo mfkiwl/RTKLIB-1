@@ -187,8 +187,8 @@ extern "C" {
 #ifdef ENAQZS
 #define MINPRNQZS   193                 /* min satellite PRN number of QZSS */
 #define MAXPRNQZS   202                 /* max satellite PRN number of QZSS */
-#define MINPRNQZS_S 183                 /* min satellite PRN number of QZSS SAIF */
-#define MAXPRNQZS_S 191                 /* max satellite PRN number of QZSS SAIF */
+#define MINPRNQZS_S 183                 /* min satellite PRN number of QZSS SLAS */
+#define MAXPRNQZS_S 191                 /* max satellite PRN number of QZSS SLAS */
 #define NSATQZS     (MAXPRNQZS-MINPRNQZS+1) /* number of QZSS satellites */
 #define NSYSQZS     1
 #else
