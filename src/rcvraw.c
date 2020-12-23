@@ -42,10 +42,6 @@
 #include <stdint.h>
 
 
-#define P2_34       5.820766091346740E-11 /* 2^-34 */
-#define P2_46       1.421085471520200E-14 /* 2^-46 */
-#define P2_59       1.734723475976810E-18 /* 2^-59 */
-#define P2_66       1.355252715606881E-20 /* 2^-66 for BeiDou ephemeris */
 
 /* get two component bits ----------------------------------------------------*/
 static unsigned int getbitu2(const unsigned char *buff, int p1, int l1, int p2,
