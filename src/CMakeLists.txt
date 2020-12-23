@@ -28,9 +28,8 @@ set (LIBRTKLIB_OBJ
   $<TARGET_OBJECTS:RTKLIB_sar_rlm>
 )
 
-#This contains dummy function implementations for writing to the
-#console in QT applications
-
+#Two libaries are built here, one with dummy functions for QT console
+#printing for CLI apps, and one with real implementations for QT builds
 add_library(RTKLib SHARED $<TARGET_OBJECTS:RTKLib_status_output_dummy> ${LIBRTKLIB_OBJ})
 add_library(RTKLib_qt STATIC ${LIBRTKLIB_OBJ})
 

@@ -4,7 +4,7 @@
         ]
     },
      "cmake.configureArgs": [
-        "-DBUILD_QT_APPS=True"
+        "-DBUILD_QT_APPS=True", "-DLAPACK=True"
     ],
     "C_Cpp.clang_format_fallbackStyle": "LLVM"
 }
