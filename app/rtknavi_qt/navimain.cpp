@@ -1613,16 +1613,16 @@ QColor  MainWindow::SnrColor(int snr)
 void  MainWindow::DrawSnr(QPainter *c, int w, int h, int x0, int y0,
 	int index, int freq)
 {
-    static const QColor color[]={
-        QColor(0,128,0),QColor(0,128,128),QColor(0xA0,0,0xA0),
-        QColor(128,0,0),QColor(0,0,128),QColor(128,128,128)
-    };
+    // static const QColor color[]={
+    //     QColor(0,128,0),QColor(0,128,128),QColor(0xA0,0,0xA0),
+    //     QColor(128,0,0),QColor(0,0,128),QColor(128,128,128)
+    // };
     static const QColor color_sys[]={
-        Qt::green,QColor(0,0xAA,0xFF),QColor(255,0,255),Qt::blue,Qt::red,Qt::gray
+        Qt::green,Qt::cyan,Qt::magenta,Qt::blue,Qt::red,Qt::darkYellow,Qt::darkGreen,Qt::gray
     };
     QString s;
-    int i,j,k,l,n,x1,y1,y2,y3,hh=h-15,ww,www,snr[NFREQ+1],mask[6]={0};
-    char id[16],sys[]="GREJCS",*q;
+    int i,j,k,l,n,x1,y1,y2,y3,hh=h-15,ww,www,snr[NFREQ+1],mask[MAXSYS]={0};
+    char id[16],sys[]="GREJCILS",*q;
 
     trace(4,"DrawSnr: w=%d h=%d x0=%d y0=%d index=%d freq=%d\n",w,h,x0,y0,index,freq);
     for (snr[0]=MINSNR+10;snr[0]<MAXSNR;snr[0]+=10) {
@@ -1672,14 +1672,13 @@ void  MainWindow::DrawSnr(QPainter *c, int w, int h, int x0, int y0,
                 c->drawRect(r1);
             }
         }
-        DrawText(c,x1+www/2,y1+6,(s=id+1),color[l],1);
+        DrawText(c,x1+www/2,y1+6,QString(id),color_sys[l],1);
         mask[l]=1;
     }
-    for (i=n=0;i<6;i++) if (mask[i]) n++;
-    for (i=j=0;i<6;i++) {
+    for (i=n=0;i<MAXSYS;i++) if (mask[i]) n++;
+    for (i=j=0;i<MAXSYS;i++) {
         if (!mask[i]) continue;
-        sprintf(id,"%c",sys[i]);
-        DrawText(c,x0+w-15+8*(-n+j++),y0+3,(s=id),color[i],0);
+        DrawText(c,x0+w-15+8*(-n+j++),y0+3,QString("%1").arg(sys[i]),color_sys[i],0);
     }
 }
 // draw satellites in skyplot -----------------------------------------------
@@ -1687,13 +1686,13 @@ void  MainWindow::DrawSat(QPainter *c, int w, int h, int x0, int y0,
     int index, int freq)
 {
     static const QColor color_sys[]={
-        Qt::green,QColor(0x00,0xAA,0xFF),QColor(0xff,0x00,0xff),Qt::blue,Qt::red,Qt::gray
+        Qt::green,Qt::cyan,Qt::magenta,Qt::blue,Qt::red,Qt::yellow,Qt::darkGreen,Qt::gray
     };
     QString s;
     QPoint p(w/2,h/2);
     double r=MIN(w*0.95,h*0.95)/2,azel[MAXSAT*2],dop[4];
     int i,k,l,d,x[MAXSAT],y[MAXSAT],ns=0,f=!freq?0:freq-1;
-    char id[16],sys[]="GREJCS",*q;
+    char id[16],sys[]="GREJCILS",*q;
 
     trace(4,"DrawSat: w=%d h=%d index=%d freq=%d\n",w,h,index,freq);
 
@@ -1893,10 +1892,10 @@ void MainWindow::DrawTrk(QPainter *c, QLabel *disp, QPixmap &buff)
     p2.ry()=p2.y()-12;
     graph->DrawMark(*c,p2,11,Qt::gray,static_cast<int>(xt/sx+0.5),0);
     p2.ry()=p2.y()-2;
-    if      (xt<0.01  ) label.sprintf("%.0f mm",xt*1000.0);
-    else if (xt<1.0   ) label.sprintf("%.0f cm",xt*100.0);
-    else if (xt<1000.0) label.sprintf("%.0f m" ,xt);
-    else                label.sprintf("%.0f km",xt/1000.0);
+    if      (xt<0.01  ) label = QString("%1 mm").arg(xt*1000.0, 0, 'f', 0);
+    else if (xt<1.0   ) label = QString("%1 cm").arg(xt*100.0, 0, 'f', 0);
+    else if (xt<1000.0) label = QString("%1 m").arg(xt, 0, 'f', 0);
+    else                label = QString("%1 km").arg(xt/1000.0, 0, 'f', 0);
     graph->DrawText(*c,p2,label,Qt::gray,Qt::white,0,1,0);
 
     // ref position
