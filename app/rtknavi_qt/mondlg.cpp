@@ -3,6 +3,7 @@
 #include <QCloseEvent>
 #include <QScrollBar>
 #include <QDebug>
+#include <QDesktopWidget>
 
 #include "rtklib.h"
 #include "mondlg.h"
@@ -36,7 +37,7 @@ MonitorDialog::MonitorDialog(QWidget* parent)
     int i;
     setupUi(this);
 	
-    FontScale=physicalDpiX()*2;
+    FontScale=qApp->desktop()->logicalDpiX()*2;
 
     ScrollPos=0;
 	ObsMode=0;

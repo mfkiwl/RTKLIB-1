@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QFileDialog>
 #include <QDebug>
+#include <QDesktopWidget>
 
 #include "refdlg.h"
 #include "rtklib.h"
@@ -44,7 +45,7 @@ void  RefDialog::showEvent(QShowEvent* event)
         for (int j=0;j<2;j++)
             StaList->setItem(i,j,new QTableWidgetItem(""));
 
-    FontScale=2*physicalDpiX();    
+    FontScale=qApp->desktop()->logicalDpiX()*2;
     for (int i=0;i<columns.size();i++) {
         StaList->setColumnWidth(i,width[i]*FontScale/96);
     }
@@ -95,7 +96,7 @@ void  RefDialog::BtnFindClick()
 void  RefDialog::FindList(void)
 {
     QString str=FindStr->text();
-	
+
     QList<QTableWidgetItem*> f= StaList->findItems(str,Qt::MatchContains);
 
     if (f.empty()) return;

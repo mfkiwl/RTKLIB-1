@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QDebug>
+#include <QDesktopWidget>
 
 #include "rtklib.h"
 #include "refdlg.h"
@@ -42,7 +43,7 @@ void PntDialog::showEvent(QShowEvent *event)
 
     int width[]={120,120,90};
 	
-    FontScale=this->physicalDpiX();
+    FontScale=qApp->desktop()->logicalDpiX()*2;
     for (int i=0;i<3;i++) {
         PntList->setColumnWidth(i,width[i]*FontScale/96);
     }
