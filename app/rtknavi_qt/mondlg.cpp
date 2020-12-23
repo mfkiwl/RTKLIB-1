@@ -1017,13 +1017,13 @@ void MonitorDialog::SetNav(void)
     header<<tr("SAT")<<tr("PRN")<<tr("Status")<<tr("IODE")<<tr("IODC")<<tr("Accuracy")<<tr("Health")<<tr("Toe")<<tr("Toc")<<tr("Ttrans")
         <<tr("A (m)")<<tr("e")<<tr("i0 (deg)")<<tr("OMEGA0 (deg)")<<tr("omega (deg)")<<tr("M0 (deg)")
         <<tr("deltan (deg/s)")<<tr("OMEGAdot (deg/s)")<<tr("IDOT (deg/s)")
-        <<tr("af0 (ns)")<<tr("af1 (ns/s)")<<tr("af2 (ns/s2)")<<tr("TGD (ns)")<<tr("BGD5a(ns)")<<tr("BGD5b(ns)")
+        <<tr("af0 (ns)")<<tr("af1 (ns/s)")<<tr("af2 (ns/s2)")<<tr("TGD | BGD5a(ns)")<<tr("BGD5b(ns)")
         <<tr("Cuc(rad)")<<tr("Cus(rad)")<<tr("Crc(m)")<<tr("Crs(m)")<<tr("Cic(rad)")<<tr("Cis(rad)")<<tr("Code")<<tr("Flag");
 	int i,width[]={
 		25,25,30,30,30,25,25,115,115,115, 80,70,60,60,60,60,70,70,70,60,
 		50,50,50,50,50,70,70,70,70,70, 70,30,30
 	};
-    Console->setColumnCount(33);
+    Console->setColumnCount(32);
     Console->setRowCount(2);
 
     for (i=0;i<Console->columnCount();i++) {
@@ -1070,10 +1070,8 @@ void MonitorDialog::ShowNav(int sys)
         Console->setItem(n,j++, new QTableWidgetItem(id));
         Console->setItem(n,j++, new QTableWidgetItem(QString::number(prn)));
         Console->setItem(n,j++, new QTableWidgetItem(valid?tr("OK"):tr("-")));
-        if (eph[k].iode<0) s="-"; else QString::number(eph[k].iode);
-        Console->setItem(n,j++, new QTableWidgetItem(s));
-        if (eph[k].iodc<0) s="-"; else QString::number(eph[k].iodc);
-        Console->setItem(n,j++, new QTableWidgetItem(s));
+        Console->setItem(n,j++, new QTableWidgetItem(eph[k].iode<0 ? QString("-") : QString::number(eph[k].iode)));
+        Console->setItem(n,j++, new QTableWidgetItem(eph[k].iodc<0 ? QString("-") : QString::number(eph[k].iodc)));
         Console->setItem(n,j++, new QTableWidgetItem(QString::number(eph[k].sva)));
         Console->setItem(n,j++, new QTableWidgetItem(QString::number(eph[k].svh,16)));
 		if (eph[k].toe.time!=0) time2str(eph[k].toe,tstr,0); else strcpy(tstr,"-");
@@ -1167,8 +1165,7 @@ void MonitorDialog::ShowGnav(void)
         Console->setItem(i,j++, new QTableWidgetItem(id));
         Console->setItem(i,j++, new QTableWidgetItem(QString::number(prn)));
         Console->setItem(i,j++, new QTableWidgetItem(valid?tr("OK"):tr("-")));
-        if (geph[i].iode<0) s="-"; else QString::number(geph[i].iode);
-        Console->setItem(i,j++, new QTableWidgetItem(s));
+        Console->setItem(i,j++, new QTableWidgetItem(QString::number(geph[i].iode)));
         Console->setItem(i,j++, new QTableWidgetItem(QString::number(geph[i].frq)));
         Console->setItem(i,j++, new QTableWidgetItem(QString::number(geph[i].svh)));
         Console->setItem(i,j++, new QTableWidgetItem(QString::number(geph[i].age)));
