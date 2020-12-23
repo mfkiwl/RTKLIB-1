@@ -11,9 +11,6 @@ if(BUILD_QT_APPS)
   set(CMAKE_AUTOUIC ON)
   set(CMAKE_AUTORCC ON)
 
-  #Additional QT UI Headers
-  include_directories(appcmn_qt)
-
   add_subdirectory(rtkconv_qt)
   add_subdirectory(rtkget_qt)
   add_subdirectory(rtklaunch_qt)
