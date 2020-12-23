@@ -311,7 +311,7 @@ void MainForm::showEvent(QShowEvent* event)
             QCoreApplication::translate("main", "yyyy/mm/dd hh:mm:ss"));
     parser.addOption(timeStartOption);
 
-    QCommandLineOption timeEndOption(QStringList() << "ts",
+    QCommandLineOption timeEndOption(QStringList() << "te",
             QCoreApplication::translate("main", "time end"),
             QCoreApplication::translate("main", "yyyy/mm/dd hh:mm:ss"));
     parser.addOption(timeEndOption);
