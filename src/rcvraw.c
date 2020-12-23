@@ -89,22 +89,26 @@ static double getbitg(const unsigned char *buff, int pos, int len)
 }
 /* decode Galileo I/NAV ephemeris ----------------------------------------------
 * decode Galileo I/NAV (ref [5] 4.3)
-* args   : unsigned char *buff I Galileo I/NAV subframe bits
-*                                  buff[ 0-15]: I/NAV word type 0 (128 bit)
-*                                  buff[16-31]: I/NAV word type 1
-*                                  buff[32-47]: I/NAV word type 2
-*                                  buff[48-63]: I/NAV word type 3
-*                                  buff[64-79]: I/NAV word type 4
-*                                  buff[80-95]: I/NAV word type 5
-*          eph_t    *eph    IO  ephemeris structure
+* args   : unsigned char *buff I   Galileo I/NAV subframe bits
+*                                  buff[ 0-15]:  I/NAV word type 0 (128 bit)
+*                                  buff[16-31]:  I/NAV word type 1
+*                                  buff[32-47]:  I/NAV word type 2
+*                                  buff[48-63]:  I/NAV word type 3
+*                                  buff[64-79]:  I/NAV word type 4
+*                                  buff[80-95]:  I/NAV word type 5
+*                                  buff[96-111]: I/NAV word type 6
+*          int      sig_code  I    corresponding observation code
+*          eph_t    *eph      IO   ephemeris structure
 * return : status (1:ok,0:error)
 *-----------------------------------------------------------------------------*/
-extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
+extern int decode_gal_inav(const unsigned char *buff, int sig_code, eph_t *eph, alm_t *alm,
+                           double *ion_gal, double *utc_gal, int *leaps)
 {
     double tow,toc,tt,sqrtA;
-    int i, time_f, week, svid, e5b_hs, e1b_hs, e5b_dvs, e1b_dvs, gst_wn, gst_tow,
-        az_ai0, az_ai1, az_ai2, r1_flag, r2_flag, r3_flag, r4_flag, r5_flag,
-        type[6], iod_nav[4];
+    int i, time_f, week, svid, type[7], iod_nav[4];
+    int e5b_hs, e1b_hs, e5b_dvs, e1b_dvs, gst_wn, gst_tow;
+    int deltatLS, deltatLSF, WNLSF, DN;
+    uint8_t sf;
 
     i=0; /* word type 0 */
     type[0]    =getbitu(buff,i, 6);              i+= 6;
@@ -151,28 +155,35 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     eph->f2    =getbits(buff,i, 6)*P2_59;
 
     i=128*5; /* word type 5 */
-    type[5]    =getbitu(buff,i, 6);              i+= 6;
-    az_ai0     =getbitu(buff,i, 11);            i+= 11; //ionospheric Correction
-    az_ai1     =getbitu(buff,i, 11);            i+= 11;
-    az_ai2     =getbitu(buff,i, 14);            i+= 14;
-    r1_flag    =getbitu(buff,i, 1);              i+= 1;
-    r1_flag    =getbitu(buff,i, 1);              i+= 1;
-    r2_flag    =getbitu(buff,i, 1);              i+= 1;
-    r3_flag    =getbitu(buff,i, 1);              i+= 1;
-    r4_flag    =getbitu(buff,i, 1);              i+= 1;
-    r5_flag    =getbitu(buff,i, 1);              i+= 1;
-    eph->tgd[0]=getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5a/E1 */
-    eph->tgd[1]=getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5b/E1 */
-    e5b_hs     =getbitu(buff,i, 2);              i+= 2;
-    e1b_hs     =getbitu(buff,i, 2);              i+= 2;
-    e5b_dvs    =getbitu(buff,i, 1);              i+= 1;
-    e1b_dvs    =getbitu(buff,i, 1);              i+= 1;
-    gst_wn     =getbitu(buff,i, 1);              i+= 1;
-    gst_tow    =getbitu(buff,i, 1);
+    type [5]   = getbitu(buff,i, 6);            i+=6;
+    ion_gal[0] = getbitu(buff,i, 11)*P2_2;      i+=11;  // Effective ionisation level 1st order parameter (sfu)
+    ion_gal[1] = getbits(buff,i, 11)*P2_8;      i+=11;  // Effective ionisation level 2nd order parameter (sfu/degree)
+    ion_gal[2] = getbits(buff,i, 14)*P2_15;     i+=14;  // Effective ionisation level 3rd order parameter (sfu/degree^2)
+    ion_gal[3] = 0;                                     // Unused
 
-        /* test word types */
-        if (type[0] != 0 || type[1] != 1 || type[2] != 2 || type[3] != 3 || type[4] != 4 || type[5] != 5)
-    {
+    sf         = getbitu(buff,i, 5);            i+=5;   // Ionospheric disturbance flags, 1 bit each regions 1-5
+    eph->tgd[0]= getbits(buff,i,10)*P2_32;      i+=10;  // BGD E5a/E1
+    eph->tgd[1]= getbits(buff,i,10)*P2_32;      i+=10;  // BGD E5b/E1
+    e5b_hs     = getbitu(buff,i, 2);            i+=2;   // E5b Signal Health Status
+    e1b_hs     = getbitu(buff,i, 2);            i+=2;   // E1-B/c Signal Health Status
+    e5b_dvs    = getbitu(buff,i, 1);            i+=1;   // E5b data validity Status
+    e1b_dvs    = getbitu(buff,i, 1);            i+=1;   // E1-B data validity Status
+    gst_wn     = getbitu(buff,i, 12);           i+=12;  // GST Week Number
+    gst_tow    = getbitu(buff,i, 20);
+
+    i=128*6; /* word type 6 - GST-UTC Correction */
+    type  [6]  = getbitu(buff,i, 6);        i+= 6;
+    utc_gal[0] = getbits(buff,i, 32)*P2_30; i+= 32;  // Constant term of polynomial (s)
+    utc_gal[1] = getbits(buff,i, 24)*P2_50; i+= 24;  // 1st order term of polynomial (s/s)
+    deltatLS   = getbits(buff,i, 8);        i+= 8;   // Leap Second count before leap second adjustment
+    utc_gal[2] = getbitu(buff,i, 8)*3600;   i+= 8;   // UTC data reference time of Week (*3600 second scale)
+    *leaps     = getbitu(buff,i, 8);        i+= 8;   // UTC data reference Week number (week)
+    WNLSF      = getbitu(buff,i, 8);        i+= 8;   // Week number of leap second adjustment
+    DN         = getbitu(buff,i, 3);        i+= 3;   // Day number at the end of which a leap second adjustment becomes effective (1-7 days)
+    deltatLSF  = getbits(buff,i, 8);                // Leap Second count after leap second adjustment (s)
+
+    /* test word types */
+    if (type[0] != 0 || type[1] != 1 || type[2] != 2 || type[3] != 3 || type[4] != 4 || type[5] != 5 || type[6] != 6) {
         trace(3,"decode_gal_inav error: type=%d %d %d %d %d %d\n",type[0],
               type[1],type[2],type[3],type[4],type[5]);
         return 0;
@@ -202,7 +213,21 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     eph->toe=gst2time(week,eph->toes);
     eph->toc=gst2time(week,toc);
     eph->week=week+1024; /* gal-week = gst-week + 1024 */
-    eph->code =(1<<0)|(1<<9); /* data source = i/nav e1b, af0-2,toc,sisa for e5b-e1 */
+
+    /* Encode the data source field for RINEX
+       Bits 0,1,2. OR with current value for mixed e1-b, e5b-I
+       0:  I/NAV E1-B
+       1:  F/NAV E5a-I
+       2:  I/NAV E5b-I */
+
+    int eph_source = eph->code & 0x7;
+    switch (sig_code) {
+        case CODE_L1X: eph_source |= 0x1; break;
+        case CODE_L7X: eph_source |= 0x4; break;
+    }
+
+    /* Set af0-2,toc,sisa for e5b-e1 */
+    eph->code = eph_source | (1<<9);
     return 1;
 }
 /* decode BeiDou D1 ephemeris --------------------------------------------------
