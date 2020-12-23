@@ -541,7 +541,7 @@ extern void satno2id(int sat, char *id)
         case SYS_CMP: sprintf(id,"C%02d",prn-MINPRNCMP+1); return;
         case SYS_IRN: sprintf(id,"I%02d",prn-MINPRNIRN+1); return;
         case SYS_LEO: sprintf(id,"L%02d",prn-MINPRNLEO+1); return;
-        case SYS_SBS: sprintf(id,"%03d" ,prn); return;
+        case SYS_SBS: sprintf(id,"S%03d" ,prn); return;
     }
     strcpy(id,"");
 }
