@@ -431,11 +431,10 @@ void MainForm::BtnPlotClick()
     QString OutputFile_Text=OutputFile->currentText();
     QString file=FilePath(OutputFile_Text);
     QString cmd1="./rtkplot_qt",cmd2="./RTKPLOT_Qt-x86_64.AppImage", cmd3="rtkplot_qt";
-    QString opts="";
+    QStringList opts= {file};
 
-    opts+=" "+file;
 
-    if (!ExecCmd(cmd1+opts,1)&&!ExecCmd(cmd2+opts,1)&&!ExecCmd(cmd3+opts,1)) {
+    if (!ExecCmd(cmd1, opts,1)&&!ExecCmd(cmd2,opts,1)&&!ExecCmd(cmd3,opts,1)) {
         ShowMsg(QString("error : rtkplot_qt execution"));
     }
 }
@@ -684,7 +683,8 @@ void MainForm::BtnInputPlot1Click()
     QString InputFile5_Text=InputFile5->currentText();
     QString InputFile6_Text=InputFile6->currentText();
     QString files[6];
-    QString cmd1="rtkplot_qt",cmd2="../../../bin/rtkplot_qt",opts="";
+    QString cmd1="rtkplot_qt",cmd2="../../../bin/rtkplot_qt";
+    QStringList opts;
     QString navfile;
 
     files[0]=FilePath(InputFile1_Text); /* obs rover */
@@ -697,10 +697,12 @@ void MainForm::BtnInputPlot1Click()
     if (files[2]=="") {
         if (ObsToNav(files[0],navfile)) files[2]=navfile;
     }
-    opts=" -r \""+files[0]+"\" \""+files[2]+"\" \""+files[3]+"\" \""+
-        files[4]+"\" \""+files[5]+"\"";
+    opts << "-r";
+    for (int i=0; i<6; i++) {
+        opts << QString("\"%1\"").arg(files[i]);
+    }
 
-    if (!ExecCmd(cmd1+opts,1)&&!ExecCmd(cmd2+opts,1)) {
+    if (!ExecCmd(cmd1,opts,1)&&!ExecCmd(cmd2,opts,1)) {
         ShowMsg(QString("error : rtkplot_qt execution"));
     }
 }
@@ -714,7 +716,8 @@ void MainForm::BtnInputPlot2Click()
     QString InputFile5_Text=InputFile5->currentText();
     QString InputFile6_Text=InputFile6->currentText();
     QString files[6];
-    QString cmd1="rtkplot_qt",cmd2="../../../bin/rtkplot_qt",opts="";
+    QString cmd1="rtkplot_qt",cmd2="../../../bin/rtkplot_qt";
+    QStringList opts;
     QString navfile;
 
     files[0]=FilePath(InputFile1_Text); /* obs rover */
@@ -727,10 +730,12 @@ void MainForm::BtnInputPlot2Click()
     if (files[2]=="") {
         if (ObsToNav(files[0],navfile)) files[2]=navfile;
     }
-    opts=" -r \""+files[1]+"\" \""+files[2]+"\" \""+files[3]+"\" \""+
-         files[4]+"\" \""+files[5]+"\"";
+    opts << "-r";
+    for (int i=0; i<6; i++) {
+        opts << QString("\"%1\"").arg(files[i]);
+    }
 
-    if (!ExecCmd(cmd1+opts,1)&&!ExecCmd(cmd2+opts,1)) {
+    if (!ExecCmd(cmd1,opts,1)&&!ExecCmd(cmd2,opts,1)) {
         ShowMsg(QString("error : rtkplot_qt execution"));
     }
 }
@@ -1109,10 +1114,11 @@ void MainForm::AddHist(QComboBox *combo)
     combo->setCurrentIndex(0);
 }
 // execute command ----------------------------------------------------------
-int MainForm::ExecCmd(const QString &cmd, int show)
+int MainForm::ExecCmd(const QString &cmd, const QStringList &args, int show)
 {
     Q_UNUSED(show);
-    return QProcess::startDetached(cmd);  /* FIXME: show option not yet supported */
+
+    return QProcess::startDetached(cmd, args);  /* FIXME: show option not yet supported */
 }
 // view file ----------------------------------------------------------------
 void MainForm::ViewFile(const QString &file)

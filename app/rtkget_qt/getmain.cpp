@@ -66,11 +66,11 @@ extern int showmsg(char *format,...)
     QString str;
     static QString buff2;
     char buff[1024],*p;
-    
+
     va_start(arg,format);
     vsprintf(buff,format,arg);
     va_end(arg);
-    
+
     if ((p=strstr(buff,"STAT="))) {
         buff2.append(str.right(66));
         if (buff2.endsWith('_')) buff2.remove(buff2.length()-1,1);
@@ -196,9 +196,9 @@ void MainForm::FormCreate()
     QString file=QApplication::applicationFilePath();
     QFileInfo fi(file);
     IniFile=fi.absolutePath()+"/"+fi.baseName()+".ini";
-    
+
     setWindowTitle(QString("%1 v.%2 %3").arg(PRGNAME).arg(VER_RTKLIB).arg(PATCH_LEVEL));
-    
+
     QCommandLineParser parser;
     parser.setApplicationDescription("RTK Get");
     parser.addHelpOption();
@@ -227,7 +227,7 @@ void MainForm::FormCreate()
     LoadUrl(UrlFile);
     UpdateType();
     UpdateEnable();
-    
+
     if (TraceLevel>0) {
         traceopen(TRACE_FILE);
         tracelevel(TraceLevel);
@@ -280,9 +280,9 @@ void MainForm::BtnTestClick()
         MsgLabel3->setText(tr("no local data"));
         return;
     }
-        
+
     thread->nsta=SelectSta(thread->stas);
-    
+
     if (LocalDir->isChecked()) {
         strcpy(thread->dir,qPrintable(Dir->currentText()));
     }
@@ -296,21 +296,21 @@ void MainForm::BtnTestClick()
     connect(thread,SIGNAL(finished()),this,SLOT(DownloadFinished()));
 
     thread->start();
-    
+
 }
 //---------------------------------------------------------------------------
 void MainForm::BtnOptsClick()
 {
     QString urlfile=UrlFile;
-    
+
     DownOptDialog downOptDialog(this);
 
     downOptDialog.exec();
 
     if (downOptDialog.result()!=QDialog::Accepted) return;
-    
+
     if (UrlFile==urlfile) return;
-    
+
     LoadUrl(UrlFile);
     UpdateType();
 }
@@ -328,7 +328,7 @@ void MainForm::BtnDownloadClick()
 
     thread=new DownloadThread(this, LogFile,LogAppend, false);
     GetTime(&thread->ts,&thread->te,&thread->ti);
-    
+
     str=Number->text();
     QStringList tokens=str.split('-');
     if (tokens.size()==2)
@@ -339,24 +339,24 @@ void MainForm::BtnDownloadClick()
     {
         thread->seqnos=thread->seqnoe=tokens.at(0).toInt();
     } else return;
-    
+
     thread->nurl=SelectUrl(thread->urls);
     if (timediff(thread->ts,thread->te)>0.0||thread->nurl<=0) {
         MsgLabel3->setText(tr("no download data"));
         return;
     }
     for (i=0;i<MAX_STA;i++) thread->stas[i]=new char [16];
-    
+
     thread->nsta=SelectSta(thread->stas);
     thread->usr=FtpLogin->text();
     thread->pwd=FtpPasswd->text();
     thread->proxy=ProxyAddr;
-    
+
     if (!SkipExist->isChecked()) thread->opts|=DLOPT_FORCE;
     if (!UnZip    ->isChecked()) thread->opts|=DLOPT_KEEPCMP;
     if (HoldErr )                thread->opts|=DLOPT_HOLDERR;
     if (HoldList)                thread->opts|=DLOPT_HOLDLST;
-    
+
     if (LocalDir->isChecked()) {
         strcpy(thread->dir,qPrintable(Dir->currentText()));
     }
@@ -457,7 +457,7 @@ void MainForm::BtnTime2Click()
 void MainForm::BtnAllClick()
 {
     int i,n=0;
-    
+
     StaList->setVisible(false);
     for (i=StaList->count()-1;i>=0;i--) {
         StaList->item(i)->setSelected(BtnAll->text()=="A");
@@ -479,7 +479,7 @@ void MainForm::BtnHelpClick()
 {
     AboutDialog aboutDialog(this);
     QString prog=PRGNAME;
-    
+
     aboutDialog.About=prog;
     aboutDialog.IconIndex=8;
     aboutDialog.exec();
@@ -551,7 +551,7 @@ void MainForm::LoadOpt(void)
 {
     QSettings setting(IniFile,QSettings::IniFormat);
     QStringList stas;
-    
+
     TimeY1->setDate       (setting.value ("opt/startd","2011/01/01").toDate());
     TimeH1->setTime       (setting.value ("opt/starth",     "00:00").toTime());
     TimeY2->setDate       (setting.value ("opt/endd",  "2011/01/01").toDate());
@@ -643,9 +643,9 @@ void MainForm::LoadUrl(QString file)
     QString subtype, basetype;
     char *sel[]={"*"};
     int i,n;
-    
+
     urls=new url_t [MAX_URL];
-    
+
     Types.clear();
     Urls.clear();
     Locals.clear();
@@ -654,11 +654,11 @@ void MainForm::LoadUrl(QString file)
     DataList->clear();
     DataType->addItem(tr("ALL"));
     SubType ->addItem("");
-    
+
     if (file=="") file=URL_FILE; // default url
-    
+
     n=dl_readurls(qPrintable(file),sel,1,urls,MAX_URL);
-    
+
     for (i=0;i<n;i++) {
         int p;
         Types.append(urls[i].type);
@@ -679,7 +679,7 @@ void MainForm::LoadUrl(QString file)
     }
     DataType->setCurrentIndex(0);
     SubType ->setCurrentIndex(0);
-    
+
     delete [] urls;
 }
 //---------------------------------------------------------------------------
@@ -689,9 +689,9 @@ void MainForm::LoadSta(QString file)
     QByteArray buff;
 
     if (!f.open(QIODevice::ReadOnly)) return;
-    
+
     StaList->clear();
-    
+
     while (!f.atEnd())
     {
         buff=f.readLine();
@@ -707,7 +707,7 @@ void MainForm::GetTime(gtime_t *ts, gtime_t *te, double *ti)
 {
     QString str;
     double eps[6]={2010,1,1},epe[6]={2010,1,1},val;
-    
+
     eps[0]=TimeY1->date().year();eps[1]=TimeY1->date().month();eps[2]=TimeY1->date().day();
     eps[3]=TimeH1->time().hour();eps[4]=TimeH1->time().minute();
     epe[0]=TimeY2->date().year();epe[1]=TimeY2->date().month();epe[2]=TimeY2->date().day();
@@ -716,7 +716,7 @@ void MainForm::GetTime(gtime_t *ts, gtime_t *te, double *ti)
     *ts=epoch2time(eps);
     *te=epoch2time(epe);
     *ti=86400.0;
-    
+
     str=TimeInt->currentText();
     QStringList tokens=str.split(" ");
     val=tokens.at(0).toDouble();
@@ -733,20 +733,20 @@ int MainForm::SelectUrl(url_t *urls)
     QString str,file=UrlFile;
     char *types[MAX_URL_SEL];
     int i,nurl=0;
-    
+
     for (i=0;i<MAX_URL_SEL;i++) types[i]=new char [64];
-    
+
     for (i=0;i<DataList->count()&&nurl<MAX_URL_SEL;i++) {
         if (!DataList->item(i)->isSelected()) continue;
         str=DataList->item(i)->text();
         strcpy(types[nurl++],qPrintable(str));
     }
     if (UrlFile=="") file=URL_FILE;
-    
+
     nurl=dl_readurls(qPrintable(file),types,nurl,urls,MAX_URL_SEL);
-    
+
     for (i=0;i<MAX_URL_SEL;i++) delete [] types[i];
-    
+
     return nurl;
 }
 //---------------------------------------------------------------------------
@@ -754,7 +754,7 @@ int MainForm::SelectSta(char **stas)
 {
     QString str;
     int i,nsta=0,len;
-    
+
     for (i=0;i<StaList->count()&&nsta<MAX_STA;i++) {
         if (!StaList->item(i)->isSelected()) continue;
         str=StaList->item(i)->text();
@@ -772,9 +772,9 @@ void MainForm::UpdateType(void)
     QString str;
     QString type,subtype;
     int i;
-    
+
     DataList->clear();
-    
+
     for (i=0;i<Types.size();i++) {
         str=Types.at(i);
         QStringList tokens=str.split('_');
@@ -797,7 +797,7 @@ void MainForm::UpdateType(void)
 void MainForm::UpdateMsg(void)
 {
     int i,j,n=0;
-    
+
     for (i=0;i<DataList->count();i++) {
         if (!DataList->item(i)->isSelected()) continue;
         for (j=0;j<Types.count();j++) {
@@ -819,7 +819,7 @@ void MainForm::UpdateMsg(void)
 void MainForm::UpdateStaList(void)
 {
     int i,n=0;
-    
+
     for (i=0;i<StaList->count();i++) {
         if (StaList->item(i)->isSelected()) n++;
     }
@@ -871,9 +871,9 @@ void MainForm::ReadHist(QSettings &setting, QString key, QComboBox *combo)
 {
     QString item;
     int i;
-    
+
     combo->clear();
-    
+
     for (i=0;i<MAX_HIST;i++) {
         item=setting.value(QString("history/%1_%2").arg(key).arg(i,3),"").toString();
         if (item!="") combo->addItem(item);
@@ -883,7 +883,7 @@ void MainForm::ReadHist(QSettings &setting, QString key, QComboBox *combo)
 void MainForm::WriteHist(QSettings &setting, QString key, QComboBox * combo)
 {
     int i;
-    
+
     for (i=0;i<combo->count();i++) {
         setting.setValue(QString("history/%1_%2").arg(key).arg(i),combo->itemText(i));
     }
@@ -899,9 +899,3 @@ void MainForm::AddHist(QComboBox *combo)
     for (int i=combo->count()-1;i>=MAX_HIST;i--) combo->removeItem(i);
     combo->setCurrentIndex(0);
 }
-//---------------------------------------------------------------------------
-int MainForm::ExecCmd(QString cmd)
-{
-    return QProcess::startDetached(cmd);
-}
-//---------------------------------------------------------------------------

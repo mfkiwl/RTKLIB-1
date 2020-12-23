@@ -3,7 +3,7 @@
 #define plotmainH
 //---------------------------------------------------------------------------
 #include <QTimer>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QMainWindow>
 #include <clocale>
 
@@ -143,7 +143,7 @@ public slots:
         void  MenuReloadClick		();
         void  MenuClearClick		();
         void  MenuQuitClick		();
-	
+
         void  MenuTimeClick		();
         void  MenuMapImgClick		();
         void  MenuWaypointClick	();
@@ -152,7 +152,7 @@ public slots:
         void  MenuQcObsClick		();
         void  MenuCopyClick		();
         void  MenuOptionsClick	();
-	
+
         void  MenuToolBarClick	();
         void  MenuStatusBarClick	();
         void  MenuMonitor1Click	();
@@ -168,7 +168,7 @@ public slots:
         void  MenuAnimStartClick	();
         void  MenuAnimStopClick	();
         void  MenuAboutClick		();
-	
+
         void  BtnConnectClick		();
         void  BtnSol1Click		();
         void  BtnSol2Click		();
@@ -190,7 +190,7 @@ public slots:
         void  RangeListClick		();
 
         void  TimerTimer			();
-	
+
         void  MenuFileSelClick();
         void  MenuSaveDopClick();
         void  MenuSaveImageClick();
@@ -236,8 +236,8 @@ private:
     sta_t Sta;
     double *Az,*El,*Mp[NFREQ+NEXOBS];
     QTimer Timer;
-    QTime updateTime;
-    
+    QElapsedTimer updateTime;
+
     gtime_t OEpoch;
     int FormWidth,FormHeight;
     int ConnectState,OpenRaw;
@@ -247,14 +247,14 @@ private:
     int NSolF1,NSolF2,NObsF,NNavF;
     int SatMask[MAXSAT],SatSel[MAXSAT];
     int SimObs;
-    
+
     int Drag,Xn,Yn;
     double X0,Y0,Xc,Yc,Xs,Ys,Xcent,Xcent0;
     unsigned int MouseDownTick;
-    
+
     int GEState,GEDataState[2];
     double GEHeading;
-    
+
     void  ReadSolStat  (const QStringList &files, int sel);
     int   ReadObsRnx   (const QStringList &files, obs_t *obs, nav_t *nav, sta_t *sta);
     void  ReadMapTag   (const QString &file);
@@ -276,7 +276,7 @@ private:
     void  Reload       (void);
     void  ReadWaitStart(void);
     void  ReadWaitEnd  (void);
-    
+
     void  UpdateDisp   (void);
     void  UpdateType   (int type);
     void  UpdatePlotType(void);
@@ -298,7 +298,7 @@ private:
     void  FitTime      (void);
     void  SetRange     (int all, double range);
     void  FitRange     (int all);
-    
+
     void  SetCentX     (double c);
     void  SetScaleX    (double s);
     void  MouseDownTrk (int X, int Y);
@@ -327,7 +327,7 @@ private:
     void  DrawRes      (QPainter &g,int level);
     void  DrawPolyS    (Graph *,QPainter &c, double *x, double *y, int n,
                                   const QColor &color, int style);
-    
+
     void  DrawObs      (QPainter &g,int level);
     void  DrawObsSlip  (QPainter &g,double *yp);
     void  DrawObsEphem (QPainter &g,double *yp);
@@ -338,17 +338,17 @@ private:
     void  DrawSnr      (QPainter &g,int level);
     void  DrawSnrE     (QPainter &g,int level);
     void  DrawMpS      (QPainter &g,int level);
-    
+
     TIMEPOS *  SolToPos (solbuf_t *sol, int index, int qflag, int type);
     TIMEPOS *  SolToNsat(solbuf_t *sol, int index, int qflag);
-    
+
     void  PosToXyz     (gtime_t time, const double *rr, int type, double *xyz);
     void  CovToXyz     (const double *rr, const float *qr, int type,
                                   double *xyzs);
     void  CalcStats    (const double *x, int n, double ref, double &ave,
                                   double &std, double &rms);
     int   FitPos       (gtime_t *time, double *opos, double *ovel);
-    
+
     QString  LatLonStr(const double *pos, int ndec);
     QColor  ObsColor   (const obsd_t *obs, double az, double el);
     QColor  SysColor   (int sat);
@@ -359,12 +359,12 @@ private:
     void  TimeSpan     (gtime_t *ts, gtime_t *te, double *tint);
     double  TimePos    (gtime_t time);
     void  TimeStr(gtime_t time, int n, int tsys, QString &str);
-    int   ExecCmd      (const QString &cmd);
+    int   ExecCmd      (const QString &cmd, const QStringList &args);
     void  ShowMsg      (const QString &msg);
     void  ShowLegend   (QString *msgs);
     void  LoadOpt      (void);
     void  SaveOpt      (void);
-    
+
     MapAreaDialog *mapAreaDialog;
 #ifdef GEARTH_GMAP_ENABLE
     GoogleEarthView *googleEarthView;
@@ -403,25 +403,25 @@ public:
     int RtTimeOutTime;
     int RtReConnTime;
     double ElMaskData[361];
-    
-    // time options 
+
+    // time options
     int TimeEna[3];
     gtime_t TimeStart;
     gtime_t TimeEnd;
     double TimeInt;
-    
-    // map options 
+
+    // map options
     int MapSize[2],MapScaleEq;
     double MapScaleX,MapScaleY;
     double MapLat,MapLon;
     int PointType;
-    
-    // sky image options 
+
+    // sky image options
     int SkySize[2],SkyDestCorr,SkyElMask,SkyRes,SkyFlip,SkyBinarize;
     double SkyCent[2],SkyScale,SkyScaleR,SkyFov[3],SkyDest[10];
     double SkyBinThres1,SkyBinThres2;
-    
-    // plot options 
+
+    // plot options
     int TimeLabel;
     int LatLonFmt;
     int ShowStats;
@@ -457,17 +457,17 @@ public:
     QString QcCmd,QcOpt;
     QString TLEFile;
     QString TLESatFile;
-    
+
     QString Title;
     QString PntName[MAXWAYPNT];
     double PntPos[MAXWAYPNT][3];
     int NWayPnt,SelWayPnt;
     int OPosType;
     double OPos[3],OVel[3];
-    
+
     QString StrHistory [10];
     QString StrMntpHist[10];
-    
+
     void  ReadSol     (const QStringList &files, int sel);
     void  ReadObs     (const QStringList &files);
     void  ReadNav     (const QStringList &files);

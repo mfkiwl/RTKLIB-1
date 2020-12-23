@@ -115,7 +115,7 @@ private:
     void ReadList(QComboBox *, QSettings *ini,  const QString &key);
     void WriteList(QSettings *ini, const QString &key, const QComboBox *combo);
     void AddHist  (QComboBox *combo);
-    int ExecCmd(const QString &cmd, int show);
+    int ExecCmd(const QString &cmd, const QStringList &args, int show);
 
     gtime_t GetTime1(void);
     gtime_t GetTime2(void);

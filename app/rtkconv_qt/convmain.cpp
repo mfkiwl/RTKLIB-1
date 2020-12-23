@@ -343,42 +343,43 @@ void MainWindow::BtnPlotClick()
     QString file5=OutFile5->text();
     QString file6=OutFile6->text();
     QString file[]={file1,file2,file3,file4,file5,file6};
-    QString cmd1="./rtkplot_qt",cmd2="./RTKPLOT_Qt-x86_64.AppImage",cmd3="rtkplot_qt",opts=" -r";
+    QString cmd1="./rtkplot_qt",cmd2="./RTKPLOT_Qt-x86_64.AppImage",cmd3="rtkplot_qt";
+    QStringList opts = {"-r"};
     QCheckBox *cb[]={
         OutFileEna1,OutFileEna2,OutFileEna3,OutFileEna4,OutFileEna5,OutFileEna6
     };
     int i,ena[6];
 
     for (i=0;i<6;i++) ena[i]=cb[i]->isEnabled()&&cb[i]->isChecked();
-
     for (i=0;i<6;i++) {
-        if (ena[i]) opts=opts+" \""+RepPath(file[i])+"\"";
+        if (ena[i]) opts << RepPath(file[i]);
     }
-    if (opts==" -r") return;
+    if (opts.length() < 2) return; // needs at least 1 file
 
-    if (!ExecCmd(cmd1+opts)&&!ExecCmd(cmd2+opts)&&!ExecCmd(cmd3+opts)) {
+    if (!ExecCmd(cmd1,opts)&&!ExecCmd(cmd2,opts)&&!ExecCmd(cmd3,opts)) {
         Message->setText(tr("error : rtkplot execution"));
     }
 }
 // callback on button-post-proc ---------------------------------------------
 void MainWindow::BtnPostClick()
 {
-    QString cmd1=CmdPostExe,cmd2="./RTKPOST_Qt-x86_64.AppImage",cmd3="rtkpost_qt",opts=" ";
+    QString cmd1=CmdPostExe,cmd2="./RTKPOST_Qt-x86_64.AppImage",cmd3="rtkpost_qt";
+    QStringList opts;
 
     if (!OutFileEna1->isChecked()) return;
 
-    opts=opts+" -r \""+OutFile1->text()+"\"";
-    opts=opts+" -n \"\" -n \"\"";
+    opts << "-r" << OutFile1->text();
+    opts << "-n" << "\"\"" << "-n" <<  "\"\"";
 
     if (OutFileEna7->isChecked()) {
-        opts=opts+" -n \""+OutFile7->text()+"\"";
+        opts << "-n" << "\"" << OutFile7->text() << "\"";
     }
-    if (TimeStartF->isChecked()) opts=opts+" -ts "+TimeY1->text()+" "+TimeH1->text();
-    if (TimeEndF  ->isChecked()) opts=opts+" -te "+TimeY2->text()+" "+TimeH2->text();
-    if (TimeIntF  ->isChecked()) opts=opts+" -ti "+TimeInt->currentText();
-    if (TimeUnitF ->isChecked()) opts=opts+" -tu "+TimeUnit->text();
+    if (TimeStartF->isChecked()) opts << "-ts" << TimeY1->text() << TimeH1->text();
+    if (TimeEndF  ->isChecked()) opts << "-te" << TimeY2->text() << TimeH2->text();
+    if (TimeIntF  ->isChecked()) opts << "-ti" << TimeInt->currentText();
+    if (TimeUnitF ->isChecked()) opts << "-tu" << TimeUnit->text();
 
-    if (!ExecCmd(cmd1+opts)&&!ExecCmd(cmd2+opts)&&!ExecCmd(cmd3+opts)) {
+    if (!ExecCmd(cmd1,opts)&&!ExecCmd(cmd2,opts)&&!ExecCmd(cmd3,opts)) {
         Message->setText(tr("error : rtkpost execution"));
     }
 }
@@ -692,9 +693,9 @@ QString MainWindow::RepPath(const QString &File)
     return Path=path;
 }
 // execute command ----------------------------------------------------------
-int MainWindow::ExecCmd(const QString &cmd)
+int MainWindow::ExecCmd(const QString &cmd, const QStringList &args)
 {
-    return QProcess::startDetached(cmd);  /* FIXME: show option not yet supported */
+    return QProcess::startDetached(cmd, args);  /* FIXME: show option not yet supported */
 }
 // undate enable/disable of widgets -----------------------------------------
 void MainWindow::UpdateEnable(void)
@@ -784,7 +785,7 @@ void MainWindow::ConvertFile(void)
             conversionThread->format=STRFMT_RINEX;
         }
         else {
-            showmsg("file format can not be recognized");
+            Message->setText("file format can not be recognized");
             return;
         }
     }

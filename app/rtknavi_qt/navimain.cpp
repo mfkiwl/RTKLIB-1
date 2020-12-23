@@ -99,11 +99,11 @@ static void degtodms(double deg, double *dms)
     dms[0]*=sgn;
 }
 // execute command ----------------------------------------------------------
-int  MainWindow::ExecCmd(const QString &cmd, int show)
+int  MainWindow::ExecCmd(const QString &cmd, const QStringList &args, int show)
 {
     Q_UNUSED(show);
 
-    return QProcess::startDetached(cmd); /* FIXME: show option not yet supported */
+    return QProcess::startDetached(cmd, args); /* FIXME: show option not yet supported */
 }
 // constructor --------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent)
@@ -345,6 +345,8 @@ void  MainWindow::BtnStopClick()
 void  MainWindow::BtnPlotClick()
 {
     QString cmd;
+    QStringList args;
+
 
     trace(3,"BtnPlotClick\n");
 
@@ -352,9 +354,13 @@ void  MainWindow::BtnPlotClick()
         QMessageBox::critical(this,tr("Error"),tr("monitor port not open"));
         return;
     }
-    cmd=QString("rtkplot_qt -p tcpcli://localhost:%1 -t \"%2 %3\"").arg(OpenPort)
-                .arg(windowTitle()).arg(": RTKPLOT");
-    if (!ExecCmd(cmd,1)) {
+    // cmd=QString("rtkplot_qt' -p tcpcli://localhost:%1 -t \"%2 %3\"").arg(OpenPort)
+    //             .arg(windowTitle()).arg(": RTKPLOT");
+
+    args << "rtkplot_qt" << "-p" << QString("tcpcli://localhost:%1").arg(OpenPort) << "-t"
+    << QString("%2").arg(windowTitle()) << QString("%3").arg(": RTKPLOT");
+    
+    if (!ExecCmd(cmd,args,1)) {
         QMessageBox::critical(this,tr("Error"),tr("error: rtkplot execution"));
     }
 }

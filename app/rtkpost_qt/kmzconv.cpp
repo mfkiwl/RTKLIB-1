@@ -66,17 +66,17 @@ void ConvDialog::SetInput(const QString &File)
 //---------------------------------------------------------------------------
 void ConvDialog::TimeSpanClick()
 {
-	UpdateEnable();	
+	UpdateEnable();
 }
 //---------------------------------------------------------------------------
 void ConvDialog::AddOffsetClick()
 {
-	UpdateEnable();	
+	UpdateEnable();
 }
 //---------------------------------------------------------------------------
 void ConvDialog::TimeIntFClick()
 {
-	UpdateEnable();	
+	UpdateEnable();
 }
 //---------------------------------------------------------------------------
 void ConvDialog::BtnInputFileClick()
@@ -144,11 +144,11 @@ void ConvDialog::BtnConvertClick()
     if (FormatKML->isChecked()&&Compress->isChecked()) {
 #ifdef Q_OS_WIN
         cmd=QString("zip.exe -j -m %1 %2").arg(OutputFile->text()).arg(kmlfile); //TODO: zip for other platforms
-#endif
-#ifdef Q_OS_LINUX
+#else
         cmd=QString("gzip -3 %1 %2").arg(OutputFile->text()).arg(kmlfile);
 #endif
-        if (!ExecCmd(cmd)) {
+        QStringList args;
+        if (!ExecCmd(cmd, args)) {
             ShowMsg(tr("error : zip execution"));
 			return;
 		}
@@ -190,9 +190,9 @@ void ConvDialog::UpdateEnable(void)
 #endif
 }
 //---------------------------------------------------------------------------
-int ConvDialog::ExecCmd(const QString &cmd)
+int ConvDialog::ExecCmd(const QString &cmd, const QStringList &args)
 {
-    return QProcess::startDetached(cmd);
+    return QProcess::startDetached(cmd, args);
 }
 //---------------------------------------------------------------------------
 void ConvDialog::ShowMsg(const QString &msg)
