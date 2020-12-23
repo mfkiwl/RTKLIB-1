@@ -10,6 +10,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFutureWatcher>
 #include <QMetaObject>
+#include <QDesktopWidget>
 
 #include "rtklib.h"
 #include "aboutdlg.h"
@@ -174,7 +175,7 @@ void MainForm::showEvent(QShowEvent *event)
         Address->setCurrentText(setting.value("srctbl/address","").toString());
 	}
 
-    FontScale=physicalDpiX();
+    FontScale=qApp->desktop()->logicalDpiX()*2;
 
     colw=setting.value("srctbl/colwidth0",colw0).toString().split(",");
     i=0;

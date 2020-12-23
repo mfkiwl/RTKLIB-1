@@ -86,12 +86,12 @@ public slots:
     void BtnOutFileView3Click();
     void BtnOutFileView4Click();
     void BtnAbortClick       ();
-	
+
     void TimeStartFClick     ();
     void TimeEndFClick       ();
     void TimeIntFClick       ();
     void OutDirEnaClick      ();
-	
+
     void InFileChange();
     void BtnOutFileView5Click();
     void BtnOutFile5Click();
@@ -116,7 +116,7 @@ private:
     QString IniFile,CmdPostExe;
     ConversionThread *conversionThread;
 //    void DropFiles(TWMDropFiles msg); // for files drop
-	
+
     void ReadList(QComboBox* combo, QSettings *ini, const QString &key);
     void WriteList(QSettings *ini, const QString &key, const QComboBox *combo);
     void AddHist(QComboBox *combo);
@@ -125,11 +125,11 @@ private:
     void ConvertFile(void);
     void SetOutFiles(const QString &infile);
     void GetTime(gtime_t *ts, gtime_t *te, double *tint, double *tunit);
-    int  ExecCmd(const QString &cmd);
+    int  ExecCmd(const QString &cmd, const QStringList &args);
     QString RepPath(const QString &File);
     void LoadOpt(void);
     void SaveOpt(void);
-		
+
     ConvOptDialog *convOptDialog;
     TimeDialog *timeDialog;
     KeyDialog* keyDialog;
@@ -144,7 +144,7 @@ public:
 	double AppPos[3],AntDel[3];
 	int RnxVer,RnxFile,NavSys,ObsType,FreqType,TraceLevel,EventEna;
     int AutoPos,ScanObs,OutIono,OutTime,OutLeaps,SepNav;
-	
+
     explicit MainWindow(QWidget *parent=0);
 };
 //---------------------------------------------------------------------------

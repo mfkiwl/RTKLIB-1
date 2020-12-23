@@ -21,7 +21,7 @@ public slots:
 
 private:
     void  AddHist(QComboBox *list, QString *hist);
-    int  ExecCmd(QString cmd, int show);
+    int  ExecCmd(QString cmd, QStringList args, int show);
 
 public:
 	int Opt;

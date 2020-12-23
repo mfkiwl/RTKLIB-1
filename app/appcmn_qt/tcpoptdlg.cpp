@@ -67,7 +67,7 @@ void  TcpOptDialog::showEvent(QShowEvent* event)
 
     Addr->clear();
     MntPnt->clear();
-	
+
 	for (int i=0;i<MAXHIST;i++) {
         if (History[i]!="") Addr->addItem(History[i]);
 	}
@@ -82,7 +82,7 @@ void  TcpOptDialog::BtnOkClick()
     QString User_Text=User->text(),Passwd_Text=Passwd->text();
     QString Addr_Text=Addr->currentText(),Port_Text=Port->text();
     QString MntPnt_Text=MntPnt->currentText(),Str_Text=Str->text();
-	
+
     Path=QString("%1:%2@%3:%4/%5:%6").arg(User_Text).arg(Passwd_Text)
             .arg(Addr_Text).arg(Port_Text).arg(MntPnt_Text)
             .arg(Str_Text);
@@ -102,7 +102,7 @@ void  TcpOptDialog::AddHist(QComboBox *list, QString *hist)
 	}
 	for (int i=MAXHIST-1;i>0;i--) hist[i]=hist[i-1];
     hist[0]=list->currentText();
-	
+
     list->clear();
 	for (int i=0;i<MAXHIST;i++) {
         if (hist[i]!="") list->addItem(hist[i]);
@@ -113,16 +113,17 @@ void  TcpOptDialog::BtnNtripClick()
 {
     QString Addr_Text=Addr->currentText();
     QString Port_Text=Port->text();
-
-    ExecCmd("srctblbrows "+Addr_Text+":"+Port_Text,1);
+    QStringList args = {QString("%1:%2").arg(Addr_Text).arg(Port_Text)};
+    QString cmd = "srctblbrows";
+    ExecCmd(cmd, args, 1);
 }
 //---------------------------------------------------------------------------
-int  TcpOptDialog::ExecCmd(QString cmd, int show)
+int  TcpOptDialog::ExecCmd(QString cmd, QStringList args, int show)
 {
     QProcess prog;
     Q_UNUSED(show);
 
-    prog.start(cmd); /* FIXME: show option not yet supported */
+    prog.start(cmd, args); /* FIXME: show option not yet supported */
     return 1;
 }
 //---------------------------------------------------------------------------

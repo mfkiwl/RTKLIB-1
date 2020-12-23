@@ -1,7 +1,10 @@
 {
     "cmake.debugConfig": {
         "args": [
-            "testData.ubx"
         ]
-    }
+    },
+     "cmake.configureArgs": [
+        "-DBUILD_QT_APPS=True", "-DLAPACK=True"
+    ],
+    "C_Cpp.clang_format_fallbackStyle": "LLVM"
 }

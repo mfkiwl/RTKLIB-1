@@ -96,7 +96,7 @@ static int solflag      =2;             /* sol flag (1:std+2:age/ratio/ns) */
 static int strtype[]={                  /* stream types */
     STR_FILE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE,STR_NONE
 };
-static char strpath[MAXSTRRTK][MAXSTR]={"","","","","","","","","",""}; /* stream paths */
+static char strpath[MAXSTRRTK][MAXSTR]={"","","","","","","",""}; /* stream paths */
 static int strfmt[]={                   /* stream formats */
     STRFMT_UBX,STRFMT_RTCM3,STRFMT_SP3,SOLF_LLH,SOLF_NMEA,SOLF_LLH,SOLF_LLH
 };
@@ -444,7 +444,8 @@ static int startsvr(vt_t *vt)
     readant(vt,&prcopt,&svr.nav);
 
     /* read dcb file */
-    if (filopt.dcb) {
+    if (strlen(filopt.dcb) >0)
+    {
         strcpy(sta[0].name,sta_name);
         readdcb(filopt.dcb,&svr.nav,sta);
     }
@@ -837,7 +838,7 @@ static void prsatellite(vt_t *vt, int nf)
     }
 }
 static int verify_obs(ssat_t * ssat, int sat, int solstat, int nfreq) {
-    if (solstat == SOLQ_NONE) 
+    if (solstat == SOLQ_NONE)
         return 0;
     if (solstat == SOLQ_SINGLE) {
         return ssat[sat].vs;
@@ -856,7 +857,7 @@ static void probserv(vt_t *vt, int nf, int only_valid)
     int n_excluded_freq, sat, solstat;
     trace(4, "probserv:\n");
 
-    if (nf <= 0 || nf > NFREQ) 
+    if (nf <= 0 || nf > NFREQ)
         nf = NFREQ;
 
     rtksvrlock(&svr);
@@ -865,8 +866,8 @@ static void probserv(vt_t *vt, int nf, int only_valid)
 
     /* id: 0 - rover, 1 - base */
     for (id = 0; id < 2; id++) {
-        for (i = 0; i < svr.obs[id][0].n && n < MAXOBS * 2; i++) { 
-        
+        for (i = 0; i < svr.obs[id][0].n && n < MAXOBS * 2; i++) {
+
             obs[n++] = svr.obs[id][0].data[i];
 
             if (only_valid) {
@@ -878,7 +879,7 @@ static void probserv(vt_t *vt, int nf, int only_valid)
                     }
                 }
 
-                /* exclude obs if no valid measurements for all frequencies */ 
+                /* exclude obs if no valid measurements for all frequencies */
                 if (n_excluded_freq == nf) {
                     n--;
                 }
@@ -1024,14 +1025,14 @@ static void prssr(vt_t *vt)
     ssr_t ssr[MAXSAT];
     int i,valid;
     char tstr[64],id[32],*p=buff;
-    
+
     rtksvrlock(&svr);
     time=svr.rtk.sol.time;
     for (i=0;i<MAXSAT;i++) {
         ssr[i]=svr.nav.ssr[i];
     }
     rtksvrunlock(&svr);
-    
+
     p+=sprintf(p,"\n%s%3s %3s %3s %3s %3s %19s %6s %6s %6s %6s %6s %6s %8s "
                "%6s %6s %6s%s\n",
                ESC_BOLD,"SAT","S","UDI","IOD","URA","T0","D0-A","D0-C","D0-R",
@@ -1139,7 +1140,7 @@ static void cmd_observ(char **args, int narg, vt_t *vt)
     {
         if (sscanf(args[i], "-%d", &nf) < 1)
             cycle = (int)(atof(args[i]) * 1000.0);
-        if (!strcmp(args[i], "-v")) 
+        if (!strcmp(args[i], "-v"))
             only_valid = 1;
     }
     while (!vt_chkbrk(vt))
@@ -1147,9 +1148,9 @@ static void cmd_observ(char **args, int narg, vt_t *vt)
         if (cycle > 0) vt_printf(vt, ESC_CLEAR);
         probserv(vt, nf, only_valid);
 
-        if (cycle > 0) 
+        if (cycle > 0)
             sleepms(cycle);
-        else 
+        else
             return;
     }
     vt_printf(vt, "\n");
@@ -1205,11 +1206,11 @@ static void cmd_stream(char **args, int narg, vt_t *vt)
 static void cmd_ssr(char **args, int narg, vt_t *vt)
 {
     int cycle=0;
-    
+
     trace(3,"cmd_ssr:\n");
-    
+
     if (narg>1) cycle=(int)(atof(args[1])*1000.0);
-    
+
     while (!vt_chkbrk(vt)) {
         if (cycle>0) vt_printf(vt,ESC_CLEAR);
         prssr(vt);

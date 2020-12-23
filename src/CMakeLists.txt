@@ -11,22 +11,27 @@ add_library(RTKLib_base OBJECT
   sbas.c solution.c stream.c streamsvr.c
   tides.c tle.c)
 
+add_library(RTKLib_status_output_dummy OBJECT status_output_dummy.c)
+
 add_subdirectory(rcv)
 add_subdirectory(math)
 add_subdirectory(extensions)
 
-
 set (LIBRTKLIB_OBJ
+  $<TARGET_OBJECTS:RTKLib_base>
   $<TARGET_OBJECTS:RTKLib_math>
   $<TARGET_OBJECTS:RTKLib_math_lsq>
   $<TARGET_OBJECTS:RTKLib_rcv>
   $<TARGET_OBJECTS:RTKLib_tdiff_phases>
   $<TARGET_OBJECTS:RTKLib_glo_ifb>
-  $<TARGET_OBJECTS:RTKLib_base>
   $<TARGET_OBJECTS:RTKLib_iers>
+  $<TARGET_OBJECTS:RTKLIB_sar_rlm>
 )
 
-add_library(RTKLib SHARED ${LIBRTKLIB_OBJ})
+#Two libaries are built here, one with dummy functions for QT console
+#printing for CLI apps, and one with real implementations for QT builds
+add_library(RTKLib SHARED $<TARGET_OBJECTS:RTKLib_status_output_dummy> ${LIBRTKLIB_OBJ})
+add_library(RTKLib_qt STATIC ${LIBRTKLIB_OBJ})
 
 set_target_properties(RTKLib PROPERTIES PUBLIC_HEADER "rtklib.h")
 

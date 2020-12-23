@@ -34,27 +34,27 @@ void Plot::ReadSol(const QStringList &files, int sel)
     double tint;
     int i,n=0;
     char *paths[MAXNFILE];
-    
+
     trace(3,"ReadSol: sel=%d\n",sel);
 
     setlocale(LC_NUMERIC,"C"); // use point as decimal separator in formated output
 
     memset(&sol,0,sizeof(solbuf_t));
-    
+
     for (i=0;i<MAXNFILE;i++) paths[i]=path_str[i];
-    
+
     if (files.count()<=0) return;
-    
+
     ReadWaitStart();
-    
+
     for (i=0;i<files.count()&&n<MAXNFILE;i++) {
         strcpy(paths[n++],qPrintable(files.at(i)));
     }
     TimeSpan(&ts,&te,&tint);
-    
+
     ShowMsg(QString("reading %1...").arg(paths[0]));
     ShowLegend(NULL);
-    
+
     if (!readsolt(paths,n,ts,te,tint,0,&sol)) {
         ShowMsg(QString("no solution data : %1...").arg(paths[0]));
         ShowLegend(NULL);
@@ -63,14 +63,14 @@ void Plot::ReadSol(const QStringList &files, int sel)
     }
     freesolbuf(SolData+sel);
     SolData[sel]=sol;
-    
+
     if (SolFiles[sel]!=files) {
         SolFiles[sel]=files;
     }
     setWindowTitle("");
-    
+
     ReadSolStat(files,sel);
-    
+
     for (i=0;i<2;i++) {
         if (SolFiles[i].length()==0) continue;
         setWindowTitle(windowTitle()+SolFiles[i].at(0)+(SolFiles[i].count()>1?"... ":" "));
@@ -78,15 +78,15 @@ void Plot::ReadSol(const QStringList &files, int sel)
     BtnSol12->setChecked(false);
     if (sel==0) BtnSol1->setChecked(true);
     else        BtnSol2->setChecked(true);
-    
+
     if (sel==0||SolData[0].n<=0) {
         time2gpst(SolData[sel].data[0].time,&Week);
         UpdateOrigin();
     }
     SolIndex[0]=SolIndex[1]=ObsIndex=0;
-    
+
     GEDataState[sel]=0;
-    
+
     if (PlotType>PLOT_NSAT) {
         UpdateType(PLOT_TRK);
     }
@@ -101,7 +101,7 @@ void Plot::ReadSol(const QStringList &files, int sel)
         SetRange(1,YRange);
     }
     ReadWaitEnd();
-    
+
     UpdateTime();
     UpdatePlot();
     UpdateEnable();
@@ -113,47 +113,47 @@ void Plot::ReadSolStat(const QStringList &files, int sel)
     double tint;
     int i,n=0;
     char *paths[MAXNFILE];
-    
+
     trace(3,"ReadSolStat\n");
-    
+
     setlocale(LC_NUMERIC,"C"); // use point as decimal separator in formated output
 
     freesolstatbuf(SolStat+sel);
-    
+
     for (i=0;i<MAXNFILE;i++) paths[i]=path_str[i];
-    
+
     TimeSpan(&ts,&te,&tint);
-    
+
     for (i=0;i<files.count()&&n<MAXNFILE;i++) {
         strcpy(paths[n++],qPrintable(files.at(i)));
     }
     ShowMsg(QString("reading %1...").arg(paths[0]));
     ShowLegend(NULL);
-    
+
     readsolstatt(paths,n,ts,te,tint,SolStat+sel);
-    
+
     UpdateSatList();
 }
 // read observation data ----------------------------------------------------
 void Plot::ReadObs(const QStringList &files)
 {
-    obs_t obs={0,0,NULL};
+    obs_t obs={0,0,0};
     nav_t nav;
     sta_t sta;
     int nobs;
-    
+
     trace(3,"ReadObs\n");
-    
+
     setlocale(LC_NUMERIC,"C"); // use point as decimal separator in formated output
 
     memset(&nav,0,sizeof(nav_t));
     memset(&sta,0,sizeof(sta_t));
 
     if (files.size()==0) return;
-    
+
     ReadWaitStart();
     ShowLegend(NULL);
-    
+
     if ((nobs=ReadObsRnx(files,&obs,&nav,&sta))<=0) {
         ReadWaitEnd();
         return;
@@ -167,19 +167,19 @@ void Plot::ReadObs(const QStringList &files)
 
     UpdateObs(nobs);
     UpdateMp();
-    
+
     if (ObsFiles!=files) {
         ObsFiles=files;
     }
     NavFiles.clear();
-    
+
     setWindowTitle(files.at(0) + (files.size()>1?"...":""));
-    
+
     BtnSol1->setChecked(true);
 
     time2gpst(Obs.data[0].time,&Week);
     SolIndex[0]=SolIndex[1]=ObsIndex=0;
-    
+
     if (PlotType<PLOT_OBS||PLOT_DOP<PlotType) {
         UpdateType(PLOT_OBS);
     }
@@ -187,7 +187,7 @@ void Plot::ReadObs(const QStringList &files)
         UpdatePlotType();
     }
     FitTime();
-    
+
     ReadWaitEnd();
     UpdateObsType();
     UpdateTime();
@@ -203,16 +203,16 @@ int Plot::ReadObsRnx(const QStringList &files, obs_t *obs, nav_t *nav,
     int i,n;
     char obsfile[1024],navfile[1024]="",*p,*q,opt[2048];
     strcpy(opt,qPrintable(RnxOpts));
-    
+
     trace(3,"ReadObsRnx\n");
-    
+
     setlocale(LC_NUMERIC,"C"); // use point as decimal separator in formated output
 
     TimeSpan(&ts,&te,&tint);
-    
+
     for (i=0;i<files.count();i++) {
         strcpy(obsfile,qPrintable(QDir::toNativeSeparators(files.at(i))));
-        
+
         ShowMsg(QString(tr("reading obs data... %1")).arg(obsfile));
         qApp->processEvents();
 
@@ -226,9 +226,9 @@ int Plot::ReadObsRnx(const QStringList &files, obs_t *obs, nav_t *nav,
 
     for (i=0;i<files.count();i++) {
         strcpy(navfile,qPrintable(QDir::toNativeSeparators(files.at(i))));
-        
+
         if (!(p=strrchr(navfile,'.'))) continue;
-        
+
         if (!strcmp(p,".obs")||!strcmp(p,".OBS")) {
             strcpy(p,".nav" ); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p,".gnav"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
@@ -239,16 +239,16 @@ int Plot::ReadObsRnx(const QStringList &files, obs_t *obs, nav_t *nav,
         else if (!strcmp(p+3,"o" )||!strcmp(p+3,"d" )||
                  !strcmp(p+3,"O" )||!strcmp(p+3,"D" )) {
             n=nav->n;
-            
+
             strcpy(p+3,"N"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p+3,"G"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p+3,"H"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p+3,"Q"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p+3,"L"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
             strcpy(p+3,"P"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
-            
+
             if (nav->n>n||!(q=strrchr(navfile,'\\'))) continue;
-            
+
             // read brdc navigation data
             memcpy(q+1,"BRDC",4);
             strcpy(p+3,"N"); readrnxt(navfile,1,ts,te,tint,opt,NULL,nav,NULL);
@@ -273,28 +273,28 @@ void Plot::ReadNav(const QStringList &files)
     strcpy(opt,qPrintable(RnxOpts));
 
     trace(3,"ReadNav\n");
-    
+
     if (files.size()<=0) return;
-    
+
     setlocale(LC_NUMERIC,"C"); // use point as decimal separator in formated output
 
     ReadWaitStart();
     ShowLegend(NULL);
-    
+
     TimeSpan(&ts,&te,&tint);
-    
+
     freenav(&Nav,0xFF);
-    
+
     ShowMsg(tr("reading nav data..."));
 
     qApp->processEvents();
-    
+
     for (i=0;i<files.size();i++) {
         strcpy(navfile,qPrintable(QDir::toNativeSeparators(files.at(i))));
         readrnxt(navfile,1,ts,te,tint,opt,NULL,&Nav,NULL);
     }
     uniqnav(&Nav);
-    
+
     if (Nav.n<=0&&Nav.ng<=0&&Nav.ns<=0) {
         ShowMsg(QString(tr("no nav message: %1...")).arg(QDir::toNativeSeparators(files.at(i))));
         ReadWaitEnd();
@@ -308,7 +308,7 @@ void Plot::ReadNav(const QStringList &files)
     UpdateObs(NObs);
     UpdateMp();
     ReadWaitEnd();
-    
+
     UpdatePlot();
     UpdateEnable();
 }
@@ -319,11 +319,11 @@ void Plot::ReadElMaskData(const QString &file)
     double az0=0.0,el0=0.0,az1,el1;
     int i,j;
     QByteArray buff;
-    
+
     trace(3,"ReadElMaskData\n");
-    
+
     for (i=0;i<=360;i++) ElMaskData[i]=0.0;
-    
+
     if (!fp.open(QIODevice::ReadOnly)) {
         ShowMsg(QString(tr("no el mask data: %1...")).arg(file));
         ShowLegend(NULL);
@@ -338,9 +338,9 @@ void Plot::ReadElMaskData(const QString &file)
         bool okay;
         az1=tokens.at(0).toDouble(&okay); if (!okay) continue;
         el1=tokens.at(1).toDouble(&okay); if (!okay) continue;
-        
+
         if (az0<az1&&az1<=360.0&&0.0<=el1&&el1<=90.0) {
-            
+
             for (j=static_cast<int>(az0);j<static_cast<int>(az1);j++) ElMaskData[j]=el0*D2R;
             ElMaskData[j]=el1*D2R;
         }
@@ -358,25 +358,25 @@ void Plot::GenVisData(void)
     unsigned char i,j;
     int nobs=0;
     char name[16];
-    
+
     trace(3,"GenVisData\n");
-    
+
     memset(&data,0,sizeof(obsd_t));
 
     ClearObs();
     SimObs=1;
-    
+
     ts=TimeStart;
     te=TimeEnd;
     tint=TimeInt;
     matcpy(pos,OOPos,3,1);
     pos2ecef(pos,rr);
-    
+
     ReadWaitStart();
     ShowLegend(NULL);
     ShowMsg(tr("generating satellite visibility..."));
     qApp->processEvents();
-    
+
     for (time=ts;timediff(time,te)<=0.0;time=timeadd(time,tint)) {
         for (i=0;i<MAXSAT;i++) {
             satno2id(i+1,name);
@@ -393,7 +393,7 @@ void Plot::GenVisData(void)
             }
             data.time=time;
             data.sat=i+1;
-            
+
             for (j=0;j<NFREQ;j++) {
                 data.P[j]=data.L[j]=0.0;
                 data.code[j]=CODE_NONE;
@@ -409,7 +409,7 @@ void Plot::GenVisData(void)
         return;
     }
     UpdateObs(nobs);
-    
+
     setWindowTitle(tr("Satellite Visibility (Predicted)"));
     BtnSol1->setChecked(true);
     time2gpst(Obs.data[0].time,&Week);
@@ -431,11 +431,11 @@ void Plot::GenVisData(void)
 void Plot::ReadMapData(const QString &file)
 {
     QImage image;
-    
+
     trace(3,"ReadMapData\n");
 
     ShowMsg(QString("reading map image... %1").arg(file));
-    
+
     if (!image.load(file)) {
         ShowMsg(QString(tr("map file read error: %1")).arg(file));
         ShowLegend(NULL);
@@ -445,11 +445,11 @@ void Plot::ReadMapData(const QString &file)
     MapImageFile=file;
     MapSize[0]=MapImage.width();
     MapSize[1]=MapImage.height();
-    
+
     ReadMapTag(file);
-    
+
     BtnShowImg->setChecked(true);
-    
+
     mapAreaDialog->UpdateField();
     UpdatePlot();
     UpdateOrigin();
@@ -496,15 +496,15 @@ void Plot::UpdateSky(void)
     QRgb pix;
     double x,y,xp,yp,r,a,p[3],q[3],R[9]={0},dr,dist,Yz[3]={0},Y[3];
     int i,j,k,w1,h1,w2,h2,wz,nz=0;
-    
+
 
     w1=bm1.width(); h1=bm1.height();
     w2=bm2.width(); h2=bm2.height();
-    
+
     if (w1<=0||h1<=0||w2<=0||h2<=0) return;
-    
+
     bm2.fill(QColor("silver")); // fill bitmap by silver
-    
+
     if (norm(SkyFov,3)>1e-12) {
         RPY(SkyFov,R);
     }
@@ -525,7 +525,7 @@ void Plot::UpdateSky(void)
         yp=(j-h2/2.0)/SkyScaleR;
         r=sqrt(SQR(xp)+SQR(yp));
         if (SkyElMask&&r>1.0) continue;
-        
+
         // rotate coordinates roll-pitch-yaw
         if (norm(SkyFov,3)>1e-12) {
             if (r<1e-12) {
@@ -578,7 +578,7 @@ void Plot::UpdateSky(void)
         if (SkyBinarize) {
             YCrCb(&pix,Y);
             for (k=1;k<3;k++) Y[k]-=Yz[k];
-            
+
             // threshold by brightness and color-distance
             if (Y[0]>SkyBinThres1&&norm(Y+1,2)<SkyBinThres2) {
                 bm2.setPixel(i,j,qRgb(255,255,255)); // sky
@@ -595,11 +595,11 @@ void Plot::ReadSkyTag(const QString &file)
 {
     QFile fp(file);
     QByteArray buff;
-    
+
     trace(3,"ReadSkyTag\n");
-    
+
     if (!fp.open(QIODevice::ReadOnly)) return;
-    
+
     while (!fp.atEnd()) {
         buff=fp.readLine();
         if (buff.at(0)=='\0'||buff.at(0)=='%'||buff.at(0)=='#') continue;
@@ -631,9 +631,9 @@ void Plot::ReadSkyData(const QString &file)
 {
     QImage image;
     int i,w,h,wr;
-    
+
     trace(3,"ReadSkyData\n");
-    
+
     ShowMsg(QString("reading sky data... %1").arg(file));
 
     if (!image.load(file)) {
@@ -658,12 +658,12 @@ void Plot::ReadSkyData(const QString &file)
     SkyDestCorr=SkyRes=SkyFlip=0;
     SkyElMask=1;
     for (i=0;i<10;i++) SkyDest[i]=0.0;
-    
+
     ReadSkyTag(file+".tag");
-    
+
     ShowMsg("");
     BtnShowImg->setChecked(true);
-    
+
     UpdateSky();
 }
 // read map tag data --------------------------------------------------------
@@ -671,15 +671,15 @@ void Plot::ReadMapTag(const QString &file)
 {
     QFile fp(file+".tag");
     QByteArray buff;
-    
+
     trace(3,"ReadMapTag\n");
-    
+
     if (!(fp.open(QIODevice::ReadOnly))) return;
-    
+
     MapScaleX=MapScaleY=1.0;
     MapScaleEq=0;
     MapLat=MapLon=0.0;
-    
+
     while (!fp.atEnd()) {
         buff=fp.readLine();
         if (buff.at(0)=='\0'||buff.at(0)=='%'||buff.at(0)=='#') continue;
@@ -698,9 +698,9 @@ void Plot::ReadShapeFile(const QStringList &files)
 {
     int i;
     char path[1024];
-    
+
     ReadWaitStart();
-    
+
     gis_free(&Gis);
 
     for (i=0;i<files.count()&&i<MAXMAPLAYER;i++) {
@@ -712,11 +712,11 @@ void Plot::ReadShapeFile(const QStringList &files)
 
         strcpy(Gis.name[i],qPrintable(fi.baseName()));
     }
-    
+
     ReadWaitEnd();
     ShowMsg("");
     BtnShowMap->setChecked(true);
-    
+
     UpdateOrigin();
     UpdatePlot();
     UpdateEnable();
@@ -817,7 +817,7 @@ void Plot::ReadStaPos(const QString &file, const QString &sta,
     QString code;
     double pos[3];
     int sinex=0;
-    
+
     if (!(fp.open(QIODevice::ReadOnly))) return;
 
     while (!fp.atEnd()) {
@@ -836,7 +836,7 @@ void Plot::ReadStaPos(const QString &file, const QString &sta,
             if (tokens.size()<4) continue;
             for (int i=0;i<3;i++) pos[i]=tokens.at(i).toDouble();
             for (int i=3;i<tokens.size();i++) code=tokens.at(i)+' ';
-            code.simplified();
+            code = code.simplified();
 
             if (code!=sta) continue;
 
@@ -857,13 +857,13 @@ void Plot::SaveDop(const QString &file)
     int i,j,ns,week;
     char tstr[64];
     QString tlabel;
-    
+
     trace(3,"SaveDop: file=%s\n",qPrintable(file));
-    
+
     if (!(fp.open(QIODevice::WriteOnly))) return;
-    
+
     tlabel=TimeLabel<=1?tr("TIME (GPST)"):(TimeLabel<=2?tr("TIME (UTC)"):tr("TIME (JST))"));
-    
+
     data=QString(tr("%% %1 %2 %3 %4 %5 %6 (EL>=%7deg)\n"))
             .arg(tlabel,TimeLabel==0?13:19).arg("NSAT",6).arg("GDOP",8).arg("PDOP",8).arg("HDOP",8).arg("VDOP",8).arg(ElMask,0,'f',0);
     fp.write(data.toLatin1());
@@ -879,9 +879,9 @@ void Plot::SaveDop(const QString &file)
             ns++;
         }
         if (ns<=0) continue;
-        
+
         dops(ns,azel,ElMask*D2R,dop);
-        
+
         time=Obs.data[IndexObs[i]].time;
         if (TimeLabel==0) {
             tow=time2gpst(time,&week);
@@ -912,13 +912,13 @@ void Plot::SaveSnrMp(const QString &file)
     QString mp,data,tlabel;
     int i,j,k,week;
     strcpy(code,qPrintable(ObsTypeText.mid(1)));
-    
+
     trace(3,"SaveSnrMp: file=%s\n",qPrintable(file));
-    
+
     if (!(fp.open(QIODevice::WriteOnly))) return;
 
     tlabel=TimeLabel<=1?tr("TIME (GPST)"):(TimeLabel<=2?tr("TIME (UTC)"):tr("TIME (JST)"));
-    
+
     mp=ObsTypeText +" MP(m)";
     data=QString("%% %1 %2 %3 %4 %5 %6\n").arg(tlabel,TimeLabel==0?13:19).arg("SAT",6)
             .arg("AZ(deg)",8).arg("EL(deg)",8).arg("SNR(dBHz)",9).arg(mp,10);
@@ -927,17 +927,17 @@ void Plot::SaveSnrMp(const QString &file)
     for (i=0;i<MAXSAT;i++) {
         if (SatMask[i]||!SatSel[i]) continue;
         satno2id(i+1,sat);
-        
+
         for (j=0;j<Obs.n;j++) {
             if (Obs.data[j].sat!=i+1) continue;
-            
+
             for (k=0;k<NFREQ+NEXOBS;k++) {
                 if (strstr(code2obs(Obs.data[j].code[k],NULL),code)) break;
             }
             if (k>=NFREQ+NEXOBS) continue;
-            
+
             time=Obs.data[j].time;
-            
+
             if (TimeLabel==0) {
                 tow=time2gpst(time,&week);
                 sprintf(tstr,"%4d %9.1f ",week,tow);
@@ -964,14 +964,14 @@ void Plot::SaveElMask(const QString &file)
     QString data;
     double el,el0=0.0;
     int az;
-    
+
     trace(3,"SaveElMask: file=%s\n",qPrintable(file));
-    
+
     if (!(fp.open(QIODevice::WriteOnly))) return;
-    
+
     fp.write("%% Elevation Mask\n");
     fp.write("%% AZ(deg) EL(deg)\n");
-    
+
     for (az=0;az<=360;az++) {
         el=floor(ElMaskData[az]*R2D/0.1+0.5)*0.1;
         if (qFuzzyCompare(el,el0)) continue;
@@ -985,29 +985,29 @@ void Plot::Connect(void)
 {
     char cmd[1024],path[1024],buff[MAXSTRPATH],*name[2]={"",""},*p;
     int i,mode=STR_MODE_R;
-    
+
     trace(3,"Connect\n");
-    
+
     if (ConnectState) return;
-    
+
     for (i=0;i<2;i++) {
         if      (RtStream[i]==STR_NONE    ) continue;
         else if (RtStream[i]==STR_SERIAL  ) strcpy(path,qPrintable(StrPaths[i][0]));
         else if (RtStream[i]==STR_FILE    ) strcpy(path,qPrintable(StrPaths[i][2]));
         else if (RtStream[i]<=STR_NTRIPCLI) strcpy(path,qPrintable(StrPaths[i][1]));
         else continue;
-        
+
         if (RtStream[i]==STR_FILE||!SolData[i].cyclic||SolData[i].nmax!=RtBuffSize+1) {
             Clear();
             initsolbuf(SolData+i,1,RtBuffSize+1);
         }
         if (RtStream[i]==STR_SERIAL) mode|=STR_MODE_W;
-        
+
         strcpy(buff,path);
         if ((p=strstr(buff,"::"))) *p='\0';
         if ((p=strstr(buff,"/:"))) *p='\0';
         if ((p=strstr(buff,"@"))) name[i]=p+1; else name[i]=buff;
-        
+
         if (!stropen(Stream+i,RtStream[i],mode,path)) {
             ShowMsg(QString(tr("connect error: %1")).arg(name[0]));
             ShowLegend(NULL);
@@ -1015,7 +1015,7 @@ void Plot::Connect(void)
             continue;
         }
         strsettimeout(Stream+i,RtTimeOutTime,RtReConnTime);
-        
+
         if (StrCmdEna[i][0]) {
             strcpy(cmd,qPrintable(StrCmds[i][0]));
             strwrite(Stream+i,(unsigned char *)cmd,strlen(cmd));
@@ -1023,10 +1023,10 @@ void Plot::Connect(void)
         ConnectState=1;
     }
     if (!ConnectState) return;
-    
+
     if (Title!="") setWindowTitle(Title);
     else setWindowTitle(QString(tr("CONNECT %1 %2")).arg(name[0]).arg(name[1]));
-    
+
     BtnConnect->setChecked(true);
     BtnSol1   ->setChecked(*name[0]);
     BtnSol2   ->setChecked(*name[1]);
@@ -1043,13 +1043,13 @@ void Plot::Disconnect(void)
 {
     char cmd[1024];
     int i;
-    
+
     trace(3,"Disconnect\n");
-    
+
     if (!ConnectState) return;
-    
+
     ConnectState=0;
-    
+
     for (i=0;i<2;i++) {
         if (StrCmdEna[i][1]) {
             strcpy(cmd,qPrintable(StrCmds[i][1]));
@@ -1057,7 +1057,7 @@ void Plot::Disconnect(void)
         }
         strclose(Stream+i);
     }
-    
+
     if (windowTitle().indexOf(tr("CONNECT"))) {
         setWindowTitle(QString(tr("DISCONNECT%1")).arg(windowTitle().mid(7)));
     }
@@ -1099,9 +1099,9 @@ void Plot::UpdateObs(int nobs)
     double pos[3],rr[3],e[3],azel[MAXOBS*2]={0},rs[6],dts[2],var;
     int i,j,k,svh,per,per_=-1;
     char msg[128],name[16];
-    
+
     trace(3,"UpdateObs\n");
-    
+
     memset(&sol,0,sizeof(sol_t));
 
     delete [] IndexObs; IndexObs=NULL;
@@ -1109,23 +1109,23 @@ void Plot::UpdateObs(int nobs)
     delete [] El; El=NULL;
     NObs=0;
     if (nobs<=0) return;
-    
+
     IndexObs=new int[nobs+1];
     Az=new double[Obs.n];
     El=new double[Obs.n];
-    
+
     opt.err[0]=900.0;
-    
+
     ReadWaitStart();
     ShowLegend(NULL);
-    
+
     for (i=0;i<Obs.n;i=j) {
         time=Obs.data[i].time;
         for (j=i;j<Obs.n;j++) {
             if (timediff(Obs.data[j].time,time)>TTOL) break;
         }
         IndexObs[NObs++]=i;
-        
+
         for (k=0;k<j-i;k++) {
             azel[k*2]=azel[1+k*2]=0.0;
         }
@@ -1169,9 +1169,9 @@ void Plot::UpdateObs(int nobs)
         }
     }
     IndexObs[NObs]=Obs.n;
-    
+
     UpdateSatList();
-    
+
     ReadWaitEnd();
 }
 // update Multipath ------------------------------------------------------------
@@ -1180,29 +1180,29 @@ void Plot::UpdateMp(void)
     obsd_t *data;
     double lam1,lam2,I,C,B;
     int i,j,k,f1,f2,sat,sys,per,per_=-1,n;
-    
+
     trace(3,"UpdateMp\n");
-    
+
     for (i=0;i<NFREQ+NEXOBS;i++) {
         delete [] Mp[i]; Mp[i]=NULL;
     }
     if (Obs.n<=0) return;
-    
+
     for (i=0;i<NFREQ+NEXOBS;i++) {
         Mp[i]=new double[Obs.n];
     }
     ReadWaitStart();
     ShowLegend(NULL);
-    
+
     for (i=0;i<Obs.n;i++) {
         data=Obs.data+i;
         sys=satsys(data->sat,NULL);
-        
+
         for (j=0;j<NFREQ+NEXOBS;j++) {
             Mp[j][i]=0.0;
-            
+
             code2obs(data->code[j],&f1);
-            
+
             if (sys==SYS_CMP) {
                 if      (f1==5) f1=2; /* B2 */
                 else if (f1==4) f1=3; /* B3 */
@@ -1211,11 +1211,11 @@ void Plot::UpdateMp(void)
             else if (sys==SYS_SBS) f2=f1==1?3:1; /* L1/L5 */
             else if (sys==SYS_CMP) f2=f1==1?2:1; /* B1/B2 */
             else                   f2=f1==1?2:1; /* L1/L2 */
-            
+
             lam1=satwavelen(data->sat,f1-1,&Nav);
             lam2=satwavelen(data->sat,f2-1,&Nav);
             if (lam1==0.0||lam2==0.0) continue;
-            
+
             if (data->P[j]!=0.0&&data->L[j]!=0.0&&data->L[f2-1]!=0.0) {
                 C=SQR(lam1)/(SQR(lam1)-SQR(lam2));
                 I=lam1*data->L[j]-lam2*data->L[f2-1];
@@ -1225,12 +1225,12 @@ void Plot::UpdateMp(void)
     }
     for (sat=1;sat<=MAXSAT;sat++) for (i=0;i<NFREQ+NEXOBS;i++) {
         sys=satsys(sat,NULL);
-        
+
         for (j=k=n=0,B=0.0;j<Obs.n;j++) {
             if (Obs.data[j].sat!=sat) continue;
-            
+
             code2obs(Obs.data[j].code[i],&f1);
-            
+
             if (sys==SYS_CMP) {
                 if      (f1==5) f1=2; /* B2 */
                 else if (f1==4) f1=3; /* B3 */
@@ -1238,10 +1238,10 @@ void Plot::UpdateMp(void)
             if      (sys==SYS_GAL) f2=f1==1?3:1;
             else if (sys==SYS_CMP) f2=f1==1?2:1;
             else                   f2=f1==1?2:1;
-            
+
             if ((Obs.data[j].LLI[i]&1)||(Obs.data[j].LLI[f2-1]&1)||
                 fabs(Mp[i][j]-B)>THRES_SLIP) {
-                
+
                 for (;k<j;k++) if (Obs.data[k].sat==sat) Mp[i][k]-=B;
                 B=Mp[i][j]; n=1; k=j;
             }
@@ -1266,9 +1266,9 @@ void Plot::UpdateMp(void)
 void Plot::ConnectPath(const QString &path, int ch)
 {
     trace(3,"ConnectPath: path=%s ch=%d\n",qPrintable(path),ch);
-    
+
     RtStream[ch]=STR_NONE;
-    
+
     if (!path.indexOf("://")) return;
     if      (path.indexOf("serial")!=-1) RtStream[ch]=STR_SERIAL;
     else if (path.indexOf("tcpsvr")!=-1) RtStream[ch]=STR_TCPSVR;
@@ -1276,7 +1276,7 @@ void Plot::ConnectPath(const QString &path, int ch)
     else if (path.indexOf("ntrip" )!=-1) RtStream[ch]=STR_NTRIPCLI;
     else if (path.indexOf("file"  )!=-1) RtStream[ch]=STR_FILE;
     else return;
-    
+
     StrPaths[ch][1]=path.mid(path.indexOf("://")+3);
     RtFormat[ch]=SOLF_LLH;
     RtTimeForm=0;
@@ -1284,7 +1284,7 @@ void Plot::ConnectPath(const QString &path, int ch)
     RtFieldSep=" ";
     RtTimeOutTime=0;
     RtReConnTime =10000;
-    
+
     BtnShowTrack->setChecked(true);
     BtnFixHoriz ->setChecked(true);
     BtnFixVert  ->setChecked(true);
@@ -1294,7 +1294,7 @@ void Plot::ClearObs(void)
 {
     sta_t sta0;
     int i;
-    
+
     memset(&sta0,0,sizeof(sta_t));
 
     freeobs(&Obs);
@@ -1316,7 +1316,7 @@ void Plot::ClearObs(void)
 void Plot::ClearSol(void)
 {
     int i;
-    
+
     for (i=0;i<2;i++) {
         freesolbuf(SolData+i);
         free(SolStat[i].data);
@@ -1332,15 +1332,15 @@ void Plot::Clear(void)
 {
     double ep[]={2010,1,1,0,0,0};
     int i;
-    
+
     trace(3,"Clear\n");
-    
+
     Week=0;
-    
+
     ClearObs();
     ClearSol();
     gis_free(&Gis);
-    
+
     MapImage=QImage();
     MapImageFile="";
     MapSize[0]=MapSize[1]=0;
@@ -1350,7 +1350,7 @@ void Plot::Clear(void)
     }
     TimeStart=TimeEnd=epoch2time(ep);
     BtnAnimate->setChecked(false);
-    
+
     if (PlotType>PLOT_NSAT) {
         UpdateType(PLOT_TRK);
     }
@@ -1366,9 +1366,9 @@ void Plot::Clear(void)
 #ifdef GEARTH_GMAP_ENABLE
     googleEarthView->Clear();
 #endif
-    
+
     for (i=0;i<=360;i++) ElMaskData[i]=0.0;
-    
+
     UpdateTime();
     UpdatePlot();
     UpdateEnable();
@@ -1377,21 +1377,21 @@ void Plot::Clear(void)
 void Plot::Reload(void)
 {
     QStringList obsfiles,navfiles;
-    
+
     trace(3,"Reload\n");
-    
+
     if (SimObs) {
         GenVisData();
         return;
     }
     obsfiles=ObsFiles;
     navfiles=NavFiles;
-    
+
     ReadObs(obsfiles);
     ReadNav(navfiles);
     ReadSol(SolFiles[0],0);
     ReadSol(SolFiles[1],1);
-    
+
 }
 // read wait start ----------------------------------------------------------
 void Plot::ReadWaitStart(void)

@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
@@ -186,8 +187,8 @@ extern "C" {
 #ifdef ENAQZS
 #define MINPRNQZS   193                 /* min satellite PRN number of QZSS */
 #define MAXPRNQZS   202                 /* max satellite PRN number of QZSS */
-#define MINPRNQZS_S 183                 /* min satellite PRN number of QZSS SAIF */
-#define MAXPRNQZS_S 191                 /* max satellite PRN number of QZSS SAIF */
+#define MINPRNQZS_S 183                 /* min satellite PRN number of QZSS SLAS */
+#define MAXPRNQZS_S 191                 /* max satellite PRN number of QZSS SLAS */
 #define NSATQZS     (MAXPRNQZS-MINPRNQZS+1) /* number of QZSS satellites */
 #define NSYSQZS     1
 #else
@@ -200,7 +201,7 @@ extern "C" {
 #endif
 #ifdef ENACMP
 #define MINPRNCMP   1                   /* min satellite sat number of BeiDou */
-#define MAXPRNCMP   37                  /* max satellite sat number of BeiDou */
+#define MAXPRNCMP   63                  /* max satellite sat number of BeiDou */
 #define NSATCMP     (MAXPRNCMP-MINPRNCMP+1) /* number of BeiDou satellites */
 #define NSYSCMP     1
 #else
@@ -211,7 +212,7 @@ extern "C" {
 #endif
 #ifdef ENAIRN
 #define MINPRNIRN   1                   /* min satellite sat number of IRNSS */
-#define MAXPRNIRN   7                   /* max satellite sat number of IRNSS */
+#define MAXPRNIRN   14                   /* max satellite sat number of IRNSS */
 #define NSATIRN     (MAXPRNIRN-MINPRNIRN+1) /* number of IRNSS satellites */
 #define NSYSIRN     1
 #else
@@ -235,7 +236,7 @@ extern "C" {
 #define MAXSYS      8
 
 #define MINPRNSBS   120                 /* min satellite PRN number of SBAS */
-#define MAXPRNSBS   142                 /* max satellite PRN number of SBAS */
+#define MAXPRNSBS   158                 /* max satellite PRN number of SBAS */
 #define NSATSBS     (MAXPRNSBS-MINPRNSBS+1) /* number of SBAS satellites */
 
 #define MAXSAT      (NSATGPS+NSATGLO+NSATGAL+NSATQZS+NSATCMP+NSATIRN+NSATSBS+NSATLEO)
@@ -276,13 +277,8 @@ extern "C" {
 #define MAXSTRPATH  1024                /* max length of stream path */
 #define MAXSTRMSG   1024                /* max length of stream message */
 
-#if defined(WIN32) | defined(QT)
 #define MAXSTRRTK   8                   /* max number of stream in RTK server */
 #define MAXSOLRTK   2                   /* max number of solution streams in RTK server */
-#else
-#define MAXSTRRTK   10                  /* max number of stream in RTK server */
-#define MAXSOLRTK   4                   /* max number of solution streams in RTK server */
-#endif
 
 #define ROVER_STREAM 0                    /* number of rover stream in RTK server */
 #define BASE_STREAM  1                   /* number of base stream in RTK server */
@@ -304,7 +300,7 @@ extern "C" {
 
 #define SOLUTIONSTROFFSET 3
 #define LOGSTROFFSET 7
-#define MONITORSTRN 10                   /* the number of MONITOR stream */
+#define MONITORSTRN 7                   /* the number of MONITOR stream */
 
 #define NOUTFILE    9                   /* number of output files for rinex conversion */
 #define RNX2VER     2.10                /* RINEX ver.2 default output version */
@@ -552,8 +548,11 @@ extern "C" {
 #define CSMOOTHOPT_MEAS_DOMAIN 1
 #define CSMOOTHOPT_POS_DOMAIN  2
 
-#define P2_5        0.03125             /* 2^-5 */
-#define P2_6        0.015625            /* 2^-6 */
+#define P2_2        0.25                  /* 2^-2 */
+#define P2_5        0.03125               /* 2^-5 */
+#define P2_6        0.015625              /* 2^-6 */
+#define P2_8        0.00390625            /* 2^-8 */
+#define P2_10       0.0009765625          /* 2^-10 */
 #define P2_11       4.882812500000000E-04 /* 2^-11 */
 #define P2_15       3.051757812500000E-05 /* 2^-15 */
 #define P2_17       7.629394531250000E-06 /* 2^-17 */
@@ -568,14 +567,18 @@ extern "C" {
 #define P2_31       4.656612873077393E-10 /* 2^-31 */
 #define P2_32       2.328306436538696E-10 /* 2^-32 */
 #define P2_33       1.164153218269348E-10 /* 2^-33 */
+#define P2_34       5.820766091346740E-11 /* 2^-34 */
 #define P2_35       2.910383045673370E-11 /* 2^-35 */
 #define P2_38       3.637978807091710E-12 /* 2^-38 */
 #define P2_39       1.818989403545856E-12 /* 2^-39 */
 #define P2_40       9.094947017729280E-13 /* 2^-40 */
 #define P2_43       1.136868377216160E-13 /* 2^-43 */
+#define P2_46       1.421085471520200E-14 /* 2^-46 */
 #define P2_48       3.552713678800501E-15 /* 2^-48 */
 #define P2_50       8.881784197001252E-16 /* 2^-50 */
 #define P2_55       2.775557561562891E-17 /* 2^-55 */
+#define P2_59       1.734723475976810E-18 /* 2^-59 */
+#define P2_66       1.355252715606881E-20 /* 2^-66 */
 
 #ifdef WIN32
 #define thread_t    HANDLE
@@ -808,8 +811,8 @@ typedef struct {        /* TEC grid type */
 
 typedef struct {        /* satellite fcb data type */
     gtime_t ts,te;      /* start/end time (GPST) */
-    double bias[MAXSAT][3]; /* fcb value   (cyc) */
-    double std [MAXSAT][3]; /* fcb std-dev (cyc) */
+    double bias[MAXSAT][NFREQ]; /* fcb value   (cyc) */
+    double std [MAXSAT][NFREQ]; /* fcb std-dev (cyc) */
 } fcbd_t;
 
 typedef struct {        /* SBAS message type */
@@ -1397,10 +1400,10 @@ typedef struct half_cyc_tag {  /* half-cycle correction list type */
 
 typedef struct
 {
-    int msgType[MAXSAT];                   /* Current RLM message type per-SV */
-    int msgPartCount[MAXSAT];              /* Current RLM message receive state per-SV */
-    unsigned char msgBuffer[MAXSAT][8][3]; /* RLM message receive buffer per-SV */
-} sarRLM_t;
+    uint8_t part_count[MAXSAT];              /* Current RLM message type per-SV */
+    uint8_t msg_parts[MAXSAT];              /* Current RLM message receive state per-SV */
+    unsigned char msg_buffer[MAXSAT][8];  /* RLM message receive buffer per-SV */
+} sar_rlm_t;
 
 typedef struct {        /* receiver raw data control type */
     gtime_t time;       /* message time */
@@ -1431,7 +1434,7 @@ typedef struct {        /* receiver raw data control type */
     half_cyc_t *half_cyc; /* half-cycle correction list */
     int format;         /* receiver stream format */
     void *rcv_data;     /* receiver dependent data */
-    sarRLM_t sarRLM;    /* Galileo SAR RLM data */
+    sar_rlm_t sar_rlm;    /* Galileo SAR RLM data */
 
 } raw_t;
 
@@ -1839,7 +1842,10 @@ EXPORT int test_glostr(const unsigned char *buff);
 EXPORT int decode_glostr(const unsigned char *buff, geph_t *geph);
 EXPORT int decode_bds_d1(const unsigned char *buff, eph_t *eph);
 EXPORT int decode_bds_d2(const unsigned char *buff, eph_t *eph);
-EXPORT int decode_gal_inav(const unsigned char *buff, eph_t *eph);
+
+EXPORT int decode_gal_inav(const unsigned char *buff, int sig_code, eph_t *eph, alm_t *alm,
+                           double *ion_gal, double *utc_gal, int *leaps);
+EXPORT void decode_gal_inav_rlm(raw_t *raw, int sat);
 
 EXPORT int init_raw   (raw_t *raw, int format);
 EXPORT void free_raw  (raw_t *raw);

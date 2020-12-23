@@ -214,12 +214,12 @@ static gtime_t adjday(gtime_t time, double tod)
 /* decode SBF measurements message (observables) -----------------------------*/
 /*
  * this is the most importan block in the SBF format. It it contains all code
- * pseudoranges and carrier phase measurements of all received satellites. 
+ * pseudoranges and carrier phase measurements of all received satellites.
  * This block is made of one Type1 sub-block per santellite followed by, if any,
  * a certain number of Type2 sub-blocks. SB2Num defines how many Type2
  * sub-blocks there are inside its Type1 sub-block.
  * Type1 subplock contains code pseudorange and carrier phase range of the first
- * decoded sygnal defined by signType1, this is typically L1 signal. 
+ * decoded sygnal defined by signType1, this is typically L1 signal.
  * Any following Type2 sub-block (if there are any) contains signType2 signal
  * information, typically L2 signal. Inside Type2 sub-blocks, information is
  * expressed as difference from the data in signType1 sub-block. This makes the
@@ -383,7 +383,7 @@ static int decode_measepoch(raw_t *raw){
             raw->obs.data[n].D[j]=(float)0.0;
             raw->obs.data[n].SNR[j]=(unsigned char)0;
             raw->obs.data[n].LLI[j]=(unsigned char)0;
-            raw->obs.data[n].code[j]=CODE_NONE;            
+            raw->obs.data[n].code[j]=CODE_NONE;
         }
         /* detect which signals is stored in Type1 sub-block */
 #if 1
@@ -1343,6 +1343,7 @@ static int decode_galrawinav(raw_t *raw){
     uint8_t type;
     uint8_t part1,part2,page1,page2;
     int i,j;
+    int sig_code;
 
     p=(raw->buff)+6;
     prn=U1(p+8)-70;
@@ -1399,6 +1400,7 @@ static int decode_galrawinav(raw_t *raw){
         pos=type*16;
 
         for (i=0,j=2;i<16;i++,j+=8) raw->subfrm[sat-1][pos++]=getbitu(buff,j,8);
+        sig_code = CODE_L7X;
     } else
     { /* E1-B */
         int pos,i;
@@ -1410,10 +1412,11 @@ static int decode_galrawinav(raw_t *raw){
         pos=type*16;
 
         for (i=0,j=2;i<16;i++,j+=8) raw->subfrm[sat-1][pos++]=getbitu(buff,j,8);
+        sig_code = CODE_L1X;
     };
 
     /* decode galileo inav ephemeris */
-    if (!decode_gal_inav(raw->subfrm[sat-1],&eph)) {
+    if (!decode_gal_inav(raw->subfrm[sat-1], sig_code, &eph, raw->nav.alm, raw->nav.ion_gal, raw->nav.utc_gal, &raw->nav.leaps)) {
         return 0; /* incomplete ephemeris */
     }
     /* test svid consistency */

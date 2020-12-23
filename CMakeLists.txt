@@ -62,130 +62,111 @@ if(BUILD_QT_APPS)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     add_definitions(-DQT)
+    add_definitions(-DQT5)
+    #Occasionally libstdc++ must be explicitly specified
+    set(CXX_BASE_LIBS stdc++)
   else()
     message(FATAL_ERROR "No CXX support - Can't build QT Applications")
   endif()
 endif(BUILD_QT_APPS)
 
 
-cmake_dependent_option(OPTIMISE_NATIVE_ARCH_CXX "Optimise CXX compiler features for native architecture" ON "BUILD_QT_APPS" OFF)
-if(OPTIMISE_NATIVE_ARCH_CXX)
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG("-march=native" CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-  if(CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-  endif(CXX_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-endif(OPTIMISE_NATIVE_ARCH_CXX)
-
-
-option(OPTIMISE_NATIVE_ARCH_C "Optimise C compiler features for native architecture" ON)
-if(OPTIMISE_NATIVE_ARCH)
-  include(CheckCCompilerFlag)
-  CHECK_C_COMPILER_FLAG("-march=native" C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-  if(C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
-  endif(C_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-endif(OPTIMISE_NATIVE_ARCH)
-
-option(D_ENAGLO "GLONASS Support" ON)
-if(D_ENAGLO)
+option(ENAGLO "GLONASS Support" ON)
+if(ENAGLO)
   add_definitions(-DENAGLO)
-endif(D_ENAGLO)
+endif(ENAGLO)
 
-option(D_ENAQZS "QZSS Support" ON)
-if(D_ENAQZS)
+option(ENAQZS "QZSS Support" ON)
+if(ENAQZS)
   add_definitions(-DENAQZS)
 endif()
 
-option(D_ENAGAL "Galileo Support" ON)
-if(D_ENAGAL)
+option(ENAGAL "Galileo Support" ON)
+if(ENAGAL)
   add_definitions(-DENAGAL)
-endif(D_ENAGAL)
+endif(ENAGAL)
 
-option(D_ENACMP "BeiDou/Compass Support" ON)
-if(D_ENACMP)
+option(ENACMP "BeiDou/Compass Support" ON)
+if(ENACMP)
   add_definitions(-DENACMP)
-endif(D_ENACMP)
+endif(ENACMP)
 
-option(D_ENAIRN "IRNSS Support" ON)
-if(D_ENAIRN)
+option(ENAIRN "IRNSS Support" ON)
+if(ENAIRN)
   add_definitions(-DENAIRN)
-endif(D_ENAIRN)
+endif(ENAIRN)
 
-option(D_ENALEO "LEO Support" ON)
-if(D_ENALEO)
+option(ENALEO "LEO Support" ON)
+if(ENALEO)
   add_definitions(-DENALEO)
-endif(D_ENALEO)
+endif(ENALEO)
 
-option(D_OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" OFF)
-if(D_OUTSTAT_AMB)
+option(OUTSTAT_AMB "PPP : Output ambiguity parameters to solution status" ON)
+if(OUTSTAT_AMB)
   add_definitions(-DOUTSTAT_AMB)
-endif(D_OUTSTAT_AMB)
+endif(OUTSTAT_AMB)
 
-option(D_IERS_MODEL "Use IERS GMF instead of NMF (Requires gfortran)" ON)
-if(D_IERS_MODEL)
+option(IERS_MODEL "Use IERS GMF instead of NMF (Requires gfortran)" ON)
+if(IERS_MODEL)
   add_definitions(-DIERS_MODEL)
   enable_language(Fortran)
-endif(D_IERS_MODEL)
+endif(IERS_MODEL)
 
-cmake_dependent_option(OPTIMISE_NATIVE_ARCH_FORTRAN "Optimise Fortran compiler features for native architecture" ON "D_IERS_MODEL" OFF)
-if(OPTIMISE_NATIVE_ARCH_FORTRAN)
-  include(CheckFortranCompilerFlag)
-  CHECK_FORTRAN_COMPILER_FLAG("-march=native" FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-  if(FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-    set(CMAKE_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} -march=native")
-  endif(FORTRAN_COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-endif(OPTIMISE_NATIVE_ARCH_FORTRAN)
-
-option(D_EXTLEX "QZSS LEX Support" ON)
-if(D_EXTLEX)
+option(EXTLEX "QZSS LEX Support" ON)
+if(EXTLEX)
   add_definitions(-DEXTLEX)
-endif(D_EXTLEX)
+endif(EXTLEX)
 
-option(D_MKL "Intel Math Kernel Library (MKL) Support" OFF)
-if(D_MKL)
+option(MKL "Intel Math Kernel Library (MKL) Support" OFF)
+if(MKL)
   add_definitions(-DMKL)
-endif(D_MKL)
+endif(MKL)
 
-option(D_LAPACK "Use LAPACK/BLAS" OFF)
-if(D_LAPACK)
+option(LAPACK "Use LAPACK/BLAS" OFF)
+if(LAPACK)
   add_definitions(-DLAPACK)
-endif(D_LAPACK)
+  find_package(BLAS)
+  set(C_BASE_LIBS ${BLAS_LIBRARIES})
+endif(LAPACK)
 
-option(D_TRACE "Tracing Support" ON)
-if(D_TRACE)
+option(TRACE "Tracing Support" ON)
+if(TRACE)
   add_definitions(-DTRACE)
-endif(D_TRACE)
+endif(TRACE)
 
-option(D_SHARED "Shared library compatibility" ON)
-if(D_SHARED)
+option(SHARED "Shared library compatibility" ON)
+if(SHARED)
   add_definitions(-DSHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif(D_SHARED)
+endif(SHARED)
 
-option(D_DWIN32 "Use WIN32 API" OFF)
-if(D_DWIN32)
+option(DWIN32 "Use WIN32 API" OFF)
+if(DWIN32)
   add_definitions(-DWIN32)
-endif(D_DWIN32)
+endif(DWIN32)
 
-option(D_WIN_DLL "Generate library as Windows DLL" OFF)
-if(D_WIN_DLL)
+option(WIN_DLL "Generate library as Windows DLL" OFF)
+if(WIN_DLL)
   add_definitions(-DWINDLL)
-endif(D_WIN_DLL)
+endif(WIN_DLL)
 
-option(D_NOCALLOC "Don't use calloc for zero matrix" OFF)
-if(D_NOCALLOC)
+option(NOCALLOC "Don't use calloc for zero matrix" OFF)
+if(NOCALLOC)
   add_definitions(-DNOCALLOC)
-endif(D_NOCALLOC)
+endif(NOCALLOC)
 
-option(D_CPUTIME_IN_GPST "cputime operated in gpst" OFF)
-if(D_CPUTIME_IN_GPST)
+option(CPUTIME_IN_GPST "cputime operated in gpst" OFF)
+if(CPUTIME_IN_GPST)
   add_definitions(-DCPUTIME_IN_GPST)
-endif(D_CPUTIME_IN_GPST)
+endif(CPUTIME_IN_GPST)
 
+# CAUTION: The codebase currently contains hardcoded expectations
+# regarding number of frequencies. These settings are the defaults
+# in rtklib.h - You have been warned.
 add_definitions(-DNFREQ=3)    # Frequencies supported
-add_definitions(-DNEXOBS=0)   # Number of extended obs codes
-add_definitions(-DMAXOBS=128) # Max number of observations
+# This is set to 1 to handle some hard coded assumption in the LEX code
+add_definitions(-DNEXOBS=1)   # Number of extended obs codes
+add_definitions(-DMAXOBS=64) # Max number of observations
 
 ### COMPILE & LINK
 ##################
@@ -202,17 +183,15 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Check for pthreads support
 find_package(Threads REQUIRED)
+list(APPEND C_BASE_LIBS ${CMAKE_THREAD_LIBS_INIT})
 
 # Check math funcs available, or link to libm
 include(CheckLibraryExists)
 message(STATUS "Checking whether libm is required for math")
 CHECK_LIBRARY_EXISTS(m sin "" HAVE_LIB_M)
 if (HAVE_LIB_M)
-    set(EXTRA_LIBS ${EXTRA_LIBS} m)
+    list(APPEND C_BASE_LIBS m)
 endif (HAVE_LIB_M)
-
-#Occasionally libstdc++ must be explicitly specified
-set(EXTRA_LIBS ${EXTRA_LIBS} stdc++)
 
 # Define some TCP options on macos
 add_definitions( -D_DARWIN_C_SOURCE=1)

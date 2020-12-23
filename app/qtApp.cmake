@@ -1,7 +1,24 @@
 #Generic code for all rtklib QT applications
+
+#Additional QT UI Headers
+include_directories(../appcmn_qt)
+
+#find_package(PkgConfig REQUIRED)
+find_package(PNG REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets SerialPort REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PNG libpng16 REQUIRED)
+
+#For portability, link the GUI apps against a static RTKLIB library
+#Note that the shared library contains dummy functions used
+#to print progress to the QT window 'console' during processing
+
+set(APP_LIBS  ${C_BASE_LIBS} ${CXX_BASE_LIBS}
+              ${PNG_LIBRARIES} Qt5::Widgets Qt5::Core Qt5::SerialPort
+              RTKLib_qt
+)
+set (APP_INCLUDES ${PNG_INCLUDE_DIRS})
+set (APP_DEFINES ${PNG_DEFINITIONS})
+
+add_definitions(${APP_DEFINES})
 
 if(APPLE)
   set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/${APP}.icns)
@@ -12,10 +29,8 @@ else()
   add_executable(${APP} ${SOURCES})
 endif(APPLE)
 
-#For portability, link the GUI apps against the static library
-target_link_libraries(${APP} Qt5::Widgets Qt5::Core Qt5::SerialPort RTKLib ${PNG_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
-target_include_directories(${APP} PRIVATE ${PNG_INCLUDE_DIRS})
-target_link_directories(${APP} PRIVATE ${PNG_LIBRARY_DIRS})
+target_link_libraries(${APP} ${APP_LIBS})
+target_include_directories(${APP} PRIVATE ${APP_INCLUDES})
 
 if(APPLE)
   install(TARGETS ${APP}
@@ -43,3 +58,6 @@ endif(APPLE)
   #   "
   #   COMPONENT qt_apps
   # )
+
+message(STATUS "Enabled ${APP}")
+

@@ -31,36 +31,36 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-public slots:	
+public slots:
     void  TimerTimer        ();
-	
+
     void  BtnStartClick     ();
     void  BtnStopClick      ();
     void  BtnPlotClick      ();
     void  BtnOptClick       ();
     void  BtnExitClick      ();
-	
+
     void  BtnTimeSysClick   ();
     void  BtnInputStrClick  ();
     void  BtnOutputStrClick ();
     void  BtnLogStrClick    ();
     void  BtnSolTypeClick   ();
     void  BtnPlotType1Click  ();
-	
+
     void  BtnMonitorClick   ();
     void  BtnSaveClick      ();
     void  BtnAboutClick     ();
     void  BtnTaskTrayClick  ();
-	
+
     void  MenuExpandClick   ();
     void  MenuStartClick    ();
     void  MenuStopClick     ();
     void  MenuPlotClick     ();
     void  MenuMonitorClick  ();
     void  MenuExitClick     ();
-	
+
     void  ScbSolChange      ();
-	
+
     void  TrayIconClick  (QSystemTrayIcon::ActivationReason);
     void  BtnFreqType1Click();
     void  BtnPanelClick();
@@ -104,7 +104,7 @@ private:
     void  UpdateEnable (void);
     void  ChangePlot   (void);
     int   ConfOverwrite(const QString &path);
-	
+
     void  DrawSnr      (QPainter *c, int w, int h, int x0, int y0, int index, int freq);
     void  DrawSat      (QPainter *c, int w, int h, int x0, int y0, int index, int freq);
     void  DrawBL       (QPainter *c, QLabel *disp, int w, int h);
@@ -122,11 +122,11 @@ private:
     void  LoadOpt      (void);
     void  SaveOpt      (void);
     void  SetTrayIcon  (int index);
-    int   ExecCmd      (const QString &cmd, int show);
+    int   ExecCmd      (const QString &cmd, const QStringList &args, int show);
     QColor  SnrColor   (int snr);
 public:
     QString IniFile;
-	
+
 	int PanelStack,PanelMode;
 	int SvrCycle,SvrBuffSize,Scale,SolBuffSize,NavSelect,SavedSol;
 	int NmeaReq,NmeaCycle,InTimeTag,OutTimeTag,OutAppend,LogTimeTag,LogAppend;
@@ -136,7 +136,7 @@ public:
 	int TimeSys,SolType,PlotType1,FreqType1,PlotType2,FreqType2;
     int TrkType1,TrkType2,TrkScale1,TrkScale2,BLMode1,BLMode2;
 	int MoniPort,OpenPort;
-	
+
 	int PSol,PSolS,PSolE,Nsat[2],SolCurrentStat;
 	int Sat[2][MAXSAT],Snr[2][MAXSAT][NFREQ],Vsat[2][MAXSAT];
 	double Az[2][MAXSAT],El[2][MAXSAT];
@@ -164,7 +164,7 @@ public:
     QString History[10],MntpHist[10];
 
     QTimer Timer;
-	
+
     QString GeoidDataFileF,StaPosFileF,DCBFileF,EOPFileF,TLEFileF;
     QString TLESatFileF,LocalDirectory,PntName[MAXMAPPNT];
 
